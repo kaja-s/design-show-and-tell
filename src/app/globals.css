@@ -49,3 +49,49 @@ input:focus,
 textarea:focus {
   border-color: var(--foreground) !important;
 }
+
+/* Shader hover effects */
+@keyframes wave {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes glitch {
+  0%, 100% { transform: translate(0); }
+  20% { transform: translate(-4px, 4px); }
+  40% { transform: translate(-4px, -4px); }
+  60% { transform: translate(4px, 4px); }
+  80% { transform: translate(4px, -4px); }
+}
+
+@keyframes rainbow {
+  0% { filter: hue-rotate(0deg); }
+  100% { filter: hue-rotate(360deg); }
+}
+
+.shader-wave:hover {
+  animation: wave 0.6s ease-in-out infinite !important;
+  display: inline-block;
+}
+
+.shader-glitch:hover {
+  animation: glitch 0.3s linear infinite !important;
+  display: inline-block;
+}
+
+.shader-blur:hover {
+  filter: blur(2px) !important;
+  transition: filter 0.2s;
+}
+
+.shader-rgb:hover {
+  text-shadow:
+    3px 0 0 rgba(255, 0, 0, 0.5),
+    -3px 0 0 rgba(0, 255, 255, 0.5) !important;
+}
+
+.shader-pixelate:hover {
+  animation: rainbow 2s linear infinite !important;
+  transform: scale(1.05) !important;
+  transition: transform 0.2s;
+}

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-const NEXT_EVENT = new Date("2026-06-12T18:00:00");
+const NEXT_EVENT = new Date("2026-06-11T18:00:00");
 
 function getTimeLeft(target: Date) {
   const now = new Date();
@@ -34,25 +34,11 @@ export function Countdown() {
 
   return (
     <section className="mb-16 sm:mb-24">
-      <p className="text-xs lowercase opacity-50 mb-4">next event</p>
-      <p className="text-xs lowercase opacity-70 mb-6">
-        june 12, 2026 — 6:00 pm
-      </p>
-      <div className="flex gap-6 sm:gap-10">
-        <Unit value={pad(time.days)} label="days" />
-        <Unit value={pad(time.hours)} label="hrs" />
-        <Unit value={pad(time.minutes)} label="min" />
-        <Unit value={pad(time.seconds)} label="sec" />
+      <div className="flex justify-center">
+        <span className="font-['Monaco',monospace] text-2xl sm:text-3xl uppercase">
+          {pad(time.days)}D : {pad(time.hours)}H : {pad(time.minutes)}M : {pad(time.seconds)}S
+        </span>
       </div>
     </section>
-  );
-}
-
-function Unit({ value, label }: { value: string; label: string }) {
-  return (
-    <div className="flex flex-col items-center">
-      <span className="text-3xl sm:text-5xl font-bold tabular-nums">{value}</span>
-      <span className="text-xs opacity-50 mt-1 lowercase">{label}</span>
-    </div>
   );
 }

@@ -1,3 +1,7 @@
+"use client";
+
+import { useState } from "react";
+
 const faqs = [
   {
     q: "what is design show & tell?",
@@ -22,18 +26,38 @@ const faqs = [
 ];
 
 export function Faq() {
+  const [current, setCurrent] = useState(0);
+
+  const next = () => setCurrent((c) => (c + 1) % faqs.length);
+  const prev = () => setCurrent((c) => (c - 1 + faqs.length) % faqs.length);
+
   return (
     <section className="mb-16 sm:mb-24">
-      <p className="text-xs lowercase opacity-50 mb-6">faq</p>
-      <div className="space-y-6">
-        {faqs.map((item) => (
-          <div key={item.q}>
-            <p className="text-sm font-bold lowercase mb-1">{item.q}</p>
-            <p className="text-sm lowercase opacity-70 leading-relaxed">
-              {item.a}
-            </p>
-          </div>
-        ))}
+      <p className="text-xs lowercase opacity-50 mb-6 text-center">faq</p>
+      <div className="flex flex-col items-center">
+        <div className="max-w-md text-center space-y-3">
+          <p className="text-sm font-bold lowercase">{faqs[current].q}</p>
+          <p className="text-sm lowercase opacity-70 leading-relaxed">
+            {faqs[current].a}
+          </p>
+        </div>
+        <div className="flex gap-4 mt-6 items-center">
+          <button
+            onClick={prev}
+            className="text-xs lowercase px-3 py-1 border border-foreground/20 hover:bg-highlight hover:text-highlight-text transition-colors"
+          >
+            ←
+          </button>
+          <span className="text-xs opacity-50">
+            {current + 1} / {faqs.length}
+          </span>
+          <button
+            onClick={next}
+            className="text-xs lowercase px-3 py-1 border border-foreground/20 hover:bg-highlight hover:text-highlight-text transition-colors"
+          >
+            →
+          </button>
+        </div>
       </div>
     </section>
   );
