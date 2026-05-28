@@ -1,62 +1,166 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import FeatherIcon from "feather-icons-react";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  type CarouselApi,
+} from "@/components/ui/carousel";
 
 const faqs = [
   {
-    q: "what is design show & tell?",
-    a: "a casual gathering where designers share recent work, get feedback, and learn from each other. think of it as a crit session without the pressure.",
+    q: "what is it?",
+    a: "an informal gathering where designers share recent work, get feedback and ideas, and learn from each other.",
   },
   {
-    q: "who should attend?",
-    a: "anyone who works in or adjacent to design — product designers, brand designers, engineers with a design eye, design students, illustrators, or anyone curious about the craft.",
+    q: "when + where?",
+    a: "june 11th, 2026 at 6:00 at Impact Hub Ljubljana (Bavarski dvor).",
+  },
+  {
+    q: "who can join?",
+    a: "designers who are building new products and features, experimenting with AI tools and crafting interesting experiences.",
   },
   {
     q: "do i need to present?",
-    a: "no. you're welcome to just listen and participate in feedback. presenting is optional and always low-stakes.",
+    a: "no. you're welcome to just listen and participate in the q&a. presenting is optional and always low-stakes.",
   },
   {
     q: "what can i show?",
-    a: "anything — a side project, a work-in-progress, a case study, a tool you've been exploring, or a design challenge you're stuck on.",
+    a: "anything. a side project, a work-in-progress, a fully developed feature, a tool you've been exploring, or a design challenge you're stuck on.",
   },
   {
-    q: "how long are presentations?",
-    a: "5–10 minutes each, followed by a few minutes of group feedback. we keep it tight and informal.",
+    q: "how long are the presentations?",
+    a: "5–10 minutes each, followed by a few minutes of group q&a. we keep it tight and informal.",
+  },
+  {
+    q: "what is the vibe?",
+    a: "friendly, collaborative, and low-pressure. it's about learning and connecting, not showing off or competing.",
+  },
+  {
+    q: "who is the organizer?",
+    a: "organized by kaja, a designer who loves bringing creative people together to share work and build community.",
   },
 ];
 
 export function Faq() {
+  const [api, setApi] = useState<CarouselApi>();
   const [current, setCurrent] = useState(0);
 
-  const next = () => setCurrent((c) => (c + 1) % faqs.length);
-  const prev = () => setCurrent((c) => (c - 1 + faqs.length) % faqs.length);
+  useEffect(() => {
+    if (!api) return;
+
+    setCurrent(api.selectedScrollSnap());
+
+    api.on("select", () => {
+      setCurrent(api.selectedScrollSnap());
+    });
+  }, [api]);
+
+  const scrollPrev = () => api?.scrollPrev();
+  const scrollNext = () => api?.scrollNext();
 
   return (
-    <section className="mb-16 sm:mb-24">
-      <p className="text-xs lowercase opacity-50 mb-6 text-center">faq</p>
-      <div className="flex flex-col items-center">
-        <div className="max-w-md text-center space-y-3">
-          <p className="text-sm font-bold lowercase">{faqs[current].q}</p>
-          <p className="text-sm lowercase opacity-70 leading-relaxed">
-            {faqs[current].a}
-          </p>
+    <section className="mb-8 sm:mb-12">
+      {/* Questions section with arrows */}
+      <div className="flex items-end gap-4 mb-6">
+        <div className="flex-1">
+          <Carousel
+            setApi={setApi}
+            orientation="vertical"
+            opts={{
+              align: "center",
+              loop: false,
+              startIndex: 0,
+            }}
+            className="w-full carousel-anim-1"
+          >
+            <CarouselContent className="h-[150px] py-[75px]">
+              {faqs.map((faq, index) => (
+                <CarouselItem
+                  key={index}
+                  className="basis-1/3"
+                  onClick={() => api?.scrollTo(index)}
+                >
+                  <button
+                    className={`text-left text-sm block w-full transition-all duration-700 cursor-pointer px-4 ${
+                      current === index
+                        ? "opacity-100 blur-0 font-bold"
+                        : "opacity-40 blur-[2px]"
+                    } hover:opacity-70`}
+                  >
+                    {faq.q}
+                  </button>
+                </CarouselItem>
+              ))}
+              {/* Empty spacer items to allow last question to center */}
+              <CarouselItem key="spacer-1" className="basis-1/3 pointer-events-none" />
+              <CarouselItem key="spacer-2" className="basis-1/3 pointer-events-none" />
+            </CarouselContent>
+          </Carousel>
         </div>
-        <div className="flex gap-4 mt-6 items-center">
+
+        {/* Navigation arrows */}
+        <div className="flex flex-col gap-2 shrink-0">
           <button
-            onClick={prev}
-            className="text-xs lowercase px-3 py-1 border border-foreground/20 hover:bg-highlight hover:text-highlight-text transition-colors"
+            onClick={scrollPrev}
+            disabled={current === 0}
+            className="p-1 transition-opacity hover:opacity-60 disabled:opacity-20"
+            aria-label="Previous question"
           >
-            ←
+            <FeatherIcon icon="chevron-up" size={16} strokeWidth={2} />
           </button>
-          <span className="text-xs opacity-50">
-            {current + 1} / {faqs.length}
-          </span>
           <button
-            onClick={next}
-            className="text-xs lowercase px-3 py-1 border border-foreground/20 hover:bg-highlight hover:text-highlight-text transition-colors"
+            onClick={scrollNext}
+            disabled={current === faqs.length - 1}
+            className="p-1 transition-opacity hover:opacity-60 disabled:opacity-20"
+            aria-label="Next question"
           >
-            →
+            <FeatherIcon icon="chevron-down" size={16} strokeWidth={2} />
           </button>
+        </div>
+      </div>
+
+      {/* Answer section */}
+      <div className="border border-foreground/20 p-6 min-h-[180px]">
+        <div className="flex gap-3 mb-4 pb-3 border-b border-foreground/20">
+          <span className="text-[10px] tracking-wider opacity-50">Q:</span>
+          <p className="text-[14px] tracking-wide flex-1 opacity-60">{faqs[current].q}</p>
+        </div>
+        <div className="flex gap-3">
+          <span className="text-[10px] tracking-wider opacity-50">A:</span>
+          <p className="text-[14px] leading-relaxed flex-1">
+            {current === 1 ? (
+              <>
+                June 11th, 2026 at 6:00 at{" "}
+                <a
+                  href="https://www.google.com/maps/place//data=!4m2!3m1!1s0x476533d1a3dfa6eb:0x27ae9f8c81542ca2?sa=X&ved=1t:8290&ictx=111"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline hover:opacity-70 transition-opacity"
+                >
+                  Impact Hub Ljubljana
+                </a>
+                {" "}(Bavarski dvor).
+              </>
+            ) : current === faqs.length - 1 ? (
+              <>
+                organized by{" "}
+                <a
+                  href="https://www.linkedin.com/in/kajaskerlj/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline hover:opacity-70 transition-opacity"
+                >
+                  kaja
+                </a>
+                , a designer who loves bringing creative people together to share work and build community.
+              </>
+            ) : (
+              faqs[current].a
+            )}
+          </p>
         </div>
       </div>
     </section>

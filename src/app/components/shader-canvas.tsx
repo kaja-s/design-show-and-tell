@@ -19,15 +19,14 @@ const FRAGMENT_SHADER = `
   uniform sampler2D u_texture;
   uniform vec2 u_resolution;
   uniform vec3 u_color;
-  uniform vec3 u_bg;
 
   void main() {
     vec4 tex = texture2D(u_texture, v_texCoord);
     float luma = dot(tex.rgb, vec3(0.299, 0.587, 0.114));
 
-    // discard background pixels
+    // discard background pixels - make them transparent
     if (luma > 0.85) {
-      gl_FragColor = vec4(u_bg, 1.0);
+      gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0);
       return;
     }
 
@@ -44,10 +43,11 @@ const FRAGMENT_SHADER = `
     vec2 cell = floor(rotated / dotSize) * dotSize + dotSize * 0.5;
     float dist = length(rotated - cell);
     float radius = dotSize * 0.5 * (1.0 - luma);
-    float dot = smoothstep(radius + 0.5, radius - 0.5, dist);
+    float dotValue = smoothstep(radius + 0.5, radius - 0.5, dist);
 
-    vec3 color = mix(u_bg, u_color, dot);
-    gl_FragColor = vec4(color, 1.0);
+    // Only render the dots, make everything else transparent
+    float alpha = dotValue;
+    gl_FragColor = vec4(u_color * dotValue, alpha);
   }
 `;
 
@@ -116,19 +116,22 @@ export function ShaderCanvas() {
 
     const resLoc = gl.getUniformLocation(program, "u_resolution");
     const colorLoc = gl.getUniformLocation(program, "u_color");
-    const bgLoc = gl.getUniformLocation(program, "u_bg");
+
+    // Enable transparency
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
     const render = () => {
       if (video.readyState >= video.HAVE_CURRENT_DATA) {
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, video);
 
         const fg = theme === "dark" ? hexToRgb("#93c5fd") : hexToRgb("#021093");
-        const bg = theme === "dark" ? hexToRgb("#040c2a") : hexToRgb("#ffffff");
 
+        gl.clearColor(0, 0, 0, 0); // Clear with transparent
+        gl.clear(gl.COLOR_BUFFER_BIT);
         gl.viewport(0, 0, canvas.width, canvas.height);
         gl.uniform2f(resLoc, canvas.width, canvas.height);
         gl.uniform3f(colorLoc, ...fg);
-        gl.uniform3f(bgLoc, ...bg);
         gl.drawArrays(gl.TRIANGLES, 0, 6);
       }
       animRef.current = requestAnimationFrame(render);

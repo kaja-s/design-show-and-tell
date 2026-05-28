@@ -33,9 +33,9 @@ export function Countdown() {
   }, []);
 
   return (
-    <section className="mb-16 sm:mb-24">
+    <section className="mb-8 sm:mb-12">
       <div className="flex justify-center">
-        <span className="font-['Monaco',monospace] text-2xl sm:text-3xl uppercase">
+        <span className="font-['Monaco',monospace] text-lg sm:text-xl uppercase">
           {pad(time.days)}D : {pad(time.hours)}H : {pad(time.minutes)}M : {pad(time.seconds)}S
         </span>
       </div>

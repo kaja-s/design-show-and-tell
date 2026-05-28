@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "./theme-provider";
+import { CaseProvider } from "./case-provider";
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
@@ -29,13 +30,17 @@ export default function RootLayout({
                 if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
                   document.documentElement.classList.add('dark');
                 }
+                const caseMode = localStorage.getItem('caseMode') || 'lower';
+                document.documentElement.setAttribute('data-case', caseMode);
               })();
             `,
           }}
         />
       </head>
       <body className="min-h-full flex flex-col">
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          <CaseProvider>{children}</CaseProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
