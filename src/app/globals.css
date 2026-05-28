@@ -1,0 +1,51 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #021093;
+  --foreground-muted: rgba(2, 16, 147, 0.5);
+  --accent: #3b5bdb;
+  --highlight: #021093;
+  --highlight-text: #ffffff;
+}
+
+:root.dark {
+  --background: #040c2a;
+  --foreground: #93c5fd;
+  --foreground-muted: rgba(147, 197, 253, 0.5);
+  --accent: #60a5fa;
+  --highlight: #93c5fd;
+  --highlight-text: #040c2a;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-foreground-muted: var(--foreground-muted);
+  --color-accent: var(--accent);
+  --color-highlight: var(--highlight);
+  --color-highlight-text: var(--highlight-text);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-mono);
+  font-feature-settings: "ss01", "ss02", "zero", "tnum";
+}
+
+::selection {
+  background: var(--highlight);
+  color: var(--highlight-text);
+}
+
+input,
+textarea {
+  outline: none;
+}
+
+input:focus,
+textarea:focus {
+  border-color: var(--foreground) !important;
+}
