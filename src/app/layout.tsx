@@ -12,6 +12,21 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "design show & tell",
   description: "a gathering for designers to share work, give feedback, and connect.",
+  icons: {
+    icon: '/favicon.png',
+  },
+  openGraph: {
+    title: "design show & tell",
+    description: "a gathering for designers to share work, give feedback, and connect.",
+    images: ['/og-image.png'],
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: "design show & tell",
+    description: "a gathering for designers to share work, give feedback, and connect.",
+    images: ['/og-image.png'],
+  },
 };
 
 export default function RootLayout({
