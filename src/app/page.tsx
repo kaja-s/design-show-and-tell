@@ -22,7 +22,7 @@ export default function Home() {
         }}
       />
 
-      <main className="sm:min-h-screen flex flex-col items-center justify-center px-5 pt-6 sm:pt-20 pb-12 sm:pb-20 relative z-10">
+      <main className="sm:min-h-screen flex flex-col items-center justify-center px-5 pt-6 sm:pt-8 pb-12 sm:pb-20 relative z-10">
         <div className="w-full max-w-xl">
           <div className="flex justify-end mb-6 sm:mb-10">
             <button
