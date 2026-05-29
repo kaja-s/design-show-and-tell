@@ -58,7 +58,6 @@ export function Rsvp() {
             />
           ))}
         </div>
-        <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-20 transition-opacity duration-100 pointer-events-none" />
         <span className="relative z-10">rsvp</span>
       </a>
     </section>

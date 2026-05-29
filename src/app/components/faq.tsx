@@ -65,7 +65,7 @@ export function Faq() {
     <section className="mb-8 sm:mb-12">
       {/* Questions section with arrows */}
       <div className="flex items-end gap-4 mb-6">
-        <div className="flex-1">
+        <div className="flex-1 relative" style={{ maskImage: 'linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%)', WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%)' }}>
           <Carousel
             setApi={setApi}
             orientation="vertical"
@@ -87,7 +87,9 @@ export function Faq() {
                     className={`text-left text-sm block w-full transition-all duration-700 cursor-pointer px-4 ${
                       current === index
                         ? "opacity-100 blur-0 font-bold"
-                        : "opacity-40 blur-[2px]"
+                        : Math.abs(current - index) === 1
+                        ? "opacity-60 blur-[2.5px]"
+                        : "opacity-10 blur-[4px]"
                     } hover:opacity-70`}
                   >
                     {faq.q}
@@ -106,7 +108,7 @@ export function Faq() {
           <button
             onClick={scrollPrev}
             disabled={current === 0}
-            className="p-1 transition-opacity hover:opacity-60 disabled:opacity-20"
+            className="p-2 disabled:opacity-20 transition-all duration-150 hover:bg-foreground/10 active:text-foreground/40"
             aria-label="Previous question"
           >
             <FeatherIcon icon="chevron-up" size={16} strokeWidth={2} />
@@ -114,7 +116,7 @@ export function Faq() {
           <button
             onClick={scrollNext}
             disabled={current === faqs.length - 1}
-            className="p-1 transition-opacity hover:opacity-60 disabled:opacity-20"
+            className="p-2 disabled:opacity-20 transition-all duration-150 hover:bg-foreground/10 active:text-foreground/40"
             aria-label="Next question"
           >
             <FeatherIcon icon="chevron-down" size={16} strokeWidth={2} />
@@ -123,7 +125,7 @@ export function Faq() {
       </div>
 
       {/* Answer section */}
-      <div className="border border-foreground/20 p-6 min-h-[180px]">
+      <div className="border border-foreground/20 p-4 sm:p-6 min-h-[180px]">
         <div className="flex gap-3 mb-4 pb-3 border-b border-foreground/20 items-center">
           <span className="text-[10px] tracking-wider opacity-50">Q:</span>
           <p className="text-[14px] tracking-wide flex-1 opacity-60">{faqs[current].q}</p>

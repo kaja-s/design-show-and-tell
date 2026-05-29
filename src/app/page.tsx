@@ -22,21 +22,18 @@ export default function Home() {
         }}
       />
 
-      {/* Fixed theme toggle - top right */}
-      <div className="fixed top-6 left-0 right-0 z-50 px-5 flex justify-center pointer-events-none">
-        <div className="w-full max-w-xl flex justify-end pointer-events-auto">
-          <button
-            onClick={toggle}
-            className="opacity-40 hover:opacity-100 transition-opacity px-2 py-1"
-            aria-label="Toggle theme"
-          >
-            <FeatherIcon icon={theme === "light" ? "moon" : "sun"} size={18} strokeWidth={1.5} />
-          </button>
-        </div>
-      </div>
-
-      <main className="min-h-screen flex flex-col items-center justify-center px-5 py-20 relative z-10">
+      <main className="sm:min-h-screen flex flex-col items-center justify-center px-5 pt-6 sm:pt-20 pb-12 sm:pb-20 relative z-10">
         <div className="w-full max-w-xl">
+          <div className="flex justify-end mb-6 sm:mb-10">
+            <button
+              onClick={toggle}
+              className="opacity-40 hover:opacity-100 transition-opacity px-2 py-1"
+              aria-label="Toggle theme"
+            >
+              <FeatherIcon icon={theme === "light" ? "moon" : "sun"} size={18} strokeWidth={1.5} />
+            </button>
+          </div>
+
           <div className="flex flex-col items-center mb-8 sm:mb-12">
             <ShaderCanvas />
             <h1 className="text-sm font-bold lowercase">design show & tell</h1>
@@ -48,8 +45,7 @@ export default function Home() {
         </div>
       </main>
 
-      {/* Fixed colophon - bottom center */}
-      <footer className="fixed bottom-6 left-0 right-0 text-center z-50">
+      <footer className="pb-6 px-5 text-center space-y-3">
         <p className="text-xs opacity-40">
           colophon:{" "}
           <a

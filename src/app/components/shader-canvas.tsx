@@ -146,7 +146,7 @@ export function ShaderCanvas() {
   }, [theme]);
 
   return (
-    <div className="relative w-40 h-40 sm:w-48 sm:h-48 ml-[10px]">
+    <div className="relative w-32 h-32 sm:w-48 sm:h-48 ml-[10px]">
       <video
         ref={videoRef}
         src="/wolf.mp4"

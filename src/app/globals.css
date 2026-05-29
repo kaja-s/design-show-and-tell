@@ -63,6 +63,7 @@ textarea:focus {
   border-color: var(--foreground) !important;
 }
 
+
 /* Shader hover effects */
 @keyframes wave {
   0%, 100% { transform: translateY(0); }

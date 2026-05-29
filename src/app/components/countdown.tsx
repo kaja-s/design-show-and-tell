@@ -23,14 +23,27 @@ function pad(n: number) {
 }
 
 export function Countdown() {
-  const [time, setTime] = useState(getTimeLeft(NEXT_EVENT));
+  const [time, setTime] = useState<ReturnType<typeof getTimeLeft> | null>(null);
 
   useEffect(() => {
+    setTime(getTimeLeft(NEXT_EVENT));
     const interval = setInterval(() => {
       setTime(getTimeLeft(NEXT_EVENT));
     }, 1000);
     return () => clearInterval(interval);
   }, []);
+
+  if (!time) {
+    return (
+      <section className="mb-8 sm:mb-12">
+        <div className="flex justify-center">
+          <span className="font-['Monaco',monospace] text-lg sm:text-xl uppercase">
+            --D : --H : --M : --S
+          </span>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="mb-8 sm:mb-12">
