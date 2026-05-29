@@ -150,7 +150,7 @@ export function Faq() {
               <>
                 organized by{" "}
                 <a
-                  href="https://www.linkedin.com/in/kajaskerlj/"
+                  href="https://www.kajaskerlj.com/"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="underline hover:opacity-70 transition-opacity"
