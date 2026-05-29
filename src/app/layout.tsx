@@ -13,7 +13,9 @@ export const metadata: Metadata = {
   title: "design show & tell",
   description: "a gathering for designers to share work, give feedback, and connect.",
   icons: {
-    icon: '/favicon.png',
+    icon: '/favicon.svg',
+    shortcut: '/favicon.svg',
+    apple: '/favicon.svg',
   },
   openGraph: {
     title: "design show & tell",

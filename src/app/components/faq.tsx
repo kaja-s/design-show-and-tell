@@ -12,7 +12,7 @@ import {
 const faqs = [
   {
     q: "what is it?",
-    a: "an informal gathering where designers share recent work, get feedback and ideas, and learn from each other.",
+    a: "live demos. new experiments. no slides. an informal space for designers to share what they're working on, explore different approaches, and steal ideas from each other.",
   },
   {
     q: "when + where?",
@@ -20,11 +20,11 @@ const faqs = [
   },
   {
     q: "who can join?",
-    a: "designers who are building new products and features, experimenting with AI tools and crafting interesting experiences.",
+    a: "designers who are creating new products and features, experimenting with AI tools or crafting experiences that don't quite have a playbook yet",
   },
   {
     q: "do i need to present?",
-    a: "no. you're welcome to just listen and participate in the q&a. presenting is optional and always low-stakes.",
+    a: "no. you're welcome to just listen and participate in the discussion. presenting is optional and always low-stakes.",
   },
   {
     q: "what can i show?",
@@ -40,7 +40,7 @@ const faqs = [
   },
   {
     q: "who is the organizer?",
-    a: "organized by kaja, a designer who loves bringing creative people together to share work and build community.",
+    a: "organized by kaja, a designer who loves bringing creative people together.",
   },
 ];
 
@@ -124,12 +124,12 @@ export function Faq() {
 
       {/* Answer section */}
       <div className="border border-foreground/20 p-6 min-h-[180px]">
-        <div className="flex gap-3 mb-4 pb-3 border-b border-foreground/20">
+        <div className="flex gap-3 mb-4 pb-3 border-b border-foreground/20 items-center">
           <span className="text-[10px] tracking-wider opacity-50">Q:</span>
           <p className="text-[14px] tracking-wide flex-1 opacity-60">{faqs[current].q}</p>
         </div>
-        <div className="flex gap-3">
-          <span className="text-[10px] tracking-wider opacity-50">A:</span>
+        <div className="flex gap-3 items-start">
+          <span className="text-[10px] tracking-wider opacity-50 mt-[3px]">A:</span>
           <p className="text-[14px] leading-relaxed flex-1">
             {current === 1 ? (
               <>
