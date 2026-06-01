@@ -10,7 +10,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://designshowandtell.com"),
+  metadataBase: new URL("https://design-show-and-tell.vercel.app"),
   title: "design show & tell",
   description: "a gathering for designers to share work, give feedback, and connect.",
   icons: {
