@@ -3,6 +3,7 @@ import { Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "./theme-provider";
 import { CaseProvider } from "./case-provider";
+import { Analytics } from "@vercel/analytics/next";
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
@@ -59,6 +60,7 @@ export default function RootLayout({
         <ThemeProvider>
           <CaseProvider>{children}</CaseProvider>
         </ThemeProvider>
+        <Analytics />
       </body>
     </html>
   );
