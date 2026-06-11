@@ -16,7 +16,7 @@ const faqs = [
   },
   {
     q: "when + where?",
-    a: "june 11th, 2026 at 6:00 at Impact Hub Ljubljana (Bavarski dvor).",
+    a: "june 11th, 2026 at 6:00 at Visionect (Tržaška c. 118).",
   },
   {
     q: "who can join?",
