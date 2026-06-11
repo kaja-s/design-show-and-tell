@@ -142,9 +142,9 @@ export function Faq() {
                   rel="noopener noreferrer"
                   className="underline hover:opacity-70 transition-opacity"
                 >
-                  Impact Hub Ljubljana
+                  Tržaška cesta 118
                 </a>
-                {" "}(Bavarski dvor).
+                {" "}(Visionect).
               </>
             ) : current === faqs.length - 1 ? (
               <>
