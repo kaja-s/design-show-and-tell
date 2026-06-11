@@ -142,7 +142,7 @@ export function Faq() {
                   rel="noopener noreferrer"
                   className="underline hover:opacity-70 transition-opacity"
                 >
-                  Tržaška cesta 118
+                  Tržaška c. 118
                 </a>
                 {" "}(Visionect).
               </>
