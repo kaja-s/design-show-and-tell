@@ -1,5 +1,10 @@
 "use client";
 
+// NOTE: This is the RSVP button used during an active event cycle.
+// It's currently inactive — the homepage shows <StayUpToDate /> between events.
+// For the next event (September): update the `href` below to the new lu.ma link,
+// then in page.tsx swap <StayUpToDate /> back to <Rsvp />.
+
 import { useState, useRef } from "react";
 
 const PAINT_COLS = 14;

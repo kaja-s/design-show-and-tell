@@ -3,7 +3,9 @@
 import { useTheme } from "./theme-provider";
 import { Countdown } from "./components/countdown";
 import { Faq } from "./components/faq";
-import { Rsvp } from "./components/rsvp";
+import { StayUpToDate } from "./components/stay-up-to-date";
+// For the next event: uncomment the Rsvp import + usage below and comment out StayUpToDate.
+// import { Rsvp } from "./components/rsvp";
 import { ShaderCanvas } from "./components/shader-canvas";
 import FeatherIcon from "feather-icons-react";
 
@@ -41,7 +43,9 @@ export default function Home() {
 
           <Countdown />
           <Faq />
-          <Rsvp />
+          {/* Between events: collect signups. For the next event, swap to <Rsvp /> below. */}
+          <StayUpToDate />
+          {/* <Rsvp /> */}
         </div>
       </main>
 
