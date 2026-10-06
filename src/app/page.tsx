@@ -32,12 +32,16 @@ export default function Home() {
       <main className="sm:min-h-screen flex flex-col items-center justify-center px-5 pt-6 sm:pt-8 pb-12 sm:pb-20 relative z-10">
         <div className="w-full max-w-xl">
           <div className="flex justify-end mb-6 sm:mb-10">
+            {/* Names the action and exposes the current state: "dark theme", pressed/not pressed. */}
             <button
+              type="button"
               onClick={toggle}
-              className="opacity-40 hover:opacity-100 transition-opacity px-2 py-1"
-              aria-label="Toggle theme"
+              aria-pressed={theme === "dark"}
+              aria-label="Dark theme"
+              title={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
+              className="opacity-40 hover:opacity-100 transition-opacity p-[11px] -m-[11px]"
             >
-              <FeatherIcon icon={theme === "light" ? "moon" : "sun"} size={18} strokeWidth={1.5} />
+              <FeatherIcon icon={theme === "light" ? "moon" : "sun"} size={18} strokeWidth={1.5} aria-hidden="true" />
             </button>
           </div>
 

@@ -122,7 +122,7 @@ export function Faq() {
           <button
             onClick={scrollPrev}
             disabled={current === 0}
-            className="p-2 disabled:opacity-20 transition-all duration-150 hover:bg-foreground/10 active:text-foreground/40"
+            className="p-3 disabled:opacity-20 transition-colors duration-150 hover:bg-foreground/10 active:text-foreground/40"
             aria-label="Previous question"
           >
             <FeatherIcon icon="chevron-up" size={16} strokeWidth={2} />
@@ -130,7 +130,7 @@ export function Faq() {
           <button
             onClick={scrollNext}
             disabled={current === faqs.length - 1}
-            className="p-2 disabled:opacity-20 transition-all duration-150 hover:bg-foreground/10 active:text-foreground/40"
+            className="p-3 disabled:opacity-20 transition-colors duration-150 hover:bg-foreground/10 active:text-foreground/40"
             aria-label="Next question"
           >
             <FeatherIcon icon="chevron-down" size={16} strokeWidth={2} />

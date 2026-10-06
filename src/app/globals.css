@@ -64,14 +64,19 @@ body::before {
   color: var(--highlight-text);
 }
 
-input,
-textarea {
-  outline: none;
-}
-
+/* Keyboard focus: a 2px ring in the foreground colour, outside the border so it
+   reads against any adjacent surface. Mouse focus keeps the border tint only. */
 input:focus,
 textarea:focus {
-  border-color: var(--foreground) !important;
+  border-color: var(--foreground);
+}
+input:focus-visible,
+textarea:focus-visible,
+button:focus-visible,
+a:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--foreground);
+  outline-offset: 2px;
 }
 
 
