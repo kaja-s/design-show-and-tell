@@ -10,6 +10,7 @@
   --accent: #3b5bdb;
   --highlight: #021093;
   --highlight-text: #ffffff;
+  --danger: #b4231f;
 }
 
 :root.dark {
@@ -19,6 +20,7 @@
   --accent: #60a5fa;
   --highlight: #93c5fd;
   --highlight-text: #040c2a;
+  --danger: #fca5a5;
 }
 
 @theme inline {
@@ -28,6 +30,7 @@
   --color-accent: var(--accent);
   --color-highlight: var(--highlight);
   --color-highlight-text: var(--highlight-text);
+  --color-danger: var(--danger);
   --font-mono: var(--font-geist-mono);
 }
 

@@ -37,6 +37,9 @@ export function SpeakerProposal() {
   >("idle");
   const [message, setMessage] = useState("");
   const [offerMailto, setOfferMailto] = useState(false);
+  // Per-field messages from on-submit validation; empty = valid.
+  const [fieldErrors, setFieldErrors] = useState<{ name?: string; email?: string; proposal?: string }>({});
+  const formRef = useRef<HTMLFormElement>(null);
   // Proposal box: compact by default, taller via the expand toggle.
   const [expanded, setExpanded] = useState(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -67,8 +70,23 @@ export function SpeakerProposal() {
 
   const close = () => setOpen(false);
 
+  const validate = () => {
+    const errors: typeof fieldErrors = {};
+    if (!name.trim()) errors.name = "enter your name.";
+    if (!EMAIL_RE.test(email.trim())) errors.email = "enter an email address like name@example.com.";
+    if (!proposal.trim()) errors.proposal = "tell us what you'd show, a sentence is enough.";
+    return errors;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const errors = validate();
+    setFieldErrors(errors);
+    if (Object.keys(errors).length) {
+      // let aria-invalid land in the DOM, then move focus to the first failing field
+      requestAnimationFrame(() => focusFirstInvalid(formRef.current, ["name", "email", "proposal"]));
+      return;
+    }
     setStatus("loading");
     setMessage("");
     setOfferMailto(false);
@@ -93,9 +111,6 @@ export function SpeakerProposal() {
       setOfferMailto(true);
     }
   };
-
-  const fieldClass =
-    "w-full px-3.5 py-3 text-sm bg-transparent border border-foreground/20 placeholder:text-foreground/40 disabled:opacity-50 disabled:cursor-not-allowed transition-[border-color] duration-150";
 
   // Staged entrance inside the dialog: header, fields, action, 100ms apart.
   const stage = (i: number): React.CSSProperties => ({
@@ -135,7 +150,7 @@ export function SpeakerProposal() {
                     </div>
                   </div>
                 ) : (
-                  <form onSubmit={handleSubmit}>
+                  <form ref={formRef} onSubmit={handleSubmit} noValidate>
                     {/* header: one bold line carries the ask, one quiet line carries the format */}
                     <div
                       className="animate-fade-in mb-5 flex items-start justify-between gap-4"
@@ -153,59 +168,78 @@ export function SpeakerProposal() {
                         type="button"
                         onClick={close}
                         aria-label="Close"
-                        className="-mr-2 -mt-2 p-2 opacity-40 hover:opacity-100 hover:rotate-90 transition-[opacity,transform] duration-300 ease-out"
+                        className="-mr-3 -mt-3 p-[13px] opacity-40 hover:opacity-100 hover:rotate-90 transition-[opacity,transform] duration-300 ease-out"
                       >
                         <FeatherIcon icon="x" size={14} strokeWidth={1.5} />
                       </button>
                     </div>
 
-                    <div className="animate-fade-in space-y-3" style={stage(1)}>
-                      <div className="grid grid-cols-1 gap-3">
+                    <div className="animate-fade-in space-y-4" style={stage(1)}>
+                      <div>
+                        <FieldLabel htmlFor="proposal-name">name</FieldLabel>
                         <input
+                          id="proposal-name"
                           type="text"
                           name="name"
                           autoComplete="name"
                           value={name}
                           onChange={(e) => setName(e.target.value)}
-                          placeholder="name"
+                          placeholder="ana novak"
                           required
+                          aria-invalid={fieldErrors.name ? true : undefined}
+                          aria-describedby="proposal-name-error"
                           disabled={status === "loading"}
-                          className={fieldClass}
+                          className={FIELD_CLASS}
                         />
+                        <FieldError id="proposal-name-error">{fieldErrors.name}</FieldError>
+                      </div>
+                      <div>
+                        <FieldLabel htmlFor="proposal-email">email</FieldLabel>
                         <input
+                          id="proposal-email"
                           type="email"
                           name="email"
                           autoComplete="email"
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
-                          placeholder="email"
+                          placeholder="name@example.com"
                           required
+                          aria-invalid={fieldErrors.email ? true : undefined}
+                          aria-describedby="proposal-email-error"
                           disabled={status === "loading"}
-                          className={fieldClass}
+                          className={FIELD_CLASS}
                         />
+                        <FieldError id="proposal-email-error">{fieldErrors.email}</FieldError>
                       </div>
-                      <div className="relative">
-                        <textarea
-                          name="proposal"
-                          value={proposal}
-                          onChange={(e) => setProposal(e.target.value)}
-                          placeholder="what would you show us? a sentence is enough."
-                          required
-                          rows={expanded ? 12 : 5}
-                          maxLength={PROPOSAL_MAX}
-                          disabled={status === "loading"}
-                          className={`${fieldClass} resize-none leading-relaxed pb-8 transition-[height] duration-200 ease-out`}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setExpanded((v) => !v)}
-                          aria-pressed={expanded}
-                          aria-label={expanded ? "Collapse proposal field" : "Expand proposal field"}
-                          className="absolute left-2 bottom-2 inline-flex items-center gap-1.5 px-1.5 py-1 text-[10px] tracking-wider opacity-40 hover:opacity-100 hover:bg-foreground/10 transition-[opacity,background-color] duration-150"
-                        >
-                          <FeatherIcon icon={expanded ? "minimize-2" : "maximize-2"} size={11} strokeWidth={2} />
-                          {expanded ? "collapse" : "expand"}
-                        </button>
+                      <div>
+                        <FieldLabel htmlFor="proposal-text">what would you show us?</FieldLabel>
+                        <div className="relative">
+                          <textarea
+                            id="proposal-text"
+                            name="proposal"
+                            value={proposal}
+                            onChange={(e) => setProposal(e.target.value)}
+                            placeholder="a prototype, a side project, a tool you've been exploring…"
+                            required
+                            rows={expanded ? 12 : 5}
+                            maxLength={PROPOSAL_MAX}
+                            aria-invalid={fieldErrors.proposal ? true : undefined}
+                            aria-describedby="proposal-text-error"
+                            disabled={status === "loading"}
+                            className={`${FIELD_CLASS} resize-none leading-relaxed pb-8 transition-[height,border-color] duration-200 ease-out`}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setExpanded((v) => !v)}
+                            aria-pressed={expanded}
+                            aria-label={expanded ? "Collapse proposal field" : "Expand proposal field"}
+                            className="absolute left-2 bottom-2 inline-flex items-center gap-1.5 px-2 py-1.5 min-h-6 text-xs tracking-wider opacity-40 hover:opacity-100 hover:bg-foreground/10 transition-[opacity,background-color] duration-150"
+                          >
+                            <FeatherIcon icon={expanded ? "minimize-2" : "maximize-2"} size={11} strokeWidth={2} />
+                            {expanded ? "collapse" : "expand"}
+                          </button>
+                        </div>
+                        <FieldError id="proposal-text-error">{fieldErrors.proposal}</FieldError>
                       </div>
                     </div>
 
@@ -230,15 +264,15 @@ export function SpeakerProposal() {
                         type="button"
                         onClick={close}
                         disabled={status === "loading"}
-                        className="text-xs opacity-40 hover:opacity-100 transition-opacity duration-150 disabled:opacity-20"
+                        className="text-xs opacity-40 hover:opacity-100 transition-opacity duration-150 disabled:opacity-20 py-2 px-2 -mx-2 min-h-10"
                       >
                         not now
                       </button>
                     </div>
 
                     {status === "error" && (
-                      <div className="mt-3 text-xs space-y-1 animate-fade-in">
-                        <p style={{ color: "#ef4444" }}>{message}</p>
+                      <div role="alert" className="mt-3 text-xs space-y-1 animate-fade-in">
+                        <p className="text-danger">{message}</p>
                         {offerMailto && (
                           <p className="opacity-70">
                             <a
