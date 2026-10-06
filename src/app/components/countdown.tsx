@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 // shows dashes and the small save-the-date line appears beneath it.
 const NEXT_EVENT: Date | null = null;
 
-const SAVE_THE_DATE = "late november 2026 · exact date soon";
+const SAVE_THE_DATE = "[late november 2026 | exact date soon]";
 const PLACEHOLDER = "--D : --H : --M : --S";
 
 // Tab title easter egg: while the tab is hidden the title becomes the slot's

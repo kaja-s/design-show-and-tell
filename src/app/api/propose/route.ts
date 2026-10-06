@@ -58,7 +58,7 @@ export async function POST(request: Request) {
     if (!LOOPS_API_KEY || !transactionalId) {
       console.error("Proposal email not configured: LOOPS_API_KEY or LOOPS_PROPOSAL_TRANSACTIONAL_ID missing");
       return NextResponse.json(
-        { error: "Sending isn't set up yet.", fallback: "mailto" },
+        { error: "unable to send right now. email to kaja.skerlj@gmail.com instead. thanks!", fallback: "mailto" },
         { status: 503 }
       );
     }
@@ -88,7 +88,7 @@ export async function POST(request: Request) {
       if (!confirmation.ok) console.error("Loops confirmation error:", confirmation.data);
     }
 
-    return NextResponse.json({ success: true, message: "Got it. Kaja will get back to you." });
+    return NextResponse.json({ success: true, message: "thanks! i'll read it over the next few days and get back to you." });
   } catch (error) {
     console.error("Proposal error:", error);
     return NextResponse.json({ error: "An unexpected error occurred.", fallback: "mailto" }, { status: 500 });

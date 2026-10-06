@@ -7,7 +7,7 @@ window.GRAPHIC = {
     label: "design show & tell",
     corner: "ljubljana",
     cmd: "call for speakers",           // typed after the "> " prompt
-    out: "late november 2026 · exact date soon",
+    out: "[late november 2026 | exact date soon]",
   },
   // timeline overrides go here, e.g. { click1: 5.2 } — see T in comp.html for the keys
   timeline: {},
