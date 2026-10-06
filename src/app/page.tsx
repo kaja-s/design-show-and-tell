@@ -6,6 +6,7 @@ import { Faq } from "./components/faq";
 import { StayUpToDate } from "./components/stay-up-to-date";
 // For the next event: uncomment the Rsvp import + usage below and comment out StayUpToDate.
 // import { Rsvp } from "./components/rsvp";
+import { LastEvent } from "./components/last-event";
 import { ShaderCanvas } from "./components/shader-canvas";
 import { ConsoleWolf } from "./components/console-wolf";
 import FeatherIcon from "feather-icons-react";
@@ -46,6 +47,7 @@ export default function Home() {
           <Faq />
           {/* Between events: collect signups. For the next event, swap to <Rsvp /> below. */}
           <StayUpToDate />
+          <LastEvent />
           {/* <Rsvp /> */}
         </div>
       </main>

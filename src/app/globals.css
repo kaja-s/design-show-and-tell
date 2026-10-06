@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* The theme is a .dark class on <html> (see layout.tsx), not the OS setting. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --background: #ffffff;
   --foreground: #021093;
@@ -26,6 +29,11 @@
   --color-highlight: var(--highlight);
   --color-highlight-text: var(--highlight-text);
   --font-mono: var(--font-geist-mono);
+}
+
+html {
+  /* dragged last-event photos may sit past the viewport edge; clip instead of scrolling */
+  overflow-x: clip;
 }
 
 body {
