@@ -1,0 +1,600 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>design show &amp; tell — motion graphic</title>
+<style>
+  @font-face {
+    font-family: "Geist Mono";
+    font-weight: 100 900;
+    font-style: normal;
+    src: url("fonts/geist-mono-latin.woff2") format("woff2");
+    unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+  }
+  @font-face {
+    font-family: "Geist Mono";
+    font-weight: 100 900;
+    font-style: normal;
+    src: url("fonts/geist-mono-latin-ext.woff2") format("woff2");
+    unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+  }
+
+  /* tokens mirror src/app/globals.css — set per frame from JS so the theme can crossfade */
+  :root {
+    --bg-a: #f4f4f4;
+    --bg-b: #eafcff;
+    --fg: #021093;
+    --fg-muted: rgba(2, 16, 147, 0.5);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1080px; height: 1080px; overflow: hidden; background: #000; }
+  body {
+    position: relative;
+    font-family: "Geist Mono", Monaco, monospace;
+    font-feature-settings: "ss01", "ss02", "zero", "tnum";
+    color: var(--fg);
+    text-transform: lowercase;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .layer { position: absolute; inset: 0; }
+  #bg { background: linear-gradient(180deg, var(--bg-a) 0%, var(--bg-b) 100%); }
+  #gl { display: block; width: 1080px; height: 1080px; }
+  #noise {
+    background-image: url("../../public/noise.svg");
+    background-repeat: repeat;
+    opacity: 0.4;
+    pointer-events: none;
+    z-index: 50;
+  }
+
+  /* every text block is knocked out of the page gradient so it stays legible over the wolf */
+  .knockout {
+    background: linear-gradient(180deg, var(--bg-a) 0%, var(--bg-b) 100%);
+    background-attachment: fixed;
+    color: var(--fg);
+    white-space: pre;
+    line-height: 1;
+  }
+
+  /* ---- status line ---- */
+  .label {
+    position: absolute;
+    font-size: 22px;
+    font-weight: 500;
+    padding: 7px 10px 9px 10px;
+  }
+  #label  { left: 60px; top: 60px; }
+  #topright {
+    position: absolute;
+    right: 60px;
+    top: 60px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  #corner { position: static; }
+  .dim { color: var(--fg-muted); }
+  .cursor {
+    display: inline-block;
+    width: 0.62em;
+    height: 1em;
+    background: currentColor;
+    vertical-align: -0.1em;
+    margin-left: 0.1em;
+  }
+
+  /* ---- theme toggle (the site's button: feather icon at 40% opacity, 100% on hover) ---- */
+  #toggle {
+    position: relative;
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    transform-origin: 50% 50%;
+  }
+  #toggle svg {
+    position: absolute;
+    left: 3px;
+    top: 3px;
+    width: 32px;
+    height: 32px;
+    stroke: var(--fg);
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    shape-rendering: geometricPrecision;
+    transform-origin: 50% 50%;
+    will-change: transform, opacity;
+  }
+
+  /* ---- the command + its output ---- */
+  #block {
+    position: absolute;
+    left: 346px;
+    bottom: 128px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  #cmd {
+    font-size: 56px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    padding: 10px 18px 16px 18px;
+  }
+  #out {
+    font-size: 28px;
+    font-weight: 500;
+    padding: 10px 18px 12px 18px;
+  }
+
+  /* ---- mouse pointer ---- */
+  #mouse {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 40px;
+    height: 58px;
+    z-index: 45;
+    transform-origin: 2px 2px;
+    will-change: transform;
+    filter: drop-shadow(0 2px 3px rgba(2, 16, 147, 0.25));
+  }
+</style>
+</head>
+<body>
+  <div id="bg" class="layer"></div>
+  <canvas id="gl" class="layer" width="1080" height="1080"></canvas>
+  <video id="video" src="../../public/wolf.mp4" muted playsinline preload="auto" style="display:none"></video>
+
+  <div id="ui" class="layer">
+    <div id="label" class="label knockout"></div>
+
+    <div id="topright">
+    <div id="corner" class="label knockout"></div>
+    <div id="toggle" class="knockout">
+      <!-- feather "moon" -->
+      <svg id="moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <!-- feather "sun" -->
+      <svg id="sun" viewBox="0 0 24 24">
+        <circle id="sun-core" cx="12" cy="12" r="5"/>
+        <g id="sun-rays">
+          <line x1="12" y1="1" x2="12" y2="3"/>
+          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+          <line x1="21" y1="12" x2="23" y2="12"/>
+          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+          <line x1="12" y1="21" x2="12" y2="23"/>
+          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+          <line x1="1" y1="12" x2="3" y2="12"/>
+          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+        </g>
+      </svg>
+    </div>
+    </div>
+
+    <div id="block">
+      <div id="cmd" class="knockout"></div>
+      <div id="out" class="knockout"></div>
+    </div>
+  </div>
+
+  <svg id="mouse" viewBox="0 0 15 22">
+    <path d="M1.5 1.5 L1.5 17.5 L5.6 13.6 L8.5 20.3 L11.2 19.1 L8.4 12.6 L13.8 12.6 Z"
+          fill="#93c5fd"/>
+  </svg>
+
+  <div id="noise" class="layer"></div>
+
+<script>
+  // which graphic to show: comp.html?graphic=<folder name> → loads ../<folder>/content.js
+  (function () {
+    const name = new URLSearchParams(location.search).get("graphic") || "call-for-speakers";
+    document.write('<script src="../' + name + '/content.js"><\/script>');
+  })();
+</script>
+<script>
+/* ============================================================
+   content comes from ../<graphic>/content.js (window.GRAPHIC)
+   ============================================================ */
+const G = window.GRAPHIC || {};
+const CONTENT = Object.assign({
+  label: "design show & tell",
+  corner: "ljubljana",
+  cmd: "",
+  out: "",
+}, G.content);
+
+/* ============================================================
+   timeline (seconds)
+   ============================================================ */
+// the piece loops: the last frame is the same empty light frame as the first
+const T = Object.assign({
+  wolfIn:   [0.00, 1.20],
+  label:    [0.30, 0.045],  // start, seconds per char
+  corner:   [0.55, 0.045],
+  cmd:      [1.40, 0.05],
+  out:      [2.40, 0.028],
+  mouseIn:  [3.90, 1.05],   // pointer travels to the toggle
+  hover1:    4.85,
+  click1:    5.20,          // mousedown → dark
+  mouseAway:[5.60, 0.70],   // pointer wanders off the icon
+  mouseBack:[8.70, 0.65],   // …and comes back after a 2s hold on the dark theme
+  hover2:    9.25,
+  click2:    9.55,          // mousedown → light again
+  mouseOut: [9.95, 0.80],   // pointer leaves the frame
+  fade:     [10.70, 0.60],  // content dissolves: text fades, wolf dots shrink away
+}, G.timeline);
+const DURATION = G.duration || 12;
+const FPS = 24;
+
+// wolf framing — b is the default; render.js can pick another with ?variant=
+const VARIANTS = {
+  a: { scale: 0.90, push: 0.025, offX: -0.09, offY: -0.02 },   // hero on the left, full figure
+  b: { scale: 1.30, push: 0.020, offX: -0.21, offY: -0.30 },   // full bleed, head top-centre, body runs off frame
+};
+const VARIANT = VARIANTS[new URLSearchParams(location.search).get("variant") || G.variant] || VARIANTS.b;
+
+const THEME = {
+  light: { bgA: "#f4f4f4", bgB: "#eafcff", fg: "#021093" },
+  dark:  { bgA: "#040c2a", bgB: "#060e35", fg: "#93c5fd" },
+};
+
+/* ============================================================
+   easing + colour helpers
+   ============================================================ */
+const clamp01 = (x) => Math.max(0, Math.min(1, x));
+const seg = (t, start, dur) => clamp01((t - start) / dur);
+const lerp = (a, b, p) => a + (b - a) * p;
+const outExpo  = (p) => (p >= 1 ? 1 : 1 - Math.pow(2, -10 * p));
+const outQuint = (p) => 1 - Math.pow(1 - p, 5);
+const inOutCubic = (p) => (p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2);
+const inOutQuint = (p) => (p < 0.5 ? 16 * p * p * p * p * p : 1 - Math.pow(-2 * p + 2, 5) / 2);
+const outBack = (p) => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(p - 1, 3) + c1 * Math.pow(p - 1, 2); };
+const inCubic = (p) => p * p * p;
+
+const hexToRgb = (hex) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+const mixHex = (a, b, p) => {
+  const A = hexToRgb(a), B = hexToRgb(b);
+  return `rgb(${A.map((v, i) => Math.round(lerp(v, B[i], p))).join(",")})`;
+};
+const mixRgb01 = (a, b, p) => hexToRgb(a).map((v, i) => lerp(v, hexToRgb(b)[i], p) / 255);
+
+/* ============================================================
+   webgl halftone — same math as src/app/components/shader-canvas.tsx
+   with extra uniforms for dot size, scanline reveal and video framing
+   ============================================================ */
+const VS = `
+  attribute vec2 a_position;
+  attribute vec2 a_uv;
+  varying vec2 v_uv;
+  void main() { gl_Position = vec4(a_position, 0.0, 1.0); v_uv = a_uv; }
+`;
+const FS = `
+  precision highp float;
+  varying vec2 v_uv;
+  uniform sampler2D u_tex;
+  uniform vec2 u_res;
+  uniform vec3 u_color;
+  uniform float u_dot;
+  uniform float u_angle;
+  uniform float u_reveal;
+  uniform float u_gain;
+  uniform vec2 u_scale;
+  uniform vec2 u_offset;
+
+  void main() {
+    vec2 uv = (v_uv - u_offset) / u_scale;
+    float luma = 1.0;
+    if (uv.x >= 0.0 && uv.x <= 1.0 && uv.y >= 0.0 && uv.y <= 1.0) {
+      vec3 c = texture2D(u_tex, uv).rgb;
+      luma = dot(c, vec3(0.299, 0.587, 0.114));
+    }
+    if (luma > 0.85) discard;
+
+    vec2 p = gl_FragCoord.xy;
+    float s = sin(u_angle);
+    float c = cos(u_angle);
+    vec2 rotated = vec2(p.x * c - p.y * s, p.x * s + p.y * c);
+    vec2 cell = floor(rotated / u_dot) * u_dot + u_dot * 0.5;
+    float dist = length(rotated - cell);
+
+    // scanline reveal from the top; dots grow in as the line passes
+    float d = 1.0 - gl_FragCoord.y / u_res.y;
+    float w = 0.10;
+    // (the extra -w keeps the very top row fully hidden at reveal = 0, so frame 0 == last frame)
+    float rv = smoothstep(d - w, d, u_reveal * (1.0 + 2.0 * w) - w);
+
+    // u_gain shrinks every dot uniformly for the dissolve at the end
+    float radius = u_dot * 0.5 * (1.0 - luma) * rv * u_gain;
+    if (radius < 0.05) discard; // no 1px specks when a dot has shrunk to nothing
+    float a = smoothstep(radius + 0.5, radius - 0.5, dist);
+    gl_FragColor = vec4(u_color * a, a); // premultiplied
+  }
+`;
+
+const canvas = document.getElementById("gl");
+const video = document.getElementById("video");
+const gl = canvas.getContext("webgl", { premultipliedAlpha: true, alpha: true, antialias: false });
+const U = {};
+(function initGL() {
+  const compile = (type, src) => {
+    const sh = gl.createShader(type);
+    gl.shaderSource(sh, src);
+    gl.compileShader(sh);
+    if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(sh));
+    return sh;
+  };
+  const prog = gl.createProgram();
+  gl.attachShader(prog, compile(gl.VERTEX_SHADER, VS));
+  gl.attachShader(prog, compile(gl.FRAGMENT_SHADER, FS));
+  gl.linkProgram(prog);
+  gl.useProgram(prog);
+
+  const quad = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, quad);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([
+    -1, -1, 0, 0,   1, -1, 1, 0,   -1, 1, 0, 1,
+    -1,  1, 0, 1,   1, -1, 1, 0,    1, 1, 1, 1,
+  ]), gl.STATIC_DRAW);
+  const aPos = gl.getAttribLocation(prog, "a_position");
+  const aUv = gl.getAttribLocation(prog, "a_uv");
+  gl.enableVertexAttribArray(aPos);
+  gl.enableVertexAttribArray(aUv);
+  gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 16, 0);
+  gl.vertexAttribPointer(aUv, 2, gl.FLOAT, false, 16, 8);
+
+  const tex = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, tex);
+  gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+
+  for (const n of ["u_res", "u_color", "u_dot", "u_angle", "u_reveal", "u_gain", "u_scale", "u_offset"]) {
+    U[n] = gl.getUniformLocation(prog, n);
+  }
+  gl.enable(gl.BLEND);
+  gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+  gl.viewport(0, 0, canvas.width, canvas.height);
+})();
+
+function drawWolf(t, darkMix) {
+  if (video.readyState < 2) return;
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, video);
+
+  const pIn = outExpo(seg(t, T.wolfIn[0], T.wolfIn[1]));
+  const dot = 96 - (96 - 14) * pIn;            // coarse grid "focuses" into the final halftone
+  const reveal = outQuint(seg(t, T.wolfIn[0], T.wolfIn[1]));
+  const gain = 1 - inOutCubic(seg(t, T.fade[0], T.fade[1]));
+  const drift = t / DURATION;
+  // slow push-in on whichever framing was picked
+  const scale = VARIANT.scale + VARIANT.push * drift;
+  const offX = VARIANT.offX - 0.01 * drift;
+  const offY = VARIANT.offY;
+
+  gl.clearColor(0, 0, 0, 0);
+  gl.clear(gl.COLOR_BUFFER_BIT);
+  gl.uniform2f(U.u_res, canvas.width, canvas.height);
+  gl.uniform3f(U.u_color, ...mixRgb01(THEME.light.fg, THEME.dark.fg, darkMix));
+  gl.uniform1f(U.u_dot, dot);
+  gl.uniform1f(U.u_angle, 1.1868);
+  gl.uniform1f(U.u_reveal, reveal);
+  gl.uniform1f(U.u_gain, gain);
+  gl.uniform2f(U.u_scale, scale, scale);
+  gl.uniform2f(U.u_offset, offX, offY);
+  gl.drawArrays(gl.TRIANGLES, 0, 6);
+}
+
+/* ============================================================
+   dom setup
+   ============================================================ */
+const $ = (id) => document.getElementById(id);
+
+// typewriter: prompt + text + block cursor
+function makeTyper(el, prompt) {
+  const pr = document.createElement("span");
+  pr.className = "dim";
+  pr.textContent = prompt;
+  const txt = document.createElement("span");
+  const cur = document.createElement("span");
+  cur.className = "cursor";
+  el.append(pr, txt, cur);
+  return { el, txt, cur };
+}
+const labelTyper = makeTyper($("label"), "> ");
+const cornerTyper = makeTyper($("corner"), "");
+const cmdTyper = makeTyper($("cmd"), "> ");
+const outTyper = makeTyper($("out"), "");
+
+const toggleEl = $("toggle"), moonEl = $("moon"), sunEl = $("sun"), sunRays = $("sun-rays"), sunCore = $("sun-core");
+const rayEls = Array.from(sunRays.querySelectorAll("line"));
+rayEls.forEach((l) => { l.style.strokeDasharray = "3"; });
+const mouseEl = $("mouse");
+
+/* ============================================================
+   per-frame layout — everything derives from t, nothing is stateful
+   ============================================================ */
+function typeInto(typer, text, start, perChar, t, cursorUntil) {
+  const n = Math.max(0, Math.min(text.length, Math.floor((t - start) / perChar)));
+  typer.txt.textContent = text.slice(0, n);
+  const started = t >= start;
+  const done = n >= text.length;
+  const blink = done ? Math.floor((t - start) * 2.6) % 2 === 0 : true;
+  const show = started && blink && (cursorUntil == null || t < cursorUntil);
+  typer.cur.style.opacity = show ? 1 : 0;
+  typer.el.style.opacity = started ? 1 : 0;
+}
+
+// the pointer's path: a cubic bézier from below the frame up to the toggle
+const TOGGLE_CENTER = { x: 1080 - 60 - 19, y: 60 + 19 }; // refined from the DOM once fonts are in
+const PATH_IN = [
+  { x: 700, y: 1140 },
+  { x: 980, y: 880 },
+  { x: 1120, y: 300 },
+  { x: TOGGLE_CENTER.x - 3, y: TOGGLE_CENTER.y - 2 },
+];
+const REST = { x: 870, y: 330 };   // where the pointer idles between the two clicks
+const PATH_AWAY = [PATH_IN[3], { x: TOGGLE_CENTER.x - 20, y: TOGGLE_CENTER.y + 120 }, { x: 930, y: 250 }, REST];
+const PATH_BACK = [REST, { x: 900, y: 240 }, { x: TOGGLE_CENTER.x - 60, y: TOGGLE_CENTER.y + 40 }, PATH_IN[3]];
+const PATH_OUT = [
+  PATH_IN[3],
+  { x: TOGGLE_CENTER.x + 40, y: TOGGLE_CENTER.y + 140 },
+  { x: 1040, y: 520 },
+  { x: 1180, y: 760 },
+];
+function aimAtToggle() {
+  const r = toggleEl.getBoundingClientRect();
+  TOGGLE_CENTER.x = r.left + r.width / 2;
+  TOGGLE_CENTER.y = r.top + r.height / 2;
+  PATH_IN[3] = { x: TOGGLE_CENTER.x - 3, y: TOGGLE_CENTER.y - 2 };
+  PATH_AWAY[0] = PATH_IN[3];
+  PATH_AWAY[1] = { x: TOGGLE_CENTER.x - 20, y: TOGGLE_CENTER.y + 120 };
+  PATH_BACK[2] = { x: TOGGLE_CENTER.x - 60, y: TOGGLE_CENTER.y + 40 };
+  PATH_BACK[3] = PATH_IN[3];
+  PATH_OUT[0] = PATH_IN[3];
+  PATH_OUT[1] = { x: TOGGLE_CENTER.x + 40, y: TOGGLE_CENTER.y + 140 };
+}
+const bez = (P, p) => {
+  const q = 1 - p;
+  return {
+    x: q * q * q * P[0].x + 3 * q * q * p * P[1].x + 3 * q * p * p * P[2].x + p * p * p * P[3].x,
+    y: q * q * q * P[0].y + 3 * q * q * p * P[1].y + 3 * q * p * p * P[2].y + p * p * p * P[3].y,
+  };
+};
+
+function layout(t) {
+  // theme: flips on mousedown with the site's 0.3s crossfade
+  const darkMix = inOutCubic(seg(t, T.click1, 0.22)) - inOutCubic(seg(t, T.click2, 0.22));
+  const root = document.documentElement.style;
+  root.setProperty("--bg-a", mixHex(THEME.light.bgA, THEME.dark.bgA, darkMix));
+  root.setProperty("--bg-b", mixHex(THEME.light.bgB, THEME.dark.bgB, darkMix));
+  root.setProperty("--fg", mixHex(THEME.light.fg, THEME.dark.fg, darkMix));
+  root.setProperty("--fg-muted", mixHex(THEME.light.fg, THEME.dark.fg, darkMix).replace("rgb(", "rgba(").replace(")", ",0.5)"));
+
+  // status line
+  typeInto(labelTyper, CONTENT.label, T.label[0], T.label[1], t, 3.0);
+  typeInto(cornerTyper, CONTENT.corner, T.corner[0], T.corner[1], t, 1.6);
+
+  // the command and its output
+  typeInto(cmdTyper, CONTENT.cmd, T.cmd[0], T.cmd[1], t, T.out[0] + 0.1);
+  typeInto(outTyper, CONTENT.out, T.out[0], T.out[1], t, null);
+
+  // everything in the ui layer dissolves at the end
+  $("ui").style.opacity = 1 - inOutCubic(seg(t, T.fade[0], T.fade[1]));
+
+  // ---- pointer: in → click → wander → back → click → out ----
+  let mp = null, press = 1;
+  const pressAt = (click) => {
+    const down = seg(t, click - 0.08, 0.08), up = seg(t, click, 0.18);
+    return 1 - 0.14 * outQuint(down) + 0.14 * outBack(up);
+  };
+  if (t >= T.mouseIn[0] && t < T.mouseAway[0]) {
+    mp = bez(PATH_IN, inOutQuint(seg(t, T.mouseIn[0], T.mouseIn[1])));
+    press = pressAt(T.click1);
+  } else if (t >= T.mouseAway[0] && t < T.mouseBack[0]) {
+    mp = bez(PATH_AWAY, inOutCubic(seg(t, T.mouseAway[0], T.mouseAway[1])));
+  } else if (t >= T.mouseBack[0] && t < T.mouseOut[0]) {
+    mp = bez(PATH_BACK, inOutQuint(seg(t, T.mouseBack[0], T.mouseBack[1])));
+    press = pressAt(T.click2);
+  } else if (t >= T.mouseOut[0]) {
+    mp = bez(PATH_OUT, inCubic(seg(t, T.mouseOut[0], T.mouseOut[1])));
+  }
+  if (mp) {
+    mouseEl.style.opacity = 1;
+    mouseEl.style.transform = `translate(${mp.x.toFixed(1)}px, ${mp.y.toFixed(1)}px) scale(${press.toFixed(3)})`;
+  } else {
+    mouseEl.style.opacity = 0;
+  }
+
+  // ---- toggle: brand blue, lifts on hover, moon ⇄ sun on each click ----
+  const hover = outQuint(seg(t, T.hover1, 0.2)) * (1 - outQuint(seg(t, T.mouseAway[0], 0.3)))
+              + outQuint(seg(t, T.hover2, 0.2)) * (1 - outQuint(seg(t, T.mouseOut[0], 0.3)));
+  const toggleIn = outBack(seg(t, T.corner[0], 0.3));
+  toggleEl.style.opacity = toggleIn > 0 ? 1 : 0;
+  toggleEl.style.transform = `scale(${(toggleIn * (1 + 0.12 * hover)).toFixed(3)})`;
+
+  const swap1 = seg(t, T.click1, 0.55);   // moon → sun
+  const swap2 = seg(t, T.click2, 0.55);   // sun → moon
+  // moon: idle sway; rotates away and shrinks on the first click, rotates back in on the second
+  const sway = Math.sin(t * 1.6) * 6;
+  const moonOut = inOutCubic(clamp01(swap1 * 1.6)) - inOutCubic(clamp01((swap2 - 0.25) / 0.75));
+  moonEl.style.opacity = 1 - moonOut;
+  moonEl.style.transform = `rotate(${sway - 90 * moonOut}deg) scale(${1 - 0.5 * moonOut})`;
+  // sun: pops in with overshoot and its rays draw out one by one, keeps turning, then collapses on the second click
+  const sunIn = clamp01((swap1 - 0.25) / 0.75);
+  const sunOut = inOutCubic(clamp01(swap2 * 1.6));
+  sunEl.style.opacity = clamp01(sunIn * 3) * (1 - sunOut);
+  const spin = Math.max(0, t - T.click1) * 24;
+  const sunScale = (0.4 + 0.6 * outBack(sunIn)) * (1 - 0.6 * sunOut);
+  sunEl.style.transform = `rotate(${-60 + 60 * outBack(sunIn) + spin + 90 * sunOut}deg) scale(${sunScale})`;
+  sunCore.style.strokeDasharray = "";
+  rayEls.forEach((l, i) => {
+    const drawn = clamp01((sunIn - 0.3 - i * 0.055) / 0.25);
+    const retracted = clamp01((swap2 - i * 0.03) / 0.2);
+    const p = Math.min(drawn, 1 - retracted);
+    l.style.strokeDashoffset = String(3 * (1 - p));
+    l.style.opacity = p > 0 ? 1 : 0;
+  });
+
+  return darkMix;
+}
+
+/* ============================================================
+   frame driver
+   ============================================================ */
+const VIDEO_FPS = 24;
+let videoFrames = 121;
+const ready = new Promise((resolve) => {
+  const check = () => {
+    if (video.readyState >= 4 && document.fonts.status === "loaded") resolve();
+  };
+  video.addEventListener("canplaythrough", check);
+  video.addEventListener("loadedmetadata", () => { videoFrames = Math.round(video.duration * VIDEO_FPS); });
+  document.fonts.ready.then(() => { aimAtToggle(); check(); });
+  // make sure every subset is actually fetched before the first frame
+  document.fonts.load('600 56px "Geist Mono"', CONTENT.cmd);
+  document.fonts.load('500 28px "Geist Mono"', CONTENT.out + "ž·");
+  video.load();
+});
+
+function seekTo(time) {
+  return new Promise((resolve) => {
+    if (Math.abs(video.currentTime - time) < 1e-4) return resolve();
+    video.addEventListener("seeked", () => resolve(), { once: true });
+    video.currentTime = time;
+  });
+}
+
+// renders exactly one frame of the composition; used by render.js
+window.renderFrame = async function (frameIndex, fps) {
+  await ready;
+  const t = frameIndex / fps;
+  const vFrame = Math.round(t * VIDEO_FPS) % videoFrames;
+  await seekTo((vFrame + 0.5) / VIDEO_FPS);
+  const darkMix = layout(t);
+  drawWolf(t, darkMix);
+  await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+  return t;
+};
+window.compReady = () => ready;
+
+// preview mode: open the file in a browser and it just plays
+if (!navigator.webdriver) {
+  ready.then(() => {
+    video.loop = true;
+    video.play().catch(() => {});
+    const t0 = performance.now();
+    (function loop() {
+      const t = ((performance.now() - t0) / 1000) % DURATION;
+      drawWolf(t, layout(t));
+      requestAnimationFrame(loop);
+    })();
+  });
+}
+</script>
+</body>
+</html>
