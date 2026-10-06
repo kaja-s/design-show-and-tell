@@ -9,18 +9,20 @@ import {
   type CarouselApi,
 } from "@/components/ui/carousel";
 
-const faqs = [
+const linkClass = "underline hover:opacity-70 transition-opacity";
+
+const faqs: { q: string; a: React.ReactNode }[] = [
   {
     q: "what is it?",
     a: "live demos. new experiments. no slides. an informal space for designers to share what they're working on, explore different approaches, and steal ideas from each other.",
   },
   {
     q: "when + where?",
-    a: "june 11th, 2026 at 6:00 at Visionect (Tržaška cesta 118).",
+    a: "late november 2026, ljubljana. exact date and venue announced in the next couple of weeks.",
   },
   {
     q: "who can join?",
-    a: "designers who are creating new products and features, experimenting with AI tools or crafting experiences that don't quite have a playbook yet",
+    a: "designers who are creating new products and features, experimenting with AI tools or crafting experiences that don't quite have a playbook yet.",
   },
   {
     q: "do i need to present?",
@@ -35,12 +37,24 @@ const faqs = [
     a: "5–10 minutes each, followed by a few minutes of group q&a. we keep it tight and informal.",
   },
   {
-    q: "what is the vibe?",
-    a: "friendly, collaborative, and low-pressure. it's about learning and connecting, not showing off or competing.",
-  },
-  {
-    q: "who is the organizer?",
-    a: "organized by kaja, a designer who loves bringing creative people together.",
+    q: "who organizes it?",
+    a: (
+      <>
+        organized by{" "}
+        <a href="https://www.kajaskerlj.com/" target="_blank" rel="noopener noreferrer" className={linkClass}>
+          kaja
+        </a>
+        ,{" "}
+        <a href="https://www.linkedin.com/in/anuska-dzogic/" target="_blank" rel="noopener noreferrer" className={linkClass}>
+          anuška
+        </a>{" "}
+        and{" "}
+        <a href="https://www.vitastefane.com/" target="_blank" rel="noopener noreferrer" className={linkClass}>
+          vita
+        </a>
+        , three designers who love bringing creative people together to share work and build community.
+      </>
+    ),
   },
 ];
 
@@ -133,35 +147,7 @@ export function Faq() {
         <div className="flex gap-3 items-start">
           <span className="text-[10px] tracking-wider opacity-50 mt-[3px]">A:</span>
           <p className="text-[14px] leading-relaxed flex-1">
-            {current === 1 ? (
-              <>
-                June 11th, 2026 at 6:00 at{" "}
-                <a
-                  href="https://www.google.com/maps/place//data=!4m2!3m1!1s0x476533d1a3dfa6eb:0x27ae9f8c81542ca2?sa=X&ved=1t:8290&ictx=111"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline hover:opacity-70 transition-opacity"
-                >
-                  Tržaška c. 118
-                </a>
-                {" "}(Visionect).
-              </>
-            ) : current === faqs.length - 1 ? (
-              <>
-                organized by{" "}
-                <a
-                  href="https://www.kajaskerlj.com/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline hover:opacity-70 transition-opacity"
-                >
-                  kaja
-                </a>
-                , a designer who loves bringing creative people together to share work and build community.
-              </>
-            ) : (
-              faqs[current].a
-            )}
+            {faqs[current].a}
           </p>
         </div>
       </div>

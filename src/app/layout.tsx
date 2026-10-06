@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL("https://design-show-and-tell.vercel.app"),
   title: "design show & tell",
-  description: "a gathering for designers to share work, give feedback, and connect.",
+  description: "a gathering for designers to share work, give feedback, and connect. next event: late november 2026.",
   icons: {
     icon: '/favicon.svg',
     shortcut: '/favicon.svg',
@@ -22,14 +22,14 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "design show & tell",
-    description: "a gathering for designers to share work, give feedback, and connect.",
+    description: "a gathering for designers to share work, give feedback, and connect. next event: late november 2026.",
     images: ['/og-image.png'],
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
     title: "design show & tell",
-    description: "a gathering for designers to share work, give feedback, and connect.",
+    description: "a gathering for designers to share work, give feedback, and connect. next event: late november 2026.",
     images: ['/og-image.png'],
   },
 };
