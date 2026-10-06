@@ -1,0 +1,205 @@
+<title>show &amp; tell interface review</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;700&display=swap">
+<style>
+  /* layout: sticky summary bar, then findings as a single column of cards; everything else is quiet reference below */
+  :root {
+    --bg: #f4f4f4; --bg-2: #eafcff; --fg: #021093; --fg-muted: rgba(2,16,147,.55); --line: rgba(2,16,147,.2);
+    --highlight: #021093; --highlight-text: #ffffff;
+    --high: #b4231f; --medium: #b45309; --low: #3b6ea8; --ok: #0f7b4f;
+    --font: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --bg:#040c2a; --bg-2:#060e35; --fg:#93c5fd; --fg-muted:rgba(147,197,253,.55); --line:rgba(147,197,253,.22); --highlight:#93c5fd; --highlight-text:#040c2a; --high:#fca5a5; --medium:#fcd34d; --low:#93c5fd; --ok:#6ee7b7; color-scheme: dark; }
+  }
+  :root[data-theme="dark"] { --bg:#040c2a; --bg-2:#060e35; --fg:#93c5fd; --fg-muted:rgba(147,197,253,.55); --line:rgba(147,197,253,.22); --highlight:#93c5fd; --highlight-text:#040c2a; --high:#fca5a5; --medium:#fcd34d; --low:#93c5fd; --ok:#6ee7b7; color-scheme: dark; }
+
+  * { box-sizing: border-box; }
+  body { margin:0; min-height:100vh; background: linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 100%); color: var(--fg); font-family: var(--font); font-size: 14px; line-height: 1.6; font-feature-settings: "ss01","ss02","zero","tnum"; padding-block: 40px 80px; padding-inline: 20px; text-transform: lowercase; }
+  ::selection { background: var(--highlight); color: var(--highlight-text); }
+  .wrap { max-width: 760px; margin: 0 auto; }
+  a { color: inherit; text-underline-offset: 3px; }
+  code { font-family: inherit; font-size: 12px; padding: 1px 5px; border: 1px solid var(--line); text-transform: none; white-space: nowrap; }
+  .eyebrow { font-size: 11px; letter-spacing: .12em; opacity: .5; }
+  h1 { font-size: 20px; font-weight: 700; margin: 8px 0; text-wrap: balance; }
+  h2 { font-size: 14px; font-weight: 700; margin: 48px 0 14px; padding-top: 14px; border-top: 1px solid var(--line); }
+  p { margin: 0 0 12px; max-width: 64ch; }
+  .lede { opacity: .75; }
+  .note { border-left: 2px solid var(--line); padding: 2px 0 2px 14px; opacity: .8; margin: 12px 0 0; }
+
+  .bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; margin: 24px -20px 0; padding: 10px 20px; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(6px); border-bottom: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .bar .count { font-size: 12px; opacity: .7; margin-inline-end: auto; }
+  .chip { font: inherit; font-size: 11px; padding: 4px 9px; border: 1px solid var(--line); background: transparent; color: var(--fg); cursor: pointer; text-transform: lowercase; display: inline-flex; gap: 6px; align-items: center; min-height: 28px; }
+  .chip i { width: 7px; height: 7px; border-radius: 50%; background: var(--fg-muted); }
+  .chip[aria-pressed="true"] { background: var(--highlight); color: var(--highlight-text); border-color: var(--highlight); }
+  .chip[aria-pressed="true"] i { background: currentColor; }
+  .chip.high i { background: var(--high); } .chip.medium i { background: var(--medium); } .chip.low i { background: var(--low); }
+  .chip:focus-visible, .card input:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+
+  .group { margin-top: 28px; }
+  .group h3 { font-size: 11px; letter-spacing: .12em; opacity: .55; margin: 0 0 10px; font-weight: 500; }
+  .card { border: 1px solid var(--line); padding: 14px 16px 16px; margin-bottom: 10px; display: grid; grid-template-columns: 24px 1fr; gap: 12px; align-items: start; background: color-mix(in srgb, var(--bg) 60%, transparent); }
+  .card[data-done="true"] { opacity: .45; }
+  .card[data-done="true"] .title { text-decoration: line-through; }
+  .card input { margin: 3px 0 0; width: 16px; height: 16px; accent-color: var(--fg); cursor: pointer; }
+  .card .head { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: baseline; margin-bottom: 6px; }
+  .card .title { font-weight: 700; cursor: pointer; }
+  .pill { font-size: 10px; letter-spacing: .1em; padding: 2px 7px; border: 1px solid currentColor; }
+  .pill.high { color: var(--high); } .pill.medium { color: var(--medium); } .pill.low { color: var(--low); }
+  .dom { font-size: 11px; opacity: .55; }
+  .loc { font-size: 11px; opacity: .7; text-transform: none; margin-bottom: 10px; word-break: break-word; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 560px) { .cols { grid-template-columns: 1fr; } }
+  .cols > div { min-width: 0; border-top: 1px solid var(--line); padding-top: 8px; }
+  .cols b { display: block; font-size: 10px; letter-spacing: .12em; opacity: .5; margin-bottom: 4px; font-weight: 500; }
+  .cols p { font-size: 13px; margin: 0; }
+  .why { font-size: 12px; opacity: .7; margin: 10px 0 0; }
+  .card.hidden { display: none; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 12px; margin: 8px 0 12px; }
+  th, td { text-align: left; padding: 8px 10px 8px 0; border-top: 1px solid var(--line); vertical-align: top; }
+  th { font-weight: 500; font-size: 10px; letter-spacing: .12em; opacity: .55; border-top: 0; }
+  td:first-child { white-space: nowrap; }
+  .scroll { overflow-x: auto; }
+  ul { padding-left: 18px; margin: 0 0 12px; } li { margin-bottom: 6px; max-width: 64ch; }
+  .verdict { border: 1px solid var(--high); color: var(--high); padding: 12px 16px; display: inline-flex; gap: 12px; align-items: baseline; }
+  .verdict b { font-size: 11px; letter-spacing: .12em; }
+  .foot { margin-top: 48px; padding-top: 14px; border-top: 1px solid var(--line); font-size: 11px; opacity: .5; }
+</style>
+
+<div class="wrap">
+  <div class="eyebrow">design show &amp; tell · interface review · full mode</div>
+  <h1>fifteen findings, two of them blocking</h1>
+  <p class="lede">the whole site, one route, both themes, desktop and phone. tick a finding when it's handled; the page remembers in this browser. the two highs answer the question you asked: the page has two competing asks and no action on the first screen.</p>
+  <p class="note">not verified here: 320px reflow and 200% zoom (tooling floor was 500px), screen readers, forced-colors, and ios input zoom. the console wolf and print poster added today were out of scope.</p>
+
+  <div class="bar" role="toolbar" aria-label="filters">
+    <span class="count" id="count"></span>
+    <button class="chip high" data-sev="high" aria-pressed="true" type="button"><i></i>high</button>
+    <button class="chip medium" data-sev="medium" aria-pressed="true" type="button"><i></i>medium</button>
+    <button class="chip low" data-sev="low" aria-pressed="true" type="button"><i></i>low</button>
+    <button class="chip" id="hideDone" aria-pressed="false" type="button">hide done</button>
+  </div>
+
+  <div id="findings"></div>
+
+  <h2>coverage</h2>
+  <div class="scroll"><table>
+    <tr><th>domain</th><th>evidence inspected</th><th>result</th></tr>
+    <tr><td>accessibility</td><td>keyboard focus on faq items and inputs, dialog focus handling, form markup, video element, heading outline, hit-area sizes, reduced-motion handling in source</td><td>6 findings</td></tr>
+    <tr><td>layout</td><td>desktop and phone captures in both themes, cta position vs fold, corner-card footprint, horizontal overflow at 500px</td><td>1 finding</td></tr>
+    <tr><td>writing</td><td>all visible copy, the three cta labels, dialog and api error strings</td><td>1 finding (vocabulary folded into #2)</td></tr>
+    <tr><td>typography</td><td>type sizes in source, input font sizes, countdown font stack</td><td>2 findings</td></tr>
+    <tr><td>colors</td><td>rendered contrast of every opacity tier in both themes, filled-action count, raw hex in components</td><td>3 findings</td></tr>
+    <tr><td>ui</td><td>transition properties, theme-switch behaviour, hover and press states</td><td>2 findings</td></tr>
+  </table></div>
+
+  <h2>measured contrast</h2>
+  <p>foreground at each opacity tier, blended onto the real page background, wcag ratio. body text needs 4.5:1, large or bold 3:1.</p>
+  <div class="scroll"><table>
+    <tr><th>text tier</th><th>where</th><th>light</th><th>dark</th></tr>
+    <tr><td>100%</td><td>body copy</td><td>12.75</td><td>10.67</td></tr>
+    <tr><td>60%</td><td>faq question echo</td><td>4.40</td><td>4.44</td></tr>
+    <tr><td>50% at 10px</td><td>"q:" / "a:", card label</td><td>3.27</td><td>3.44</td></tr>
+    <tr><td>40%</td><td>colophon, placeholders</td><td>2.49</td><td>2.59</td></tr>
+    <tr><td>30%</td><td>"late november 2026 · exact date soon"</td><td>1.92</td><td>1.97</td></tr>
+    <tr><td>#ef4444</td><td>form errors</td><td>3.42</td><td>5.11</td></tr>
+    <tr><td>button label</td><td>filled buttons</td><td>14.02</td><td>10.67</td></tr>
+  </table></div>
+
+  <h2>considered but rejected</h2>
+  <div class="scroll"><table>
+    <tr><th>location</th><th>candidate</th><th>rejected because</th></tr>
+    <tr><td>globals.css case mode</td><td>stop lowercasing proper nouns</td><td>deliberate brand voice, applied consistently, inputs excluded</td></tr>
+    <tr><td>last-event.tsx frames</td><td>pure black/white 10% image outline</td><td>the whole site draws structure with the same tinted hairline; one exception would reduce consistency</td></tr>
+    <tr><td>faq.tsx neighbours at 10%</td><td>contrast failure</td><td>decorative previews with explicit arrows and the full text in the answer panel</td></tr>
+    <tr><td>page-loader.tsx</td><td>show the loader on every load</td><td>the 400ms delay is right; fast loads should never flash a spinner</td></tr>
+    <tr><td>proposal dialog backdrop</td><td>dim further than 55%</td><td>the page behind is already blurred and inert</td></tr>
+  </table></div>
+
+  <h2>verification</h2>
+  <ul>
+    <li><b>passed</b> · rendered contrast computed in the browser for each tier against both theme backgrounds · hit areas measured from bounding boxes · dialog is modal, traps and restores focus, blurs the page, centered · no horizontal overflow at 500px and 1280px · faq items show the browser's default 3px focus ring · <code>npx tsc --noEmit</code> passes · <code>npm run lint</code> reports only pre-existing errors</li>
+    <li><b>not verified</b> · 320px reflow and 200% zoom · screen-reader announcements · forced-colors mode · ios input zoom (inferred from the 14px size)</li>
+  </ul>
+
+  <h2>verdict</h2>
+  <div class="verdict"><b>block</b><span>two high findings remain: the always-on wolf motion under reduced motion, and the two competing filled ctas.</span></div>
+
+  <div class="foot">reviewed with better-accessibility, better-layout, better-writing, better-typography, better-colors and better-ui · october 2026</div>
+</div>
+
+<script>
+(function () {
+  var F = [
+    {n:1, sev:"high", dom:"accessibility", title:"the wolf never stops moving, even under reduced motion", loc:"src/app/components/shader-canvas.tsx:150", before:"a looping muted video drives a requestanimationframe shader loop unconditionally, with no pause control.", after:"when prefers-reduced-motion matches, draw one frame and stop the loop. add a small pause control, or at least honour the preference.", why:"motion that ignores reduced motion is an escalation trigger. it's the first thing on the page and it never stops."},
+    {n:2, sev:"high", dom:"colors · writing", title:"two filled ctas with different words and destinations", loc:"src/app/page.tsx:52 and :91 · src/app/components/call-for-speakers.tsx:148", before:"\"call for speakers\" opens the dialog; \"propose a demo →\" in the corner card is a mailto with a hover-unfolding field. on phones the card covers the faq answer.", after:"one ask, one verb-first label, one destination. the card's button opens the same dialog via the existing open event, both say \"propose a demo\", and on phones the card collapses to a one-line bar or goes away.", why:"only one action per view gets the fill. two asks with different words for the same thing is the \"no clear cta\" you noticed, and the card hides content on small screens."},
+    {n:3, sev:"medium", dom:"layout", title:"the cta sits below the fold after seven questions", loc:"src/app/page.tsx:50", before:"the button comes after the full faq: below the fold on a 900px desktop, about one full screen down on phones. the first screen has no action.", after:"a quiet text link under the save-the-date line (\"want to show something? propose a demo\") that opens the dialog, or move the cta above the faq.", why:"the most important content belongs near the top. right now the first screen is wolf, dashes, and a faint date."},
+    {n:4, sev:"medium", dom:"accessibility", title:"placeholders are the only labels; errors aren't tied to fields", loc:"src/app/components/speaker-proposal.tsx inputs · stay-up-to-date.tsx inputs", before:"no <label>; errors are a red paragraph with no aria-invalid or aria-describedby; focus doesn't move to the failing field.", after:"visible labels in the site's small-label style, placeholders showing format (name@example.com), errors wired to fields, focus the first invalid one.", why:"placeholders vanish on input and are never announced as labels. errors aren't connected to what failed."},
+    {n:5, sev:"medium", dom:"accessibility", title:"input focus is a 1px tint change", loc:"src/app/globals.css:65", before:"input, textarea { outline: none } with only a border-colour change on focus.", after:"remove the reset and style :focus-visible with a 2px outline in the foreground colour.", why:"a 1px tint change is below the visible-indicator floor."},
+    {n:6, sev:"medium", dom:"accessibility", title:"text buttons are too small to hit", loc:"src/app/components/call-for-speakers.tsx:165 · theme toggle in page.tsx:36", before:"\"not now\" renders 50×16px; the theme toggle 34×26px.", after:"vertical padding so standalone text buttons reach 24px, 40px where density allows.", why:"below the 24px target minimum. these are standalone controls, not inline text."},
+    {n:7, sev:"medium", dom:"colors", title:"secondary text fails contrast, including the only date line", loc:"countdown.tsx:70 (30%) · footer in page.tsx (40%) · faq.tsx q:/a: (50%) · placeholders (40%) · error #ef4444", before:"see the measured-contrast table: 50% → 3.3, 40% → 2.5, 30% → 1.9, error red 3.4 on light.", after:"report only, your call: text that carries information (the date line, errors) wants about 70% opacity to clear 4.5:1; decorative tiers can stay.", why:"body text needs 4.5:1. the date line is the only place the next event is announced and it's the faintest text on the page."},
+    {n:8, sev:"medium", dom:"typography", title:"10px labels and sub-16px inputs", loc:"faq.tsx (two 10px labels) · call-for-speakers.tsx label and 12px textarea · speaker-proposal.tsx expand control · inputs at 14px", before:"labels at 10px; inputs under 16px.", after:"floor labels at 12px; size inputs text-base sm:text-sm so ios doesn't zoom on focus.", why:"10px is below the smallest caption size, and sub-16px inputs trigger page zoom on iphone."},
+    {n:9, sev:"medium", dom:"writing", title:"a configuration message reaches the visitor", loc:"src/app/api/propose/route.ts:36", before:"\"sending isn't set up yet.\" is shown when the loops template is missing.", after:"\"unable to send right now. email it instead.\" with the mailto link beside it.", why:"that string describes your setup, not what the visitor should do."},
+    {n:10, sev:"medium", dom:"accessibility", title:"one heading on the whole page, one dangling reference", loc:"src/app/components/last-event.tsx:239 · faq.tsx", before:"only the h1 exists; the photo section's aria-labelledby points at an id that no longer exists; the faq has no heading.", after:"give the faq and photo sections an h2 (small or visually hidden) and fix the reference.", why:"headings are how screen-reader users navigate; a dangling aria-labelledby names nothing."},
+    {n:11, sev:"low", dom:"typography", title:"the countdown asks for a mac-only font", loc:"src/app/components/countdown.tsx", before:"font-['Monaco',monospace]", after:"the site's font-mono token.", why:"windows and android fall to a generic monospace instead of geist mono."},
+    {n:12, sev:"low", dom:"colors", title:"raw hex beside a token system", loc:"paint-button.tsx:67 · rsvp.tsx:59 · inline #ef4444 in both forms", before:"#93c5fd and #ef4444 written directly in components.", after:"add --color-paint and --color-danger tokens and use them.", why:"values picked in isolation drift from the theme and have no dark-mode seam."},
+    {n:13, sev:"low", dom:"ui", title:"transition-all on the faq", loc:"faq.tsx:101, :125, :133", before:"transition-all", after:"transition-[opacity,filter] on items, transition-colors on the arrows.", why:"transition only what changes."},
+    {n:14, sev:"low", dom:"ui", title:"the theme flip smears", loc:"src/app/theme-provider.tsx toggle", before:"every colour transition on the page animates at once when the theme switches.", after:"disable transitions for the flip, force a reflow, restore on the next frame.", why:"the switch should snap, not crossfade the whole page."},
+    {n:15, sev:"low", dom:"accessibility", title:"the theme toggle announces no state", loc:"src/app/page.tsx:39", before:"aria-label=\"toggle theme\"", after:"aria-pressed, or a label that names the target: \"switch to light theme\".", why:"the control announces no current state."}
+  ];
+  var KEY = "dsat-review-done";
+  var done = {};
+  try { done = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch (e) { done = {}; }
+  var sev = { high: true, medium: true, low: true }, hideDone = false;
+  var root = document.getElementById("findings");
+
+  function render() {
+    root.innerHTML = "";
+    ["high", "medium", "low"].forEach(function (s) {
+      var items = F.filter(function (f) { return f.sev === s; });
+      var g = document.createElement("div"); g.className = "group";
+      var h = document.createElement("h3"); h.textContent = s + " · " + items.length; g.appendChild(h);
+      items.forEach(function (f) {
+        var c = document.createElement("div"); c.className = "card"; c.dataset.done = !!done[f.n]; c.dataset.sev = f.sev;
+        c.innerHTML =
+          '<input type="checkbox" id="f' + f.n + '" aria-label="done: ' + f.title + '"' + (done[f.n] ? " checked" : "") + '>' +
+          '<div><div class="head"><span class="pill ' + f.sev + '">' + f.sev + '</span><span class="dom">#' + f.n + ' · ' + f.dom + '</span></div>' +
+          '<label class="title" for="f' + f.n + '">' + f.title + '</label>' +
+          '<div class="loc">' + f.loc + '</div>' +
+          '<div class="cols"><div><b>now</b><p>' + f.before + '</p></div><div><b>instead</b><p>' + f.after + '</p></div></div>' +
+          '<p class="why">' + f.why + '</p></div>';
+        c.querySelector("input").addEventListener("change", function (e) {
+          done[f.n] = e.target.checked; c.dataset.done = e.target.checked;
+          try { localStorage.setItem(KEY, JSON.stringify(done)); } catch (err) {}
+          applyFilters();
+        });
+        g.appendChild(c);
+      });
+      root.appendChild(g);
+    });
+    applyFilters();
+  }
+  function applyFilters() {
+    var shown = 0, total = F.length, finished = 0;
+    document.querySelectorAll(".card").forEach(function (c) {
+      var n = +c.querySelector("input").id.slice(1);
+      var hide = !sev[c.dataset.sev] || (hideDone && done[n]);
+      c.classList.toggle("hidden", hide);
+      if (!hide) shown++;
+      if (done[n]) finished++;
+    });
+    document.querySelectorAll(".group").forEach(function (g) {
+      var any = Array.prototype.some.call(g.querySelectorAll(".card"), function (c) { return !c.classList.contains("hidden"); });
+      g.style.display = any ? "" : "none";
+    });
+    document.getElementById("count").textContent = finished + " of " + total + " done · showing " + shown;
+  }
+  document.querySelectorAll("[data-sev]").forEach(function (b) {
+    b.addEventListener("click", function () { sev[b.dataset.sev] = !sev[b.dataset.sev]; b.setAttribute("aria-pressed", String(sev[b.dataset.sev])); applyFilters(); });
+  });
+  document.getElementById("hideDone").addEventListener("click", function () {
+    hideDone = !hideDone; this.setAttribute("aria-pressed", String(hideDone)); applyFilters();
+  });
+  render();
+})();
+</script>

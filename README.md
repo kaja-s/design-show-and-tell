@@ -1,36 +1,68 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# design show & tell
 
-## Getting Started
+The website for **design show & tell**, an informal meetup where designers show what they're working on. Live demos, no slides, 5–10 minutes each.
 
-First, run the development server:
+Live at [design-show-and-tell.vercel.app](https://design-show-and-tell.vercel.app).
+
+## Running it
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev      # http://localhost:3000
+npm run build    # production build (also type-checks)
+npm run lint
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Create `.env.local` with:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+LOOPS_API_KEY=                     # Loops (loops.so) API key, used by both API routes
+LOOPS_PROPOSAL_TRANSACTIONAL_ID=   # optional, see "Speaker proposals" below
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## What's on the page
 
-## Learn More
+- **Wolf.** `public/wolf.mp4` rendered through a WebGL halftone shader (`src/app/components/shader-canvas.tsx`). Colours follow the theme.
+- **Countdown.** Live digits once a date is set; dashes plus a "late november 2026 · exact date soon" line while it isn't.
+- **FAQ.** A vertical carousel of questions with the answer below.
+- **Call for speakers.** The main button opens a modal form (name, email, idea) that emails the organizer. A small card in the bottom-right corner makes the same ask and remembers being dismissed for a week.
+- **Last time.** Three photos from the previous meetup as an overlapping duotone collage; hover for full colour.
+- **Theme toggle** (light/dark) and a page loader for slow connections.
 
-To learn more about Next.js, take a look at the following resources:
+## The event cycle
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+The site has three phases. Switch between them in `src/app/page.tsx` by mounting one of:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Phase | Component | When |
+| --- | --- | --- |
+| Looking for speakers | `<SpeakerProposal />` | now |
+| Between events, lineup full | `<StayUpToDate />` | collects emails into Loops |
+| Event announced | `<Rsvp />` | links to the lu.ma page |
 
-## Deploy on Vercel
+When a date is confirmed, also update:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. `NEXT_EVENT` in `src/app/components/countdown.tsx`
+2. The "when + where?" answer in `src/app/components/faq.tsx`
+3. The lu.ma link in `src/app/components/rsvp.tsx`
+4. The copy in `src/app/components/call-for-speakers.tsx`, or unmount it once the lineup is full
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Speaker proposals
+
+The form posts to `/api/propose`, which sends a Loops transactional email to the organizer inbox set in `src/app/api/propose/route.ts`.
+
+One-time setup in Loops: create a transactional email with the data variables `name`, `email` and `proposal`, publish it, and put its ID in `LOOPS_PROPOSAL_TRANSACTIONAL_ID`. Until that's set, the form falls back to a pre-filled `mailto:` link so no proposal is lost.
+
+The "stay up to date" form posts to `/api/subscribe`, which adds the contact to the mailing list ID hardcoded in that route.
+
+## Stack
+
+Next.js 16 (App Router), React 19, Tailwind CSS v4, TypeScript. Loading indicators from [loading-dev](https://loading.dev). Icons from Feather. Deployed on Vercel with Vercel Analytics.
+
+## Extras
+
+- `scripts/capture-shader.js` re-renders the wolf video through the halftone shader to an MP4 (needs `ffmpeg`).
+- `docs/` holds standalone design write-ups made while building the site; they aren't part of the build.
+
+## Colophon
+
+Design references: [ÌníOlúwa Abíódún](https://www.iniabiodun.com/), [Dan Hollick](https://x.com/DanHollick/status/1978503090308304899), [Mitul Shah](https://github.com/mitul-s/mitul.ca).

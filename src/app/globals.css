@@ -180,6 +180,367 @@ html[data-case="lower"] label {
 }
 
 /* ---------------------------------------------------------------------------
+   Countdown glitch variants (src/app/components/countdown.tsx)
+   `data-glitch` on .cd-slot picks one. Each is a long quiet loop with a
+   ~250ms burst near the end, hard-cut with steps() so it reads as a fault,
+   not a tween. Periods differ so none of them feel metronomic.
+   --------------------------------------------------------------------------- */
+
+/* 1. slip — chromatic split: accent ghost left/right with a 1px slip */
+@keyframes cdg-slip {
+  0%, 92%, 100% { text-shadow: none; transform: translateX(0); }
+  93%   { text-shadow: -3px 0 var(--accent), 3px 0 var(--foreground-muted); transform: translateX(2px); }
+  94.5% { text-shadow: 3px 0 var(--accent), -3px 0 var(--foreground-muted); transform: translateX(-2px); }
+  96%   { text-shadow: -1px 0 var(--accent), 1px 0 var(--foreground-muted); transform: translateX(0); }
+  97%   { text-shadow: none; }
+}
+.cd-slot[data-glitch="slip"] {
+  /* 5s loop, burst in the last ~250ms; negative delay so the first one lands right away */
+  animation: cdg-slip 5s steps(1, end) -4.55s infinite;
+}
+
+/* 2. slice — two horizontal bands of the text tear sideways */
+.cd-slot[data-glitch="slice"]::before,
+.cd-slot[data-glitch="slice"]::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+  background: var(--background);
+}
+@keyframes cdg-slice-a {
+  0%, 90%, 100% { opacity: 0; clip-path: inset(0 0 100% 0); transform: none; }
+  91%   { opacity: 1; clip-path: inset(12% 0 58% 0); transform: translateX(-5px); }
+  92.5% { clip-path: inset(38% 0 30% 0); transform: translateX(2px); }
+  94%   { clip-path: inset(62% 0 6% 0);  transform: translateX(-2px); }
+  95%   { opacity: 0; }
+}
+@keyframes cdg-slice-b {
+  0%, 90.5%, 100% { opacity: 0; clip-path: inset(0 0 100% 0); transform: none; }
+  91.5% { opacity: 1; clip-path: inset(55% 0 20% 0); transform: translateX(5px); }
+  93%   { clip-path: inset(5% 0 70% 0);  transform: translateX(-2px); }
+  94.5% { opacity: 0; }
+}
+.cd-slot[data-glitch="slice"]::before { animation: cdg-slice-a 6.5s steps(1, end) -5.8s infinite; }
+.cd-slot[data-glitch="slice"]::after  { animation: cdg-slice-b 6.5s steps(1, end) -5.8s infinite; }
+
+/* 3. flicker — failing-tube stutter: opacity dips with a hint of blur */
+@keyframes cdg-flicker {
+  0%, 88%, 100% { opacity: 1; filter: blur(0); }
+  89%   { opacity: 0.15; }
+  90%   { opacity: 1; filter: blur(0.6px); }
+  91.5% { opacity: 0.55; }
+  92.5% { opacity: 1; filter: blur(0); }
+  95%   { opacity: 0.7; }
+  95.8% { opacity: 1; }
+}
+.cd-slot[data-glitch="flicker"] {
+  animation: cdg-flicker 8s steps(1, end) -7s infinite;
+}
+
+/* 5. jitter — skew + nudge, like a dropped sync pulse */
+@keyframes cdg-jitter {
+  0%, 93%, 100% { transform: none; }
+  93.5% { transform: skewX(-12deg) translateX(3px); }
+  94.5% { transform: skewX(9deg) translateX(-3px); }
+  95.5% { transform: skewX(-3deg) translateX(1px); }
+  96.5% { transform: none; }
+}
+.cd-slot[data-glitch="jitter"] {
+  animation: cdg-jitter 7.5s steps(1, end) -6.9s infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cd-slot[data-glitch],
+  .cd-slot[data-glitch]::before,
+  .cd-slot[data-glitch]::after {
+    animation: none !important;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Call for speakers card (src/app/components/call-for-speakers.tsx)
+   Choreography:
+     1. card: slide up + in from the right with a soft spring overshoot (560ms)
+     2. children: stagger in 60ms apart, starting after the card lands (--i index)
+     3. spinner next to the label: loading-dev <Arc/>, 800ms, stops under reduced motion
+     exit: card scales down and slides out to the right (320ms)
+   --------------------------------------------------------------------------- */
+@keyframes cfs-in {
+  0%   { opacity: 0; transform: translate3d(24px, 16px, 0) scale(0.96); }
+  60%  { opacity: 1; transform: translate3d(-3px, -2px, 0) scale(1.005); }
+  80%  {             transform: translate3d(1px, 1px, 0) scale(0.999); }
+  100% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+}
+
+@keyframes cfs-out {
+  0%   { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
+  100% { opacity: 0; transform: translate3d(28px, 8px, 0) scale(0.96); }
+}
+
+@keyframes cfs-child {
+  from { opacity: 0; transform: translateY(6px); filter: blur(2px); }
+  to   { opacity: 1; transform: translateY(0);   filter: blur(0); }
+}
+
+@keyframes cfs-sweep {
+  from { transform: translateX(0); }
+  to   { transform: translateX(200%); }
+}
+
+.cfs-card {
+  will-change: transform, opacity;
+  animation: cfs-in 560ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  box-shadow:
+    0 0 0 1px transparent,
+    0 10px 30px -18px rgba(2, 16, 147, 0.35);
+}
+:root.dark .cfs-card {
+  box-shadow: 0 10px 30px -18px rgba(0, 0, 0, 0.8);
+}
+
+.cfs-card[data-phase="out"] {
+  animation: cfs-out 320ms cubic-bezier(0.4, 0, 1, 1) both;
+  pointer-events: none;
+}
+
+.cfs-card .cfs-child {
+  animation: cfs-child 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  /* card lands at ~340ms; children follow 60ms apart */
+  animation-delay: calc(340ms + var(--i, 0) * 60ms);
+}
+.cfs-card[data-phase="out"] .cfs-child {
+  animation: none;
+}
+
+.cfs-cta .cfs-arrow {
+  transition: transform 300ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.cfs-cta:hover .cfs-arrow {
+  transform: translateX(3px);
+}
+.cfs-cta:hover .cfs-sweep {
+  animation: cfs-sweep 600ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+.cfs-cta:active {
+  transform: scale(0.97);
+}
+
+/* Message field: collapsed (0fr) until "i'm in" is hovered or focused, then
+   unfolds above the button so the button stays put under the pointer
+   (the card is bottom-anchored, so growth goes upward). */
+.cfs-field {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 240ms ease-out,
+    margin-bottom 320ms cubic-bezier(0.22, 1, 0.36, 1);
+  margin-bottom: 0;
+}
+.cfs-field > * {
+  min-height: 0;
+  overflow: hidden;
+}
+.cfs-field textarea {
+  filter: blur(2px);
+  transform: translateY(4px);
+  transition:
+    filter 320ms cubic-bezier(0.22, 1, 0.36, 1) 80ms,
+    transform 320ms cubic-bezier(0.22, 1, 0.36, 1) 80ms,
+    border-color 300ms ease-out;
+}
+.cfs-field[data-open="true"] {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  margin-bottom: 0.75rem;
+}
+.cfs-field[data-open="true"] textarea {
+  filter: blur(0);
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cfs-card,
+  .cfs-card[data-phase="out"],
+  .cfs-card .cfs-child {
+    animation-duration: 180ms;
+    animation-name: cfs-fade;
+  }
+  .cfs-card[data-phase="out"] { animation-name: cfs-fade-out; }
+  .cfs-cta:hover .cfs-sweep { animation: none; }
+  .cfs-cta .cfs-arrow { transition: none; }
+  .cfs-field, .cfs-field textarea { transition: opacity 180ms linear; filter: none; transform: none; }
+}
+@keyframes cfs-fade     { from { opacity: 0; } to { opacity: 1; } }
+@keyframes cfs-fade-out { from { opacity: 1; } to { opacity: 0; } }
+
+
+/* ---------------------------------------------------------------------------
+   Speaker proposal dialog (src/app/components/speaker-proposal.tsx)
+   Native <dialog> in the top layer. The backdrop blurs + dims the page; the
+   panel rises in. Both animate only on open; closing is immediate.
+   --------------------------------------------------------------------------- */
+.proposal-dialog {
+  /* reset UA dialog chrome; the inner panel draws the surface.
+     Tailwind preflight zeroes margin on every element, which removes the
+     dialog's native margin:auto centering, so restore it explicitly. */
+  margin: auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  max-width: min(28rem, calc(100% - 2rem));
+  width: 100%;
+  max-height: calc(100% - 2rem);
+  overflow: visible;
+}
+.proposal-panel {
+  /* an expanded proposal box can outgrow short viewports: scroll the panel */
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
+}
+.proposal-dialog[open] .proposal-panel {
+  animation: proposal-in 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.proposal-dialog::backdrop {
+  background: color-mix(in srgb, var(--background) 55%, transparent);
+}
+/* Blur the page, not the backdrop: the bundler drops unprefixed backdrop-filter
+   on ::backdrop, and blurring real elements is also cheaper to animate. The
+   dialog is portalled to <body>, so it is excluded by being a <dialog>. */
+body > :where(main, footer, [role="complementary"]) {
+  transition: filter 300ms ease-out;
+}
+body[data-proposal-open="true"] > :where(main, footer, [role="complementary"]) {
+  filter: blur(6px);
+}
+.proposal-dialog[open]::backdrop {
+  animation: proposal-backdrop-in 240ms ease-out both;
+}
+@keyframes proposal-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes proposal-backdrop-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .proposal-dialog[open] .proposal-panel,
+  .proposal-dialog[open]::backdrop { animation-duration: 1ms; }
+}
+
+/* ---------------------------------------------------------------------------
+   Print poster (src/app/components/poster.tsx)
+   On screen the poster is display:none. In print, everything else is hidden
+   and the poster fills one A4 sheet, always navy on white.
+   --------------------------------------------------------------------------- */
+.poster {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 0;
+  }
+  html {
+    overflow: visible;
+  }
+  html, body {
+    background: #fff !important;
+    color: #021093 !important;
+  }
+  body::before,
+  .noise,
+  main,
+  footer,
+  .cfs-card {
+    display: none !important;
+  }
+  .poster {
+    --ink: #021093;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    width: 210mm;
+    height: 297mm;
+    padding: 18mm 16mm 16mm;
+    color: var(--ink);
+    background: #fff;
+    font-family: var(--font-geist-mono), Monaco, monospace;
+    text-transform: lowercase;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    break-inside: avoid;
+  }
+  .poster-top {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10pt;
+    letter-spacing: 0.08em;
+    padding-bottom: 4mm;
+    border-bottom: 1px solid var(--ink);
+  }
+  .poster-wolf {
+    width: 100%;
+    height: auto;
+    margin: 10mm auto 6mm;
+    flex: 1 1 auto;
+    min-height: 0;
+    display: block;
+  }
+  .poster-mid {
+    text-align: center;
+    margin-bottom: 12mm;
+  }
+  .poster-date {
+    font-family: Monaco, var(--font-geist-mono), monospace;
+    font-size: 22pt;
+    font-weight: bold;
+    letter-spacing: 0.02em;
+    margin: 0 0 3mm;
+  }
+  .poster-sub {
+    font-size: 9.5pt;
+    line-height: 1.5;
+    margin: 0;
+    opacity: 0.7;
+  }
+  .poster-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 10mm;
+    padding-top: 5mm;
+    border-top: 1px solid var(--ink);
+  }
+  .poster-cta {
+    font-size: 12pt;
+    font-weight: bold;
+    margin: 0 0 1.5mm;
+  }
+  .poster-qr {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2mm;
+    font-size: 8pt;
+    letter-spacing: 0.04em;
+    flex-shrink: 0;
+  }
+  .poster-qr img {
+    width: 28mm;
+    height: 28mm;
+    display: block;
+  }
+}
+
+
+/* ---------------------------------------------------------------------------
    Page loader (src/app/components/page-loader.tsx)
    Invisible for the first 400ms so fast loads never see it; then fades in.
    Fade-out is driven inline by the component from its current opacity.

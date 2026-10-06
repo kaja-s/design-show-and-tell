@@ -3,12 +3,16 @@
 import { useTheme } from "./theme-provider";
 import { Countdown } from "./components/countdown";
 import { Faq } from "./components/faq";
-import { StayUpToDate } from "./components/stay-up-to-date";
-// For the next event: uncomment the Rsvp import + usage below and comment out StayUpToDate.
-// import { Rsvp } from "./components/rsvp";
 import { LastEvent } from "./components/last-event";
+import { SpeakerProposal } from "./components/speaker-proposal";
+// CTA by phase: <SpeakerProposal /> while looking for speakers, <StayUpToDate /> between
+// events once the lineup is full, <Rsvp /> once the lu.ma page is live.
+// import { StayUpToDate } from "./components/stay-up-to-date";
+// import { Rsvp } from "./components/rsvp";
 import { ShaderCanvas } from "./components/shader-canvas";
+import { CallForSpeakers } from "./components/call-for-speakers";
 import { ConsoleWolf } from "./components/console-wolf";
+import { Poster } from "./components/poster";
 import FeatherIcon from "feather-icons-react";
 
 export default function Home() {
@@ -18,7 +22,7 @@ export default function Home() {
     <>
       {/* Noise overlay */}
       <div
-        className="fixed inset-0 pointer-events-none opacity-40"
+        className="noise fixed inset-0 pointer-events-none opacity-40"
         style={{
           backgroundImage: 'url(/noise.svg)',
           backgroundRepeat: 'repeat',
@@ -45,9 +49,9 @@ export default function Home() {
 
           <Countdown />
           <Faq />
-          {/* Between events: collect signups. For the next event, swap to <Rsvp /> below. */}
-          <StayUpToDate />
+          <SpeakerProposal />
           <LastEvent />
+          {/* <StayUpToDate /> */}
           {/* <Rsvp /> */}
         </div>
       </main>
@@ -84,8 +88,11 @@ export default function Home() {
         </p>
       </footer>
 
-      {/* easter egg: the halftone wolf in the devtools console */}
+      <CallForSpeakers />
+
+      {/* easter eggs: devtools console wolf, and the print-only poster (cmd+p) */}
       <ConsoleWolf />
+      <Poster />
     </>
   );
 }
