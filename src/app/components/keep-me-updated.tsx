@@ -18,8 +18,13 @@ import {
   EmailSuggestion,
 } from "./form-field";
 
-// same treatment as the FAQ's organizer links and the colophon
-const LINK_CLASS = "underline hover:opacity-70 transition-opacity";
+// Underlined like the other links at rest. On hover it doesn't dim (it's an
+// action, not a reference): the underline gives way to the site's highlight
+// fill, the same navy-on-paper the paint button and text selection use. The
+// arrow is plain punctuation: no underline, no hover, no motion.
+const LINK_CLASS = "group inline-flex items-baseline gap-1";
+const LINK_TEXT_CLASS =
+  "-mx-1 px-1 underline underline-offset-4 decoration-foreground/40 group-hover:no-underline group-hover:bg-highlight group-hover:text-highlight-text group-focus-visible:no-underline transition-[background-color,color] duration-150";
 
 export function KeepMeUpdated() {
   const [open, setOpen] = useState(false);
@@ -102,7 +107,8 @@ export function KeepMeUpdated() {
   if (!open) {
     return (
       <button type="button" onClick={openForm} className={LINK_CLASS}>
-        → keep me updated
+        <span aria-hidden="true">→</span>
+        <span className={LINK_TEXT_CLASS}>keep me updated</span>
       </button>
     );
   }
