@@ -38,7 +38,7 @@ export function ConsoleWolf() {
     const text = "font-family: Monaco, 'Geist Mono', monospace; color: #021093;";
     const dim = "font-family: Monaco, 'Geist Mono', monospace; color: #021093; opacity: .6;";
     console.log(
-      `%c${asciiWolf()}\n\n%cdesign show & tell — looking for speakers\n%c5–10 minutes, live, no slides. finished or not.\n%cpropose a demo: mailto:${ORGANIZER_EMAIL}\n\n%cpsst: double-click a photo. try cmd+p.`,
+      `%c${asciiWolf()}\n\n%cdesign show & tell — looking for speakers\n%cten minutes, live, no slides. half-finished is perfect.\n%cpropose a demo: mailto:${ORGANIZER_EMAIL}\n\n%cpsst: double-click a photo. try cmd+p.`,
       mono,
       `${text} font-weight: bold;`,
       text,

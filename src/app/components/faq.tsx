@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import FeatherIcon from "feather-icons-react";
+import { KeepMeUpdated } from "./keep-me-updated";
 import {
   Carousel,
   CarouselContent,
@@ -14,45 +15,70 @@ const linkClass = "underline hover:opacity-70 transition-opacity";
 const faqs: { q: string; a: React.ReactNode }[] = [
   {
     q: "what is it?",
-    a: "live demos. new experiments. no slides. an informal space for designers to share what they're working on, explore different approaches, and steal ideas from each other.",
+    a: (
+      <>
+        <strong className="font-bold">live demos. new experiments. no slides.</strong> an informal space for designers to share what they&apos;re working on, explore different approaches, and <strong className="font-bold">steal ideas</strong> from each other.
+      </>
+    ),
   },
   {
     q: "when + where?",
-    a: "late november 2026, ljubljana. exact date and venue announced in the next couple of weeks.",
+    a: (
+      <>
+        <strong className="font-bold">late november 2026, ljubljana.</strong> exact date and venue announced in the next couple of weeks.{" "}
+        <KeepMeUpdated />
+      </>
+    ),
   },
   {
     q: "who can join?",
-    a: "designers who are creating new products and features, experimenting with AI tools or crafting experiences that don't quite have a playbook yet.",
+    a: (
+      <>
+        <strong className="font-bold">designers making things:</strong> new products, ai experiments, anything without a playbook yet. <strong className="font-bold">students and side-projecters very welcome.</strong>
+      </>
+    ),
   },
   {
     q: "do i need to present?",
-    a: "no. you're welcome to just listen and participate in the discussion. presenting is optional and always low-stakes.",
+    a: (
+      <>
+        <strong className="font-bold">no.</strong> you&apos;re welcome to just listen and participate in the discussion. presenting is <strong className="font-bold">optional</strong> and always low-stakes.
+      </>
+    ),
   },
   {
     q: "what can i show?",
-    a: "anything. a side project, a work-in-progress, a fully developed feature, a tool you've been exploring, or a design challenge you're stuck on.",
+    a: (
+      <>
+        <strong className="font-bold">anything.</strong> a side project, a work-in-progress, a fully developed feature, a tool you&apos;ve been exploring, or a design challenge you&apos;re stuck on.
+      </>
+    ),
   },
   {
     q: "how long are the presentations?",
-    a: "5–10 minutes each, followed by a few minutes of group q&a. we keep it tight and informal.",
+    a: (
+      <>
+        <strong className="font-bold">ten minutes, live, no slides.</strong> half-finished is perfect. then a few minutes of questions.
+      </>
+    ),
   },
   {
     q: "who organizes it?",
     a: (
       <>
         organized by{" "}
-        <a href="https://www.kajaskerlj.com/" target="_blank" rel="noopener noreferrer" className={linkClass}>
+        <a href="https://www.kajaskerlj.com/" target="_blank" rel="noopener noreferrer" className={`${linkClass} font-bold`}>
           kaja
         </a>
         ,{" "}
-        <a href="https://www.linkedin.com/in/anuska-dzogic/" target="_blank" rel="noopener noreferrer" className={linkClass}>
+        <a href="https://www.linkedin.com/in/anuska-dzogic/" target="_blank" rel="noopener noreferrer" className={`${linkClass} font-bold`}>
           anuška
         </a>{" "}
         and{" "}
-        <a href="https://www.vitastefane.com/" target="_blank" rel="noopener noreferrer" className={linkClass}>
+        <a href="https://www.vitastefane.com/" target="_blank" rel="noopener noreferrer" className={`${linkClass} font-bold`}>
           vita
         </a>
-        , three designers who love bringing creative people together to share work and build community.
+        , three product designers who love bringing creative people together to share work and build community.
       </>
     ),
   },
@@ -146,9 +172,9 @@ export function Faq() {
         </div>
         <div className="flex gap-3 items-start">
           <span className="text-[10px] tracking-wider opacity-50 mt-[3px]">A:</span>
-          <p className="text-[14px] leading-relaxed flex-1">
+          <div className="text-[14px] leading-relaxed flex-1">
             {faqs[current].a}
-          </p>
+          </div>
         </div>
       </div>
     </section>

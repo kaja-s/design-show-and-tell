@@ -51,7 +51,7 @@ The form posts to `/api/propose`, which sends a Loops transactional email to the
 
 One-time setup in Loops: create a transactional email with the data variables `name`, `email` and `proposal`, publish it, and put its ID in `LOOPS_PROPOSAL_TRANSACTIONAL_ID`. Until that's set, the form falls back to a pre-filled `mailto:` link so no proposal is lost.
 
-The "stay up to date" form posts to `/api/subscribe`, which adds the contact to the mailing list ID hardcoded in that route.
+The "→ keep me updated" link in the "when + where?" answer (and the unmounted "stay up to date" form) posts to `/api/subscribe`. The route makes one Loops events call that adds the contact to the mailing list and fires a `signup` event. In Loops, create a Loop triggered by the `signup` event to send the welcome email, and set it to run once per contact.
 
 ## Stack
 

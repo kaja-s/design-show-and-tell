@@ -15,7 +15,8 @@
 //
 // Treatment: duotone in the site's foreground colour (grayscale image under a
 // blend-mode overlay), full colour on hover/focus. Overlay blend flips per
-// theme so dark mode gets black/blue and light mode gets navy/white.
+// theme so dark mode gets black/blue and light mode gets navy/white. The
+// reveal uses a long, soft ease-out (700ms) so colour and tint arrive together.
 //
 // Interaction (≥ md only): photos can be dragged around the stage. Press and
 // move to drag (pointer events, so mouse/pen/touch all work); the dragged
@@ -56,7 +57,7 @@ const CONFETTI_INDEX = PHOTOS.indexOf(GROUP);
 
 type Photo = (typeof PHOTOS)[number];
 
-const LIFT = "transition-transform duration-300 ease-out hover:-translate-y-1";
+const LIFT = "transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-1";
 
 // Movement below this many px counts as a click, not a drag.
 const DRAG_THRESHOLD = 4;
@@ -89,12 +90,12 @@ function Frame({
         sizes={sizes}
         priority={priority}
         draggable={false}
-        className="h-full w-full object-cover grayscale contrast-105 transition-[filter,transform] duration-500 ease-out group-hover:grayscale-0 group-focus-within:grayscale-0 group-hover:scale-[1.03]"
+        className="h-full w-full object-cover grayscale contrast-105 transition-[filter,transform] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:grayscale-0 group-focus-within:grayscale-0 group-hover:scale-[1.03]"
       />
       {/* duotone tint: lighten in light mode (blacks → navy), darken in dark mode (whites → blue) */}
       <div
         aria-hidden="true"
-        className="absolute inset-0 bg-foreground mix-blend-lighten dark:mix-blend-darken transition-opacity duration-500 ease-out group-hover:opacity-0 group-focus-within:opacity-0 pointer-events-none"
+        className="absolute inset-0 bg-foreground mix-blend-lighten dark:mix-blend-darken transition-opacity duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:opacity-0 group-focus-within:opacity-0 pointer-events-none"
       />
     </div>
   );

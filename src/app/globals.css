@@ -70,8 +70,13 @@ input:focus,
 textarea:focus {
   border-color: var(--foreground);
 }
+/* Fields: the ring sits on the border (offset -1px) so focus reads as one
+   2px line, not a border plus a halo. Buttons and links keep the halo. */
 input:focus-visible,
-textarea:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--foreground);
+  outline-offset: -1px;
+}
 button:focus-visible,
 a:focus-visible,
 [tabindex]:focus-visible {
@@ -323,6 +328,45 @@ body[data-proposal-open="true"] > :where(main, footer) {
 }
 
 /* ---------------------------------------------------------------------------
+   Proposal success signature (src/app/components/speaker-proposal.tsx)
+   "— kaja" signs the success note. Hover, focus or tap the name and the photo
+   resolves beside it as a halftone: a dot-grid mask whose dot radius animates
+   from below 0 (nothing) past the cell's half-diagonal (solid). The registered
+   property is what lets the radius transition.
+   --------------------------------------------------------------------------- */
+@property --sig-dot {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: -0.6px;
+}
+.sig-photo {
+  /* Slightly negative so the idle state is fully masked; at 0px antialiasing
+     leaves a faint dot grid that would give the egg away. */
+  --sig-dot: -0.6px;
+  opacity: 0;
+  mask-image: radial-gradient(circle, #000 var(--sig-dot), transparent calc(var(--sig-dot) + 0.5px));
+  mask-size: 6px 6px;
+  mask-repeat: repeat;
+  mask-position: center;
+  /* Leaving: the halftone only plays forward. Run in reverse it shows white
+     star-shaped holes between shrinking dots, which reads as a glitch. So the
+     photo fades out, and the mask snaps shut once it is invisible. */
+  transition: opacity 300ms ease-out, --sig-dot 0ms linear 300ms;
+}
+.sig:hover .sig-photo,
+.sig:focus-visible .sig-photo,
+.sig[data-signed] .sig-photo {
+  --sig-dot: 4.4px;
+  opacity: 1;
+  /* Entering: visible at once, dots grow. Linear-ish so the dot stage is on
+     screen long enough to read as halftone. */
+  transition: opacity 0ms, --sig-dot 1100ms cubic-bezier(0.3, 0, 0.7, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .sig-photo { transition-duration: 1ms; }
+}
+
+/* ---------------------------------------------------------------------------
    Print poster (src/app/components/poster.tsx)
    On screen the poster is display:none. In print, everything else is hidden
    and the poster fills one A4 sheet, always navy on white.
@@ -441,6 +485,9 @@ body[data-proposal-open="true"] > :where(main, footer) {
 @keyframes page-loader-in {
   to { opacity: 1; }
 }
+
+
+
 
 
 

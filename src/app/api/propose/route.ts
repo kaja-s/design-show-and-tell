@@ -40,7 +40,7 @@ export async function POST(request: Request) {
     const cleanProposal = typeof proposal === "string" ? proposal.trim() : "";
 
     if (!cleanEmail || !cleanEmail.includes("@")) {
-      return NextResponse.json({ error: "Please provide a valid email address." }, { status: 400 });
+      return NextResponse.json({ error: "enter an email address like name@example.com." }, { status: 400 });
     }
     if (!cleanProposal) {
       return NextResponse.json({ error: "Tell us a little about what you'd show." }, { status: 400 });
@@ -88,7 +88,7 @@ export async function POST(request: Request) {
       if (!confirmation.ok) console.error("Loops confirmation error:", confirmation.data);
     }
 
-    return NextResponse.json({ success: true, message: "thanks! i'll read it over the next few days and get back to you." });
+    return NextResponse.json({ success: true, message: "thanks, i'll read it and get back to you soon." });
   } catch (error) {
     console.error("Proposal error:", error);
     return NextResponse.json({ error: "An unexpected error occurred.", fallback: "mailto" }, { status: 500 });

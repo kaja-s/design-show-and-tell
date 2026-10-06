@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { Arc } from "loading-dev";
 import { PaintButton } from "./paint-button";
-import { FIELD_CLASS, FieldLabel, FieldError, EMAIL_RE, focusFirstInvalid } from "./form-field";
+import { FIELD_CLASS, FieldLabel, FieldError, EMAIL_RE, focusFirstInvalid, suggestEmail, EmailSuggestion } from "./form-field";
 
 export function StayUpToDate() {
   const [open, setOpen] = useState(false);
@@ -12,6 +12,10 @@ export function StayUpToDate() {
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
   const [fieldErrors, setFieldErrors] = useState<{ name?: string; email?: string }>({});
+  // Likely email typo ("gmial.com"): shown once with a one-click fix; the same
+  // address sent a second time is taken as deliberate.
+  const [emailSuggestion, setEmailSuggestion] = useState<string | null>(null);
+  const confirmedEmail = useRef<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -19,6 +23,15 @@ export function StayUpToDate() {
     const errors: typeof fieldErrors = {};
     if (!name.trim()) errors.name = "enter your name.";
     if (!EMAIL_RE.test(email.trim())) errors.email = "enter an email address like name@example.com.";
+    if (!errors.email) {
+      const typed = email.trim();
+      const suggestion = suggestEmail(typed);
+      if (suggestion && confirmedEmail.current !== typed) {
+        confirmedEmail.current = typed;
+        errors.email = `did you mean ${suggestion}?`;
+        setEmailSuggestion(suggestion);
+      }
+    }
     setFieldErrors(errors);
     if (Object.keys(errors).length) {
       requestAnimationFrame(() => focusFirstInvalid(formRef.current, ["name", "email"]));
@@ -80,7 +93,7 @@ export function StayUpToDate() {
             autoComplete="name"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="ana novak"
+            placeholder="first name"
             required
             aria-invalid={fieldErrors.name ? true : undefined}
             aria-describedby="signup-name-error"
@@ -97,7 +110,13 @@ export function StayUpToDate() {
             name="email"
             autoComplete="email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              if (emailSuggestion) {
+                setEmailSuggestion(null);
+                setFieldErrors((prev) => ({ ...prev, email: undefined }));
+              }
+            }}
             placeholder="name@example.com"
             required
             aria-invalid={fieldErrors.email ? true : undefined}
@@ -105,7 +124,21 @@ export function StayUpToDate() {
             disabled={status === "loading"}
             className={FIELD_CLASS}
           />
-          <FieldError id="signup-email-error">{fieldErrors.email}</FieldError>
+          <FieldError id="signup-email-error">
+            {emailSuggestion ? (
+              <EmailSuggestion
+                suggestion={emailSuggestion}
+                onAccept={() => {
+                  setEmail(emailSuggestion);
+                  setEmailSuggestion(null);
+                  setFieldErrors((prev) => ({ ...prev, email: undefined }));
+                  formRef.current?.querySelector<HTMLInputElement>('input[name="email"]')?.focus();
+                }}
+              />
+            ) : (
+              fieldErrors.email
+            )}
+          </FieldError>
         </div>
         <div className="flex justify-center">
           <PaintButton type="submit" disabled={status === "loading"}>

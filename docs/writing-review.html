@@ -1,0 +1,180 @@
+<title>show &amp; tell writing review</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;700&display=swap">
+<style>
+  /* layout: one reading column; findings are before/after pairs grouped by principle, with a done-tracker like the interface review */
+  :root {
+    --bg: #f4f4f4; --bg-2: #eafcff; --fg: #021093; --fg-muted: rgba(2,16,147,.55); --line: rgba(2,16,147,.2);
+    --highlight: #021093; --highlight-text: #ffffff;
+    --medium: #b45309; --low: #3b6ea8; --ok: #0f7b4f;
+    --font: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --bg:#040c2a; --bg-2:#060e35; --fg:#93c5fd; --fg-muted:rgba(147,197,253,.55); --line:rgba(147,197,253,.22); --highlight:#93c5fd; --highlight-text:#040c2a; --medium:#fcd34d; --low:#93c5fd; --ok:#6ee7b7; color-scheme: dark; }
+  }
+  :root[data-theme="dark"] { --bg:#040c2a; --bg-2:#060e35; --fg:#93c5fd; --fg-muted:rgba(147,197,253,.55); --line:rgba(147,197,253,.22); --highlight:#93c5fd; --highlight-text:#040c2a; --medium:#fcd34d; --low:#93c5fd; --ok:#6ee7b7; color-scheme: dark; }
+
+  * { box-sizing: border-box; }
+  body { margin:0; min-height:100vh; background: linear-gradient(180deg, var(--bg) 0%, var(--bg-2) 100%); color: var(--fg); font-family: var(--font); font-size: 14px; line-height: 1.6; font-feature-settings: "ss01","ss02","zero","tnum"; padding-block: 40px 80px; padding-inline: 20px; }
+  ::selection { background: var(--highlight); color: var(--highlight-text); }
+  .wrap { max-width: 760px; margin: 0 auto; }
+  a { color: inherit; text-underline-offset: 3px; }
+  code { font-family: inherit; font-size: 12px; padding: 1px 5px; border: 1px solid var(--line); white-space: nowrap; }
+  .eyebrow { font-size: 11px; letter-spacing: .12em; opacity: .5; text-transform: lowercase; }
+  h1 { font-size: 20px; font-weight: 700; margin: 8px 0; text-wrap: balance; }
+  h2 { font-size: 14px; font-weight: 700; margin: 48px 0 6px; padding-top: 14px; border-top: 1px solid var(--line); }
+  h2 + p { opacity: .65; font-size: 13px; margin-bottom: 16px; }
+  p { margin: 0 0 12px; max-width: 64ch; }
+  .lede { opacity: .75; }
+  .note { border-left: 2px solid var(--line); padding: 2px 0 2px 14px; opacity: .8; margin: 12px 0 0; }
+
+  .bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; margin: 24px -20px 0; padding: 10px 20px; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(6px); border-bottom: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .bar .count { font-size: 12px; opacity: .7; margin-inline-end: auto; }
+  .chip { font: inherit; font-size: 11px; padding: 4px 9px; border: 1px solid var(--line); background: transparent; color: var(--fg); cursor: pointer; display: inline-flex; gap: 6px; align-items: center; min-height: 28px; }
+  .chip i { width: 7px; height: 7px; border-radius: 50%; background: var(--fg-muted); }
+  .chip[aria-pressed="true"] { background: var(--highlight); color: var(--highlight-text); border-color: var(--highlight); }
+  .chip[aria-pressed="true"] i { background: currentColor; }
+  .chip.medium i { background: var(--medium); } .chip.low i { background: var(--low); }
+  .chip:focus-visible, .card input:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+
+  .card { border: 1px solid var(--line); padding: 14px 16px 16px; margin-bottom: 10px; display: grid; grid-template-columns: 24px 1fr; gap: 12px; align-items: start; background: color-mix(in srgb, var(--bg) 60%, transparent); }
+  .card[data-done="true"] { opacity: .45; }
+  .card input { margin: 3px 0 0; width: 16px; height: 16px; accent-color: var(--fg); cursor: pointer; }
+  .card .head { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: baseline; margin-bottom: 8px; }
+  .pill { font-size: 10px; letter-spacing: .1em; padding: 2px 7px; border: 1px solid currentColor; text-transform: lowercase; }
+  .pill.medium { color: var(--medium); } .pill.low { color: var(--low); }
+  .loc { font-size: 11px; opacity: .7; word-break: break-word; }
+  .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 560px) { .pair { grid-template-columns: 1fr; } }
+  .pair > div { min-width: 0; border-top: 1px solid var(--line); padding-top: 8px; }
+  .pair b { display: block; font-size: 10px; letter-spacing: .12em; opacity: .5; margin-bottom: 4px; font-weight: 500; text-transform: lowercase; }
+  .pair p { font-size: 13px; margin: 0; white-space: pre-wrap; }
+  .pair .before p { opacity: .6; text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--fg) 35%, transparent); }
+  .pair .after p { font-weight: 500; }
+  .why { font-size: 12px; opacity: .7; margin: 10px 0 0; }
+  .card.hidden { display: none; }
+  .group.hidden { display: none; }
+
+  ul { padding-left: 18px; margin: 0 0 12px; } li { margin-bottom: 6px; max-width: 64ch; }
+  .verdict { border: 1px solid var(--medium); color: var(--medium); padding: 12px 16px; display: inline-flex; gap: 12px; align-items: baseline; }
+  .verdict b { font-size: 11px; letter-spacing: .12em; text-transform: lowercase; }
+  .foot { margin-top: 48px; padding-top: 14px; border-top: 1px solid var(--line); font-size: 11px; opacity: .5; }
+</style>
+
+<div class="wrap">
+  <div class="eyebrow">design show &amp; tell · writing review</div>
+  <h1>one voice, one word for the thing you come to do</h1>
+  <p class="lede">the voice you want is already there: lowercase, informal, designer to designer, kaja signing in the first person, easter eggs in the console and the poster. these are the places the copy drifts away from it. tick a finding when it's changed; the page remembers in this browser.</p>
+  <p class="note">kept as is, deliberately: "hi from stockholm!", "psst: double-click a photo. try cmd+p.", "not now", "done", the colophon, the bracketed date line on the page, and the lowercase treatment of proper nouns. that is the brand.</p>
+
+  <div class="bar" role="toolbar" aria-label="filters">
+    <span class="count" id="count"></span>
+    <button class="chip medium" data-sev="medium" aria-pressed="true" type="button"><i></i>medium</button>
+    <button class="chip low" data-sev="low" aria-pressed="true" type="button"><i></i>low</button>
+    <button class="chip" id="hideDone" aria-pressed="false" type="button">hide done</button>
+  </div>
+
+  <div id="findings"></div>
+
+  <h2>verification</h2>
+  <ul>
+    <li><b>read</b> · every user-facing string in the current source: page, countdown, faq, proposal dialog, signup form, both api routes, the console easter egg, the print poster, the photo flip captions, metadata.</li>
+    <li><b>exercised</b> · the dialog flow, both success states, and the validation messages in the browser. the css lowercase transform applies to rendered paragraphs and buttons, not to api json or alt text, which is why the capitalization policy should live in the copy.</li>
+    <li><b>not verified</b> · how screen readers voice the bracketed date line and the "—" signature; the subscribe route's error branches against loops.</li>
+  </ul>
+
+  <h2>verdict</h2>
+  <div class="verdict"><b>needs changes</b><span>no blocking findings. the two that matter most: "i" vs "we" inside the dialog, and settling on "demo" as the one word.</span></div>
+
+  <div class="foot">reviewed with better-writing · october 2026 · all suggested lines are complete replacements, ready to paste</div>
+</div>
+
+<script>
+(function () {
+  var G = [
+    { title: "one voice, flexible tone", why: "the product has one voice; tone flexes with the stakes.", items: [
+      { n: 1, sev: "medium", loc: "speaker-proposal.tsx:218 · vs :108, :150", before: "we'd love to see it. ten minutes, live, no slides. half-finished is perfect.", after: "i'd love to see it. ten minutes, live, no slides. half-finished is perfect.", why: "the dialog is signed by kaja and the reply comes from her inbox, so it should be \"i\" throughout. flipping perspective mid-flow reads as two authors." },
+      { n: 2, sev: "medium", loc: "faq.tsx:41 · who organizes it?", before: "three designers who love bringing creative people together to share work and build community.", after: "three designers who wanted a room like this to exist, so we made one.", why: "\"build community\" is linkedin language; everything around it is designer to designer." },
+      { n: 3, sev: "low", loc: "faq.tsx:25 · who can join?", before: "designers who are creating new products and features, experimenting with AI tools or crafting experiences that don't quite have a playbook yet.", after: "designers making things: new products, ai experiments, anything without a playbook yet. students and side-projecters very welcome.", why: "\"creating new products and features\" is job-description phrasing; the invitation should sound like a person." },
+      { n: 4, sev: "low", loc: "layout.tsx:17, :25, :32 · metadata description", before: "a gathering for designers to share work, give feedback, and connect. next event: late november 2026.", after: "designers showing each other work in progress. live demos, no slides. ljubljana, late november 2026.", why: "this is the line linkedin and x show on every share. \"gathering… connect\" is generic; the site itself is not." }
+    ]},
+    { title: "consistent flow vocabulary", why: "one word per thing, across the page, the console, and the poster.", items: [
+      { n: 5, sev: "medium", loc: "speaker-proposal.tsx:129 button · faq.tsx:28, :36 · console-wolf.tsx:41 · last-event.tsx:41, :46 alt text", before: "present / presentations / a talk / show / demo, and the entry point is a noun: \"call for speakers\"", after: "a demo is what you do, a proposal is what you send.\nbutton: propose a demo\nfaq: do i need to demo? · how long is a demo?\nalt: someone demoing to the room", why: "four words for one thing make people wonder if they differ. \"call for speakers\" also isn't verb-first, so it reads as a heading, not a button." },
+      { n: 6, sev: "medium", loc: "speaker-proposal.tsx:218 · console-wolf.tsx:41 · poster.tsx sub line · faq.tsx:37", before: "ten minutes, live, no slides. half-finished is perfect.\n5–10 minutes, live, no slides. finished or not.\n5–10 minutes each, followed by a few minutes of group q&a.", after: "ten minutes, live, no slides. half-finished is perfect.\n(faq adds: then a few minutes of questions.)", why: "easter eggs are part of the voice. if the console says it one way and the dialog another, the hidden copy feels pasted from an older draft." },
+      { n: 7, sev: "low", loc: "countdown.tsx:10 vs poster.tsx:12", before: "[late november 2026 | exact date soon] on the page\nlate november 2026 · exact date soon on the poster", after: "[late november 2026 | exact date soon] on both", why: "the brackets are a deliberate bit of designer flavour; the poster should carry the same signature." }
+    ]},
+    { title: "one capitalization policy", why: "pick one policy per element type and keep it in the copy, not the stylesheet.", items: [
+      { n: 8, sev: "medium", loc: "api/propose/route.ts:43, :46 · api/subscribe/route.ts:12, :51, :57 · speaker-proposal.tsx:111, :116 · stay-up-to-date.tsx:38, :43, :47 · last-event.tsx:42, :47, :52", before: "Please provide a valid email address.\nYou're on the list.\nFailed to subscribe. Please try again.\nFirst design show&tell in june 2026 at Visionect! Full room.", after: "lowercase, no \"please\", at most one exclamation per screen. full replacements in the next two groups.", why: "the css lowercases rendered text, so most of this hides on screen, but it shows in api responses, screen readers, and the next redesign." }
+    ]},
+    { title: "errors say how to fix, next to where it broke", why: "an error is an instruction. no blame, no \"please\", no \"oops\".", items: [
+      { n: 9, sev: "medium", loc: "speaker-proposal.tsx:111, :116", before: "Something went wrong. Please try again.", after: "couldn't send that. check your connection and try again, or email it instead.", why: "says nothing about the cause or the way out, while a working fallback link sits right under it." },
+      { n: 10, sev: "medium", loc: "api/subscribe/route.ts:22", before: "Subscription service is not configured.", after: "can't add you right now. try again later.", why: "describes your setup, not the visitor's next step. same class as the proposal message fixed earlier." },
+      { n: 11, sev: "low", loc: "api/subscribe/route.ts:57 · stay-up-to-date.tsx:43", before: "Failed to subscribe. Please try again.", after: "couldn't add you. try again in a moment.", why: "\"failed\" blames; the fix is already implied." },
+      { n: 12, sev: "low", loc: "api/propose/route.ts:43 · api/subscribe/route.ts:12", before: "Please provide a valid email address.", after: "enter an email address like name@example.com.", why: "match the client-side message so the two never disagree." },
+      { n: 13, sev: "low", loc: "api/subscribe/route.ts:51", before: "You're already on the list.", after: "you're already on the list. nothing to do.", why: "fine already; lowercase and close the loop so it doesn't read as an error." }
+    ]},
+    { title: "success and empty states point forward", why: "warm, and with a next step.", items: [
+      { n: 14, sev: "low", loc: "stay-up-to-date.tsx:62", before: "reply back with a \"Hi!\" :)", after: "hit reply on the first email and say hi. i read those.", why: "straight quotes and a capital in a lowercase site; \"reply back\" is redundant. the intent, a human on the other end, is right." },
+      { n: 15, sev: "low", loc: "last-event.tsx:42, :47, :52 · flip captions", before: "First design show&tell in june 2026 at Visionect! Full room.\nInformal presentations of work-in-progress.\nGroup photo! Say cheese!", after: "the first one. june 2026, visionect. full room.\nsomeone showing a half-built thing. the best kind.\neveryone who stayed for the photo.", why: "three exclamation marks in a hidden caption set is a louder voice than the rest of the site. the flip is the reward; the caption should sound like the person who hid it." }
+    ]},
+    { title: "placeholders are examples, not labels", why: "the label names the field; the placeholder shows the format.", items: [
+      { n: 16, sev: "low", loc: "speaker-proposal.tsx:241 · stay-up-to-date.tsx:83", before: "placeholder: first name (under the label \"name\")", after: "placeholder: ana", why: "the label already says what the field is; the placeholder should show an example." }
+    ]},
+    { title: "links describe their destination", why: "link text should make sense out of context.", items: [
+      { n: 17, sev: "low", loc: "rsvp.tsx:66 (currently unmounted)", before: "rsvp", after: "rsvp on lu.ma", why: "out of context it should say where it goes; also tells people to expect a third-party page." }
+    ]}
+  ];
+  var KEY = "dsat-writing-done";
+  var done = {};
+  try { done = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch (e) { done = {}; }
+  var sev = { medium: true, low: true }, hideDone = false;
+  var root = document.getElementById("findings");
+  var total = G.reduce(function (n, g) { return n + g.items.length; }, 0);
+
+  function esc(s) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;"); }
+  function render() {
+    root.innerHTML = "";
+    G.forEach(function (g) {
+      var sec = document.createElement("section"); sec.className = "group";
+      sec.innerHTML = "<h2>" + esc(g.title) + "</h2><p>" + esc(g.why) + "</p>";
+      g.items.forEach(function (f) {
+        var c = document.createElement("div"); c.className = "card"; c.dataset.done = !!done[f.n]; c.dataset.sev = f.sev;
+        c.innerHTML =
+          '<input type="checkbox" id="f' + f.n + '" aria-label="done: finding ' + f.n + '"' + (done[f.n] ? " checked" : "") + '>' +
+          '<div><div class="head"><span class="pill ' + f.sev + '">' + f.sev + '</span><span class="loc">#' + f.n + ' · ' + esc(f.loc) + '</span></div>' +
+          '<div class="pair"><div class="before"><b>now</b><p>' + esc(f.before) + '</p></div><div class="after"><b>instead</b><p>' + esc(f.after) + '</p></div></div>' +
+          '<p class="why">' + esc(f.why) + '</p></div>';
+        c.querySelector("input").addEventListener("change", function (e) {
+          done[f.n] = e.target.checked; c.dataset.done = e.target.checked;
+          try { localStorage.setItem(KEY, JSON.stringify(done)); } catch (err) {}
+          applyFilters();
+        });
+        sec.appendChild(c);
+      });
+      root.appendChild(sec);
+    });
+    applyFilters();
+  }
+  function applyFilters() {
+    var shown = 0, finished = 0;
+    document.querySelectorAll(".card").forEach(function (c) {
+      var n = +c.querySelector("input").id.slice(1);
+      var hide = !sev[c.dataset.sev] || (hideDone && done[n]);
+      c.classList.toggle("hidden", hide);
+      if (!hide) shown++;
+      if (done[n]) finished++;
+    });
+    document.querySelectorAll(".group").forEach(function (g) {
+      var any = Array.prototype.some.call(g.querySelectorAll(".card"), function (c) { return !c.classList.contains("hidden"); });
+      g.classList.toggle("hidden", !any);
+    });
+    document.getElementById("count").textContent = finished + " of " + total + " done · showing " + shown;
+  }
+  document.querySelectorAll("[data-sev]").forEach(function (b) {
+    b.addEventListener("click", function () { sev[b.dataset.sev] = !sev[b.dataset.sev]; b.setAttribute("aria-pressed", String(sev[b.dataset.sev])); applyFilters(); });
+  });
+  document.getElementById("hideDone").addEventListener("click", function () {
+    hideDone = !hideDone; this.setAttribute("aria-pressed", String(hideDone)); applyFilters();
+  });
+  render();
+})();
+</script>

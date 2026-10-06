@@ -15,8 +15,9 @@ import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { Arc } from "loading-dev";
 import FeatherIcon from "feather-icons-react";
+import Image from "next/image";
 import { PaintButton } from "./paint-button";
-import { FIELD_CLASS, FieldLabel, FieldError, EMAIL_RE, focusFirstInvalid } from "./form-field";
+import { FIELD_CLASS, FieldLabel, FieldError, EMAIL_RE, focusFirstInvalid, suggestEmail, EmailSuggestion } from "./form-field";
 
 const ORGANIZER_EMAIL = "kaja.skerlj@gmail.com";
 const PROPOSAL_MAX = 2000;
@@ -39,9 +40,15 @@ export function SpeakerProposal() {
   const [offerMailto, setOfferMailto] = useState(false);
   // Per-field messages from on-submit validation; empty = valid.
   const [fieldErrors, setFieldErrors] = useState<{ name?: string; email?: string; proposal?: string }>({});
+  // Likely email typo ("gmial.com"): shown once with a one-click fix; the same
+  // address sent a second time is taken as deliberate.
+  const [emailSuggestion, setEmailSuggestion] = useState<string | null>(null);
+  const confirmedEmail = useRef<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
   // Proposal box: compact by default, taller via the expand toggle.
   const [expanded, setExpanded] = useState(false);
+  // Success sign-off: the photo is hidden until the name is hovered, focused or tapped.
+  const [signed, setSigned] = useState(false);
   const dialogRef = useRef<HTMLDialogElement>(null);
   // Portals need document; this is false during SSR/hydration and true after.
   const mounted = useSyncExternalStore(
@@ -68,7 +75,10 @@ export function SpeakerProposal() {
     if (dialog.open) dialog.close();
   }, [open, mounted]);
 
-  const close = () => setOpen(false);
+  const close = () => {
+    setOpen(false);
+    setSigned(false);
+  };
 
   const validate = () => {
     const errors: typeof fieldErrors = {};
@@ -78,9 +88,29 @@ export function SpeakerProposal() {
     return errors;
   };
 
+  const checkEmailTypo = (errors: typeof fieldErrors) => {
+    if (errors.email) return;
+    const typed = email.trim();
+    const suggestion = suggestEmail(typed);
+    if (suggestion && confirmedEmail.current !== typed) {
+      confirmedEmail.current = typed;
+      errors.email = `did you mean ${suggestion}?`;
+      setEmailSuggestion(suggestion);
+    }
+  };
+
+  const acceptEmailSuggestion = () => {
+    if (!emailSuggestion) return;
+    setEmail(emailSuggestion);
+    setEmailSuggestion(null);
+    setFieldErrors((prev) => ({ ...prev, email: undefined }));
+    formRef.current?.querySelector<HTMLInputElement>('input[name="email"]')?.focus();
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const errors = validate();
+    checkEmailTypo(errors);
     setFieldErrors(errors);
     if (Object.keys(errors).length) {
       // let aria-invalid land in the DOM, then move focus to the first failing field
@@ -99,10 +129,10 @@ export function SpeakerProposal() {
       const data = await response.json();
       if (response.ok) {
         setStatus("success");
-        setMessage(data.message || "Got it.");
+        setMessage(data.message || "thanks! i'll read it and get back to you soon.");
       } else {
         setStatus("error");
-        setMessage(data.error || "Something went wrong. Please try again.");
+        setMessage(data.error || "couldn't send that. check your connection and try again, or email it instead.");
         setOfferMailto(data.fallback === "mailto");
       }
     } catch {
@@ -136,16 +166,64 @@ export function SpeakerProposal() {
             }}
           >
             {open && (
-              <div className="proposal-panel bg-background text-foreground border border-foreground/20 p-6 sm:p-8 w-full">
+              <div className="proposal-panel bg-background text-foreground border border-foreground/20 p-6 w-full">
                 {status === "success" ? (
-                  <div className="flex flex-col items-start gap-2 animate-fade-in">
-                    <h2 id="proposal-heading" className="text-sm font-bold">
+                  <div className="animate-fade-in">
+                    {/* message: one bold line, one quiet line, 8px apart */}
+                    <h2 id="proposal-heading" className="text-sm font-bold text-balance">
                       {message}
                     </h2>
-                    <p className="text-xs opacity-50">
-                      thanks for putting your hand up.
+                    <p className="mt-2 text-xs opacity-50">
+                      i read every proposal myself, so the reply will come from my own inbox.
                     </p>
-                    <div className="mt-4">
+                    {/* signature, 20px below the message so it reads as its own group: the name
+                        over a note, photo trailing. easter egg: hover, focus or tap the name and
+                        the photo resolves as a halftone (.sig-photo in globals.css), duotone like
+                        the event photos, then the note follows. hover the photo itself for colour. */}
+                    <button
+                      type="button"
+                      onClick={() => setSigned((v) => !v)}
+                      aria-pressed={signed}
+                      data-signed={signed || undefined}
+                      className="sig group/sig mt-5 flex items-center gap-3 text-left text-xs"
+                    >
+                      <span className="flex flex-col">
+                        <span>— kaja</span>
+                        <span
+                          className={`transition-[opacity,transform] ease-out ${
+                            signed
+                              ? "opacity-50 translate-y-0 duration-500 delay-300"
+                              : "opacity-0 -translate-y-1 duration-300 group-hover/sig:opacity-50 group-hover/sig:translate-y-0 group-hover/sig:duration-500 group-hover/sig:delay-300 group-focus-visible/sig:opacity-50 group-focus-visible/sig:translate-y-0 group-focus-visible/sig:duration-500 group-focus-visible/sig:delay-300"
+                          }`}
+                        >
+                          hi from stockholm!
+                        </span>
+                      </span>
+                      <span
+                        className={`group/photo relative block h-10 w-10 border transition-colors duration-300 ease-out ${
+                          signed
+                            ? "border-foreground/20"
+                            : "border-transparent group-hover/sig:border-foreground/20 group-focus-visible/sig:border-foreground/20"
+                        }`}
+                      >
+                        <span className="sig-photo absolute inset-0 block bg-foreground">
+                          <Image
+                            src="/kaja.jpg"
+                            alt="kaja, smiling with a matcha latte in a café"
+                            width={471}
+                            height={480}
+                            sizes="40px"
+                            className="h-full w-full object-cover grayscale transition-[filter] duration-500 ease-out group-hover/photo:grayscale-0"
+                          />
+                          <span
+                            aria-hidden="true"
+                            className="absolute inset-0 bg-foreground mix-blend-lighten dark:mix-blend-darken transition-opacity duration-500 ease-out group-hover/photo:opacity-0 pointer-events-none"
+                          />
+                        </span>
+                      </span>
+                    </button>
+                    {/* action, 20px below (the note line reserves space, so the idle gap is larger) */}
+                    <div className="mt-5">
                       <PaintButton onClick={close}>done</PaintButton>
                     </div>
                   </div>
@@ -156,12 +234,12 @@ export function SpeakerProposal() {
                       className="animate-fade-in mb-5 flex items-start justify-between gap-4"
                       style={stage(0)}
                     >
-                      <div>
+                      <div className="min-w-0">
                         <h2 id="proposal-heading" className="text-sm font-bold">
-                          show us what you&apos;re making
+                          what are you working on?
                         </h2>
                         <p className="text-xs opacity-50 mt-1">
-                          ten minutes, live. unfinished is welcome.
+                          we&apos;d love to see it. ten minutes, live, no slides. half-finished is perfect.
                         </p>
                       </div>
                       <button
@@ -184,7 +262,7 @@ export function SpeakerProposal() {
                           autoComplete="name"
                           value={name}
                           onChange={(e) => setName(e.target.value)}
-                          placeholder="ana novak"
+                          placeholder="ana"
                           required
                           aria-invalid={fieldErrors.name ? true : undefined}
                           aria-describedby="proposal-name-error"
@@ -201,7 +279,13 @@ export function SpeakerProposal() {
                           name="email"
                           autoComplete="email"
                           value={email}
-                          onChange={(e) => setEmail(e.target.value)}
+                          onChange={(e) => {
+                            setEmail(e.target.value);
+                            if (emailSuggestion) {
+                              setEmailSuggestion(null);
+                              setFieldErrors((prev) => ({ ...prev, email: undefined }));
+                            }
+                          }}
                           placeholder="name@example.com"
                           required
                           aria-invalid={fieldErrors.email ? true : undefined}
@@ -209,7 +293,13 @@ export function SpeakerProposal() {
                           disabled={status === "loading"}
                           className={FIELD_CLASS}
                         />
-                        <FieldError id="proposal-email-error">{fieldErrors.email}</FieldError>
+                        <FieldError id="proposal-email-error">
+                          {emailSuggestion ? (
+                            <EmailSuggestion suggestion={emailSuggestion} onAccept={acceptEmailSuggestion} />
+                          ) : (
+                            fieldErrors.email
+                          )}
+                        </FieldError>
                       </div>
                       <div>
                         <FieldLabel htmlFor="proposal-text">what would you show us?</FieldLabel>

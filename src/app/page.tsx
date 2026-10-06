@@ -29,8 +29,10 @@ export default function Home() {
         }}
       />
 
-      <main className="sm:min-h-screen flex flex-col items-center justify-center px-5 pt-6 sm:pt-8 pb-12 sm:pb-20 relative z-10">
-        <div className="w-full max-w-xl">
+      <main className="flex flex-col items-center px-5 relative z-10">
+        {/* First fold: wolf, countdown, faq and the cta. Fills the viewport so the
+            last-event photos below only come into view on scroll. */}
+        <section className="w-full max-w-xl sm:min-h-screen flex flex-col justify-center pt-6 sm:pt-8 pb-12 sm:pb-20">
           <div className="flex justify-end mb-6 sm:mb-10">
             {/* Names the action and exposes the current state: "dark theme", pressed/not pressed. */}
             <button
@@ -53,9 +55,13 @@ export default function Home() {
           <Countdown />
           <Faq />
           <SpeakerProposal />
-          <LastEvent />
           {/* <StayUpToDate /> */}
           {/* <Rsvp /> */}
+        </section>
+
+        {/* Second fold: photos from the last event. */}
+        <div className="w-full max-w-xl pb-12 sm:pb-20">
+          <LastEvent />
         </div>
       </main>
 

@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL("https://design-show-and-tell.vercel.app"),
   title: "design show & tell",
-  description: "a gathering for designers to share work, give feedback, and connect. next event: late november 2026.",
+  description: "designers showing each other work in progress. live demos, no slides. ljubljana, late november 2026.",
   icons: {
     icon: '/favicon.svg',
     shortcut: '/favicon.svg',
