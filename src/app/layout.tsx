@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "./theme-provider";
 import { CaseProvider } from "./case-provider";
 import { Analytics } from "@vercel/analytics/next";
+import { PageLoader } from "./components/page-loader";
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
@@ -57,6 +58,7 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
+        <PageLoader />
         <ThemeProvider>
           <CaseProvider>{children}</CaseProvider>
         </ThemeProvider>

@@ -170,3 +170,18 @@ html[data-case="lower"] time,
 html[data-case="lower"] label {
   text-transform: lowercase;
 }
+
+/* ---------------------------------------------------------------------------
+   Page loader (src/app/components/page-loader.tsx)
+   Invisible for the first 400ms so fast loads never see it; then fades in.
+   Fade-out is driven inline by the component from its current opacity.
+   --------------------------------------------------------------------------- */
+.page-loader {
+  opacity: 0;
+  /* delay is set inline by the component (SHOW_AFTER_MS) */
+  animation: page-loader-in 200ms ease-out both;
+}
+@keyframes page-loader-in {
+  to { opacity: 1; }
+}
+
