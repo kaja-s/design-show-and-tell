@@ -7,6 +7,7 @@ import { StayUpToDate } from "./components/stay-up-to-date";
 // For the next event: uncomment the Rsvp import + usage below and comment out StayUpToDate.
 // import { Rsvp } from "./components/rsvp";
 import { ShaderCanvas } from "./components/shader-canvas";
+import { ConsoleWolf } from "./components/console-wolf";
 import FeatherIcon from "feather-icons-react";
 
 export default function Home() {
@@ -80,6 +81,9 @@ export default function Home() {
           </a>
         </p>
       </footer>
+
+      {/* easter egg: the halftone wolf in the devtools console */}
+      <ConsoleWolf />
     </>
   );
 }
