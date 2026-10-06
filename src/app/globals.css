@@ -260,125 +260,6 @@ html[data-case="lower"] label {
 }
 
 /* ---------------------------------------------------------------------------
-   Call for speakers card (src/app/components/call-for-speakers.tsx)
-   Choreography:
-     1. card: slide up + in from the right with a soft spring overshoot (560ms)
-     2. children: stagger in 60ms apart, starting after the card lands (--i index)
-     3. spinner next to the label: loading-dev <Arc/>, 800ms, stops under reduced motion
-     exit: card scales down and slides out to the right (320ms)
-   --------------------------------------------------------------------------- */
-@keyframes cfs-in {
-  0%   { opacity: 0; transform: translate3d(24px, 16px, 0) scale(0.96); }
-  60%  { opacity: 1; transform: translate3d(-3px, -2px, 0) scale(1.005); }
-  80%  {             transform: translate3d(1px, 1px, 0) scale(0.999); }
-  100% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
-}
-
-@keyframes cfs-out {
-  0%   { opacity: 1; transform: translate3d(0, 0, 0) scale(1); }
-  100% { opacity: 0; transform: translate3d(28px, 8px, 0) scale(0.96); }
-}
-
-@keyframes cfs-child {
-  from { opacity: 0; transform: translateY(6px); filter: blur(2px); }
-  to   { opacity: 1; transform: translateY(0);   filter: blur(0); }
-}
-
-@keyframes cfs-sweep {
-  from { transform: translateX(0); }
-  to   { transform: translateX(200%); }
-}
-
-.cfs-card {
-  will-change: transform, opacity;
-  animation: cfs-in 560ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  box-shadow:
-    0 0 0 1px transparent,
-    0 10px 30px -18px rgba(2, 16, 147, 0.35);
-}
-:root.dark .cfs-card {
-  box-shadow: 0 10px 30px -18px rgba(0, 0, 0, 0.8);
-}
-
-.cfs-card[data-phase="out"] {
-  animation: cfs-out 320ms cubic-bezier(0.4, 0, 1, 1) both;
-  pointer-events: none;
-}
-
-.cfs-card .cfs-child {
-  animation: cfs-child 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  /* card lands at ~340ms; children follow 60ms apart */
-  animation-delay: calc(340ms + var(--i, 0) * 60ms);
-}
-.cfs-card[data-phase="out"] .cfs-child {
-  animation: none;
-}
-
-.cfs-cta .cfs-arrow {
-  transition: transform 300ms cubic-bezier(0.22, 1, 0.36, 1);
-}
-.cfs-cta:hover .cfs-arrow {
-  transform: translateX(3px);
-}
-.cfs-cta:hover .cfs-sweep {
-  animation: cfs-sweep 600ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
-}
-.cfs-cta:active {
-  transform: scale(0.97);
-}
-
-/* Message field: collapsed (0fr) until "i'm in" is hovered or focused, then
-   unfolds above the button so the button stays put under the pointer
-   (the card is bottom-anchored, so growth goes upward). */
-.cfs-field {
-  display: grid;
-  grid-template-rows: 0fr;
-  opacity: 0;
-  transition:
-    grid-template-rows 320ms cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 240ms ease-out,
-    margin-bottom 320ms cubic-bezier(0.22, 1, 0.36, 1);
-  margin-bottom: 0;
-}
-.cfs-field > * {
-  min-height: 0;
-  overflow: hidden;
-}
-.cfs-field textarea {
-  filter: blur(2px);
-  transform: translateY(4px);
-  transition:
-    filter 320ms cubic-bezier(0.22, 1, 0.36, 1) 80ms,
-    transform 320ms cubic-bezier(0.22, 1, 0.36, 1) 80ms,
-    border-color 300ms ease-out;
-}
-.cfs-field[data-open="true"] {
-  grid-template-rows: 1fr;
-  opacity: 1;
-  margin-bottom: 0.75rem;
-}
-.cfs-field[data-open="true"] textarea {
-  filter: blur(0);
-  transform: translateY(0);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .cfs-card,
-  .cfs-card[data-phase="out"],
-  .cfs-card .cfs-child {
-    animation-duration: 180ms;
-    animation-name: cfs-fade;
-  }
-  .cfs-card[data-phase="out"] { animation-name: cfs-fade-out; }
-  .cfs-cta:hover .cfs-sweep { animation: none; }
-  .cfs-cta .cfs-arrow { transition: none; }
-  .cfs-field, .cfs-field textarea { transition: opacity 180ms linear; filter: none; transform: none; }
-}
-@keyframes cfs-fade     { from { opacity: 0; } to { opacity: 1; } }
-@keyframes cfs-fade-out { from { opacity: 1; } to { opacity: 0; } }
-
-
-/* ---------------------------------------------------------------------------
    Speaker proposal dialog (src/app/components/speaker-proposal.tsx)
    Native <dialog> in the top layer. The backdrop blurs + dims the page; the
    panel rises in. Both animate only on open; closing is immediate.
@@ -411,10 +292,10 @@ html[data-case="lower"] label {
 /* Blur the page, not the backdrop: the bundler drops unprefixed backdrop-filter
    on ::backdrop, and blurring real elements is also cheaper to animate. The
    dialog is portalled to <body>, so it is excluded by being a <dialog>. */
-body > :where(main, footer, [role="complementary"]) {
+body > :where(main, footer) {
   transition: filter 300ms ease-out;
 }
-body[data-proposal-open="true"] > :where(main, footer, [role="complementary"]) {
+body[data-proposal-open="true"] > :where(main, footer) {
   filter: blur(6px);
 }
 .proposal-dialog[open]::backdrop {
@@ -457,8 +338,7 @@ body[data-proposal-open="true"] > :where(main, footer, [role="complementary"]) {
   body::before,
   .noise,
   main,
-  footer,
-  .cfs-card {
+  footer {
     display: none !important;
   }
   .poster {

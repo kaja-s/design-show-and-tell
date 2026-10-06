@@ -10,7 +10,6 @@ import { SpeakerProposal } from "./components/speaker-proposal";
 // import { StayUpToDate } from "./components/stay-up-to-date";
 // import { Rsvp } from "./components/rsvp";
 import { ShaderCanvas } from "./components/shader-canvas";
-import { CallForSpeakers } from "./components/call-for-speakers";
 import { ConsoleWolf } from "./components/console-wolf";
 import { Poster } from "./components/poster";
 import FeatherIcon from "feather-icons-react";
@@ -88,7 +87,6 @@ export default function Home() {
         </p>
       </footer>
 
-      <CallForSpeakers />
 
       {/* easter eggs: devtools console wolf, and the print-only poster (cmd+p) */}
       <ConsoleWolf />

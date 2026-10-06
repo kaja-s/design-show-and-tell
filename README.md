@@ -44,7 +44,6 @@ When a date is confirmed, also update:
 1. `NEXT_EVENT` in `src/app/components/countdown.tsx`
 2. The "when + where?" answer in `src/app/components/faq.tsx`
 3. The lu.ma link in `src/app/components/rsvp.tsx`
-4. The copy in `src/app/components/call-for-speakers.tsx`, or unmount it once the lineup is full
 
 ## Speaker proposals
 

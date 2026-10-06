@@ -16,12 +16,10 @@ import { createPortal } from "react-dom";
 import { Arc } from "loading-dev";
 import FeatherIcon from "feather-icons-react";
 import { PaintButton } from "./paint-button";
+import { FIELD_CLASS, FieldLabel, FieldError, EMAIL_RE, focusFirstInvalid } from "./form-field";
 
 const ORGANIZER_EMAIL = "kaja.skerlj@gmail.com";
 const PROPOSAL_MAX = 2000;
-
-// Other components (the corner card) can open this form by dispatching this event.
-export const OPEN_PROPOSAL_EVENT = "open-speaker-proposal";
 
 function mailtoHref(name: string, email: string, proposal: string) {
   const subject = "design show & tell — speaker proposal";
@@ -48,12 +46,6 @@ export function SpeakerProposal() {
     () => true,
     () => false,
   );
-
-  useEffect(() => {
-    const onOpen = () => setOpen(true);
-    window.addEventListener(OPEN_PROPOSAL_EVENT, onOpen);
-    return () => window.removeEventListener(OPEN_PROPOSAL_EVENT, onOpen);
-  }, []);
 
   // Sync the native dialog with React state. showModal() puts it in the top
   // layer; we lock page scroll while it's up and hand focus to the first field.
