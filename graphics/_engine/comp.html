@@ -66,6 +66,7 @@
     padding: 7px 10px 9px 10px;
   }
   #label  { left: 60px; top: 60px; }
+  #sub    { left: 60px; top: 104px; }   /* optional second line under the label (date · venue) */
   #topright {
     position: absolute;
     right: 60px;
@@ -130,6 +131,32 @@
     font-weight: 500;
     padding: 10px 18px 12px 18px;
   }
+  /* with a talk title, the output line drops to a byline under the name:
+     name (56/600) → talk (34/500) → byline (22/400, muted); the gap above the
+     talk separates "who" from "what" */
+  #block.has-talk #out {
+    font-size: 22px;
+    font-weight: 400;
+    color: color-mix(in srgb, var(--fg) 70%, transparent);   /* --fg-muted (50%) is too faint on dark */
+    padding: 7px 18px 9px 18px;
+  }
+  #talk {
+    margin-top: 22px;
+    font-size: 34px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    line-height: 1.18;
+    padding: 12px 18px 14px 18px;
+  }
+
+  /* inline logo in the output line (`{logo}` in content.out), tinted with the text */
+  .logo {
+    display: inline-block;
+    vertical-align: -0.1em;
+    color: var(--fg);   /* full colour even in a muted byline: the mark carries the company */
+    transform-origin: 0 60%;
+  }
+  .logo svg { display: block; height: 0.86em; width: auto; }
 
   /* ---- mouse pointer ---- */
   #mouse {
@@ -152,6 +179,7 @@
 
   <div id="ui" class="layer">
     <div id="label" class="label knockout"></div>
+    <div id="sub" class="label knockout"></div>
 
     <div id="topright">
     <div id="corner" class="label knockout"></div>
@@ -178,6 +206,7 @@
     <div id="block">
       <div id="cmd" class="knockout"></div>
       <div id="out" class="knockout"></div>
+      <div id="talk" class="knockout"></div>
     </div>
   </div>
 
@@ -202,9 +231,11 @@
 const G = window.GRAPHIC || {};
 const CONTENT = Object.assign({
   label: "design show & tell",
+  sub: "",
   corner: "ljubljana",
   cmd: "",
   out: "",
+  talk: "",
 }, G.content);
 
 /* ============================================================
@@ -214,9 +245,11 @@ const CONTENT = Object.assign({
 const T = Object.assign({
   wolfIn:   [0.00, 1.20],
   label:    [0.30, 0.045],  // start, seconds per char
+  sub:      [1.10, 0.030],
   corner:   [0.55, 0.045],
   cmd:      [1.40, 0.05],
   out:      [2.40, 0.028],
+  talk:     [3.30, 0.024],  // optional talk title under the output line
   mouseIn:  [3.90, 1.05],   // pointer travels to the toggle
   hover1:    4.85,
   click1:    5.20,          // mousedown → dark
@@ -230,12 +263,18 @@ const T = Object.assign({
 const DURATION = G.duration || 12;
 const FPS = 24;
 
-// wolf framing — b is the default; render.js can pick another with ?variant=
+// framing — b is the default; render.js can pick another with ?variant=, and a
+// content.js can pass its own `framing` object (same keys) for a still image
 const VARIANTS = {
   a: { scale: 0.90, push: 0.025, offX: -0.09, offY: -0.02 },   // hero on the left, full figure
   b: { scale: 1.30, push: 0.020, offX: -0.21, offY: -0.30 },   // full bleed, head top-centre, body runs off frame
 };
-const VARIANT = VARIANTS[new URLSearchParams(location.search).get("variant") || G.variant] || VARIANTS.b;
+const VARIANT = VARIANTS[new URLSearchParams(location.search).get("variant")] || G.framing || VARIANTS[G.variant] || VARIANTS.b;
+
+// halftone source: the wolf video, or a still image from the graphic's folder
+// (`image` in content.js: grayscale on white, since white is discarded)
+const IMG = G.image ? new Image() : null;
+if (IMG) IMG.src = "../" + (new URLSearchParams(location.search).get("graphic") || "call-for-speakers") + "/" + G.image;
 
 const THEME = {
   light: { bgA: "#f4f4f4", bgB: "#eafcff", fg: "#021093" },
@@ -363,8 +402,8 @@ const U = {};
 })();
 
 function drawWolf(t, darkMix) {
-  if (video.readyState < 2) return;
-  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, video);
+  if (IMG ? !IMG.complete : video.readyState < 2) return;
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, IMG || video);
 
   const pIn = outExpo(seg(t, T.wolfIn[0], T.wolfIn[1]));
   const dot = 96 - (96 - 14) * pIn;            // coarse grid "focuses" into the final halftone
@@ -406,9 +445,28 @@ function makeTyper(el, prompt) {
   return { el, txt, cur };
 }
 const labelTyper = makeTyper($("label"), "> ");
+const subTyper = makeTyper($("sub"), "  ");   // indented to line up under the label's text
+if (!CONTENT.sub) $("sub").style.display = "none";
+// a long command (e.g. a speaker's full name) can pull the bottom block left of its 346px default
+if (G.blockLeft != null) $("block").style.left = G.blockLeft + "px";
 const cornerTyper = makeTyper($("corner"), "");
 const cmdTyper = makeTyper($("cmd"), "> ");
 const outTyper = makeTyper($("out"), "");
+const talkTyper = makeTyper($("talk"), "");
+if (CONTENT.talk) $("block").classList.add("has-talk");
+else $("talk").style.display = "none";
+
+// `{logo}` in content.out is swapped for G.logo (inline SVG using currentColor);
+// it types as a single character and pops in when the typing reaches it
+const LOGO_TOKEN = "{logo}", LOGO_CHAR = "\u0000";
+const logoEl = G.logo && CONTENT.out.includes(LOGO_TOKEN) ? document.createElement("span") : null;
+const outTail = document.createElement("span");
+if (logoEl) {
+  logoEl.className = "logo";
+  logoEl.innerHTML = G.logo;
+  outTyper.txt.after(logoEl, outTail);
+}
+const OUT_TEXT = logoEl ? CONTENT.out.replace(LOGO_TOKEN, LOGO_CHAR) : CONTENT.out;
 
 const toggleEl = $("toggle"), moonEl = $("moon"), sunEl = $("sun"), sunRays = $("sun-rays"), sunCore = $("sun-core");
 const rayEls = Array.from(sunRays.querySelectorAll("line"));
@@ -476,12 +534,23 @@ function layout(t) {
   root.setProperty("--fg-muted", mixHex(THEME.light.fg, THEME.dark.fg, darkMix).replace("rgb(", "rgba(").replace(")", ",0.5)"));
 
   // status line
-  typeInto(labelTyper, CONTENT.label, T.label[0], T.label[1], t, 3.0);
+  typeInto(labelTyper, CONTENT.label, T.label[0], T.label[1], t, CONTENT.sub ? T.sub[0] : 3.0);
+  if (CONTENT.sub) typeInto(subTyper, CONTENT.sub, T.sub[0], T.sub[1], t, 3.0);
   typeInto(cornerTyper, CONTENT.corner, T.corner[0], T.corner[1], t, 1.6);
 
   // the command and its output
   typeInto(cmdTyper, CONTENT.cmd, T.cmd[0], T.cmd[1], t, T.out[0] + 0.1);
-  typeInto(outTyper, CONTENT.out, T.out[0], T.out[1], t, null);
+  typeInto(outTyper, OUT_TEXT, T.out[0], T.out[1], t, CONTENT.talk ? T.talk[0] : null);
+  if (CONTENT.talk) typeInto(talkTyper, CONTENT.talk, T.talk[0], T.talk[1], t, null);
+  if (logoEl) {
+    const typed = outTyper.txt.textContent, at = typed.indexOf(LOGO_CHAR);
+    outTyper.txt.textContent = at < 0 ? typed : typed.slice(0, at);
+    outTail.textContent = at < 0 ? "" : typed.slice(at + 1);
+    const pop = outQuint(seg(t, T.out[0] + OUT_TEXT.indexOf(LOGO_CHAR) * T.out[1], 0.25));
+    logoEl.style.display = at < 0 ? "none" : "inline-block";
+    logoEl.style.opacity = pop;
+    logoEl.style.transform = `scale(${(0.9 + 0.1 * pop).toFixed(3)})`;
+  }
 
   // everything in the ui layer dissolves at the end
   $("ui").style.opacity = 1 - inOutCubic(seg(t, T.fade[0], T.fade[1]));
@@ -549,16 +618,21 @@ function layout(t) {
 const VIDEO_FPS = 24;
 let videoFrames = 121;
 const ready = new Promise((resolve) => {
+  let imgReady = false;
   const check = () => {
-    if (video.readyState >= 4 && document.fonts.status === "loaded") resolve();
+    if ((IMG ? imgReady : video.readyState >= 4) && document.fonts.status === "loaded") resolve();
   };
+  if (IMG) IMG.decode().then(() => { imgReady = true; check(); });
   video.addEventListener("canplaythrough", check);
   video.addEventListener("loadedmetadata", () => { videoFrames = Math.round(video.duration * VIDEO_FPS); });
   document.fonts.ready.then(() => { aimAtToggle(); check(); });
   // make sure every subset is actually fetched before the first frame
   document.fonts.load('600 56px "Geist Mono"', CONTENT.cmd);
   document.fonts.load('500 28px "Geist Mono"', CONTENT.out + "ž·");
-  video.load();
+  document.fonts.load('500 22px "Geist Mono"', CONTENT.label + CONTENT.sub);
+  document.fonts.load('400 22px "Geist Mono"', CONTENT.out);
+  document.fonts.load('500 34px "Geist Mono"', CONTENT.talk);
+  if (!IMG) video.load();
 });
 
 function seekTo(time) {
@@ -574,7 +648,7 @@ window.renderFrame = async function (frameIndex, fps) {
   await ready;
   const t = frameIndex / fps;
   const vFrame = Math.round(t * VIDEO_FPS) % videoFrames;
-  await seekTo((vFrame + 0.5) / VIDEO_FPS);
+  if (!IMG) await seekTo((vFrame + 0.5) / VIDEO_FPS);
   const darkMix = layout(t);
   drawWolf(t, darkMix);
   await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));

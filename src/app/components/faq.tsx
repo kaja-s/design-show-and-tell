@@ -110,7 +110,7 @@ export function Faq() {
               loop: false,
               startIndex: 0,
             }}
-            className="w-full carousel-anim-1"
+            className="w-full"
           >
             <CarouselContent className="h-[150px] py-[75px]">
               {faqs.map((faq, index) => (
@@ -120,7 +120,7 @@ export function Faq() {
                   onClick={() => api?.scrollTo(index)}
                 >
                   <button
-                    className={`text-left text-sm block w-full transition-all duration-700 cursor-pointer px-4 ${
+                    className={`text-left text-sm block w-full transition-[opacity,filter] duration-300 ease-out cursor-pointer px-4 ${
                       current === index
                         ? "opacity-100 blur-0 font-bold"
                         : Math.abs(current - index) === 1
@@ -144,7 +144,7 @@ export function Faq() {
           <button
             onClick={scrollPrev}
             disabled={current === 0}
-            className="p-3 disabled:opacity-20 transition-colors duration-150 hover:bg-foreground/10 active:text-foreground/40"
+            className="p-3 disabled:opacity-20 transition-[background-color,color,scale] duration-150 ease-out hover:bg-foreground/10 active:text-foreground/40 active:scale-[0.96] disabled:active:scale-100"
             aria-label="Previous question"
           >
             <FeatherIcon icon="chevron-up" size={16} strokeWidth={2} />
@@ -152,7 +152,7 @@ export function Faq() {
           <button
             onClick={scrollNext}
             disabled={current === faqs.length - 1}
-            className="p-3 disabled:opacity-20 transition-colors duration-150 hover:bg-foreground/10 active:text-foreground/40"
+            className="p-3 disabled:opacity-20 transition-[background-color,color,scale] duration-150 ease-out hover:bg-foreground/10 active:text-foreground/40 active:scale-[0.96] disabled:active:scale-100"
             aria-label="Next question"
           >
             <FeatherIcon icon="chevron-down" size={16} strokeWidth={2} />

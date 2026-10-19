@@ -42,9 +42,27 @@ export default function Home() {
               aria-pressed={theme === "dark"}
               aria-label="Dark theme"
               title={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
-              className="opacity-40 hover:opacity-100 transition-opacity p-[11px] -m-[11px]"
+              className="opacity-40 hover:opacity-100 active:scale-[0.96] transition-[opacity,scale] duration-150 ease-out p-[11px] -m-[11px]"
             >
-              <FeatherIcon icon={theme === "light" ? "moon" : "sun"} size={18} strokeWidth={1.5} aria-hidden="true" />
+              {/* Both icons stay mounted and turn through each other: the outgoing one
+                  rotates on and away while the incoming one rotates in from behind, so a
+                  switch reads as one clockwise quarter turn. Transitions, so a second
+                  click mid-turn reverses from where it is. Reduced motion: fade only. */}
+              <span className="relative block size-[18px]" aria-hidden="true">
+                {(["moon", "sun"] as const).map((icon) => (
+                  <FeatherIcon
+                    key={icon}
+                    icon={icon}
+                    size={18}
+                    strokeWidth={1.5}
+                    className={`theme-icon absolute inset-0 transition-[opacity,scale,rotate,filter] duration-300 ease-[cubic-bezier(0.2,0,0,1)] motion-reduce:scale-100 motion-reduce:rotate-0 ${
+                      (icon === "moon") === (theme === "light")
+                        ? "opacity-100 scale-100 rotate-0 blur-0"
+                        : `opacity-0 scale-[0.25] blur-[4px] ${icon === "moon" ? "rotate-90" : "-rotate-90"}`
+                    }`}
+                  />
+                ))}
+              </span>
             </button>
           </div>
 

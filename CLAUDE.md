@@ -44,7 +44,7 @@ The site alternates between two states, and most changes to this repo are flippi
 
 **The "paint" button is shared.** `PaintButton` (`paint-button.tsx`) is the primary button everywhere: `rsvp.tsx` passes `href` to render it as an `<a>`, the forms use it as a `<button>`. Its hover squares use the `--paint` token (`#93c5fd` light, white dark, so they show over `--highlight` in both themes). Secondary actions are text links like `KeepMeUpdated`'s (underline that gives way to a highlight fill on hover; "call for speakers" drops the `→`), e.g. "call for speakers" in `speaker-proposal.tsx`.
 
-**FAQ is a vertical Embla carousel** (`src/components/ui/carousel.tsx`, shadcn wrapper) with two trailing empty `CarouselItem` spacers so the last question can center. Blur/opacity of items is computed from distance to the selected index. The transition timing comes from the `carousel-anim-N` classes in `globals.css`.
+**FAQ is a vertical Embla carousel** (`src/components/ui/carousel.tsx`, shadcn wrapper) with two trailing empty `CarouselItem` spacers so the last question can center. Blur/opacity of items is computed from distance to the selected index. Their opacity/blur transition is on the question buttons in `faq.tsx`.
 
 **Subscribe flow:** `StayUpToDate` (unmounted) and the inline `KeepMeUpdated` link in the "when + where?" FAQ answer post `{name?, email}` to `/api/subscribe`. The route makes one Loops `events/send` call: it creates or updates the contact, adds it to the hardcoded mailing list ID, and fires the `signup` event. A Loop in the Loops dashboard triggered by `signup` sends the welcome email; set it to run once per contact.
 

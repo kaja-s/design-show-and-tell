@@ -11,7 +11,7 @@ const PAINT_COLS = 14;
 const PAINT_ROWS = 4;
 
 const CLASS =
-  "group relative inline-block overflow-hidden px-4 py-2 bg-highlight text-highlight-text text-sm font-medium whitespace-nowrap transition-[transform,opacity] duration-100 ease-out active:scale-[0.96] disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100";
+  "group relative inline-block overflow-hidden px-4 py-2 bg-highlight text-highlight-text text-sm font-medium whitespace-nowrap transition-[scale,opacity] duration-150 ease-out active:scale-[0.96] disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100";
 
 export function PaintButton({
   children,
