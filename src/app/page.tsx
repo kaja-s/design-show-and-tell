@@ -6,9 +6,10 @@ import { Faq } from "./components/faq";
 import { LastEvent } from "./components/last-event";
 import { SpeakerProposal } from "./components/speaker-proposal";
 // CTA by phase: <SpeakerProposal /> while looking for speakers, <StayUpToDate /> between
-// events once the lineup is full, <Rsvp /> once the lu.ma page is live.
+// events once the lineup is full, <Rsvp /> once the lu.ma page is live (alongside
+// <SpeakerProposal /> while the lineup is still open).
 // import { StayUpToDate } from "./components/stay-up-to-date";
-// import { Rsvp } from "./components/rsvp";
+import { Rsvp } from "./components/rsvp";
 import { ShaderCanvas } from "./components/shader-canvas";
 import { ConsoleWolf } from "./components/console-wolf";
 import { Poster } from "./components/poster";
@@ -54,9 +55,11 @@ export default function Home() {
 
           <Countdown />
           <Faq />
-          <SpeakerProposal />
+          <div className="flex flex-wrap justify-center items-center gap-x-6 gap-y-3">
+            <Rsvp />
+            <SpeakerProposal />
+          </div>
           {/* <StayUpToDate /> */}
-          {/* <Rsvp /> */}
         </section>
 
         {/* Second fold: photos from the last event. */}

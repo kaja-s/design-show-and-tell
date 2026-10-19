@@ -9,7 +9,7 @@
 import { WOLF_COLS, WOLF_DOTS, WOLF_ROWS } from "./wolf-dots";
 
 const SITE_URL = "design-show-and-tell.vercel.app";
-const DATE_LINE = "[late november 2026 | exact date soon]";
+const DATE_LINE = "[november 19th 2026 | 6pm | visionect]";
 const PLACE = "ljubljana";
 
 // Dot radius at full ink, in cell units. Slightly over half a cell so the
@@ -51,7 +51,7 @@ export function Poster() {
         <div>
           <p className="poster-cta">looking for speakers</p>
           <p className="poster-sub">ten minutes, live, no slides. half-finished is perfect.</p>
-          <p className="poster-sub">exact date and venue announced to the list first.</p>
+          <p className="poster-sub">visionect, tržaška cesta 118, ljubljana.</p>
         </div>
         <div className="poster-qr">
           {/* eslint-disable-next-line @next/next/no-img-element */}

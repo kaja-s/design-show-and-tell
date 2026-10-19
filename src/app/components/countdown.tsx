@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 // Set to the next event's date (local time, no timezone suffix) when it's
 // confirmed, e.g. `new Date("2026-11-26T18:00:00")`. While null, the slot
 // shows dashes and the small save-the-date line appears beneath it.
-const NEXT_EVENT: Date | null = null;
+const NEXT_EVENT: Date | null = new Date("2026-11-19T18:00:00");
 
 const SAVE_THE_DATE = "[late november 2026 | exact date soon]";
 const PLACEHOLDER = "--D : --H : --M : --S";

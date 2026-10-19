@@ -10,6 +10,8 @@
   --accent: #3b5bdb;
   --highlight: #021093;
   --highlight-text: #ffffff;
+  /* PaintButton hover squares, laid over --highlight at 55% */
+  --paint: #93c5fd;
   --danger: #b4231f;
 }
 
@@ -20,6 +22,7 @@
   --accent: #60a5fa;
   --highlight: #93c5fd;
   --highlight-text: #040c2a;
+  --paint: #ffffff;
   --danger: #fca5a5;
 }
 
@@ -30,6 +33,7 @@
   --color-accent: var(--accent);
   --color-highlight: var(--highlight);
   --color-highlight-text: var(--highlight-text);
+  --color-paint: var(--paint);
   --color-danger: var(--danger);
   --font-mono: var(--font-geist-mono);
 }
@@ -57,6 +61,12 @@ body::before {
 
 :root.dark body::before {
   background: linear-gradient(180deg, #040c2a 0%, #060e35 100%);
+}
+
+/* Tailwind v4 resets buttons to cursor: default; every enabled button here is
+   a real action (links-as-buttons, paint button, toggles), so show the hand. */
+button:not(:disabled) {
+  cursor: pointer;
 }
 
 ::selection {
@@ -485,6 +495,7 @@ body[data-proposal-open="true"] > :where(main, footer) {
 @keyframes page-loader-in {
   to { opacity: 1; }
 }
+
 
 
 

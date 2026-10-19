@@ -150,7 +150,11 @@ export function SpeakerProposal() {
 
   return (
     <section className="flex justify-center">
-      <PaintButton onClick={() => setOpen(true)}>call for speakers</PaintButton>
+      <button type="button" onClick={() => setOpen(true)} className="group text-sm">
+        <span className="-mx-1 px-1 underline underline-offset-4 decoration-foreground/40 group-hover:no-underline group-hover:bg-highlight group-hover:text-highlight-text group-focus-visible:no-underline transition-[background-color,color] duration-150">
+          call for speakers
+        </span>
+      </button>
 
       {mounted &&
         createPortal(

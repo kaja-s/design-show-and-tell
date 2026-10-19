@@ -25,7 +25,7 @@ const faqs: { q: string; a: React.ReactNode }[] = [
     q: "when + where?",
     a: (
       <>
-        <strong className="font-bold">late november 2026, ljubljana.</strong> exact date and venue announced in the next couple of weeks.{" "}
+        <strong className="font-bold">november 19th, 2026 at 6pm</strong> at visionect (tržaška cesta 118, ljubljana).{" "}
         <KeepMeUpdated />
       </>
     ),
@@ -69,16 +69,12 @@ const faqs: { q: string; a: React.ReactNode }[] = [
         organized by{" "}
         <a href="https://www.kajaskerlj.com/" target="_blank" rel="noopener noreferrer" className={`${linkClass} font-bold`}>
           kaja
-        </a>
-        ,{" "}
-        <a href="https://www.linkedin.com/in/anuska-dzogic/" target="_blank" rel="noopener noreferrer" className={`${linkClass} font-bold`}>
-          anuška
         </a>{" "}
         and{" "}
-        <a href="https://www.vitastefane.com/" target="_blank" rel="noopener noreferrer" className={`${linkClass} font-bold`}>
-          vita
+        <a href="https://www.linkedin.com/in/anuska-dzogic/" target="_blank" rel="noopener noreferrer" className={`${linkClass} font-bold`}>
+          anuška
         </a>
-        , three product designers who love bringing creative people together to share work and build community.
+        , two product designers who love bringing creative people together to share work and build community.
       </>
     ),
   },

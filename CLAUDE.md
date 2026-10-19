@@ -32,7 +32,7 @@ The site alternates between two states, and most changes to this repo are flippi
 1. `src/app/components/countdown.tsx` – `NEXT_EVENT` date (local time, no timezone suffix). Between events set it to `null`: the slot then shows the `SAVE_THE_DATE` line ("late november 2026 · exact date soon") instead of a zeroed countdown. Either way the loading dashes resolve into the content over 400ms (`cd-*` block in `globals.css`). The slot glitches every 5s (`GLITCH = "slip"` in countdown.tsx; the `cdg-*` block in `globals.css` also holds the unused slice/flicker/jitter variants).
 2. `src/app/components/faq.tsx` – the "when + where?" entry in `faqs` (answers are `ReactNode`, so links go inline in the array).
 3. `src/app/components/rsvp.tsx` – the lu.ma `href`.
-4. `src/app/page.tsx` – pick the CTA for the phase: `<SpeakerProposal />` while looking for speakers, `<StayUpToDate />` between events once the lineup is full, `<Rsvp />` once the lu.ma page is live. The other two imports are commented out there.
+4. `src/app/page.tsx` – pick the CTA for the phase: `<SpeakerProposal />` while looking for speakers, `<StayUpToDate />` between events once the lineup is full, `<Rsvp />` once the lu.ma page is live. While the lineup is still open after the lu.ma page goes live, `<Rsvp />` and `<SpeakerProposal />` sit side by side in a `flex-wrap` row. Unused imports are commented out there.
 
 ## Architecture notes
 
@@ -42,7 +42,7 @@ The site alternates between two states, and most changes to this repo are flippi
 
 **The theme colors are duplicated in the shader.** `shader-canvas.tsx` renders `public/wolf.mp4` through a WebGL halftone fragment shader and hardcodes the foreground hex for each theme (`#021093` light, `#93c5fd` dark). `scripts/capture-shader.js` is a CPU re-implementation of the same shader used to export a standalone video; its constants (dot size, angle, colors) must be kept in sync with the GLSL by hand. If you change `--foreground` in `globals.css`, update both.
 
-**The "paint" button is copy-pasted, not shared.** `rsvp.tsx` (an `<a>`) and the `PaintButton` inside `stay-up-to-date.tsx` (a `<button>`) contain the same hover-paint grid logic. The hover color `#93c5fd` is hardcoded in both.
+**The "paint" button is shared.** `PaintButton` (`paint-button.tsx`) is the primary button everywhere: `rsvp.tsx` passes `href` to render it as an `<a>`, the forms use it as a `<button>`. Its hover squares use the `--paint` token (`#93c5fd` light, white dark, so they show over `--highlight` in both themes). Secondary actions are text links like `KeepMeUpdated`'s (underline that gives way to a highlight fill on hover; "call for speakers" drops the `→`), e.g. "call for speakers" in `speaker-proposal.tsx`.
 
 **FAQ is a vertical Embla carousel** (`src/components/ui/carousel.tsx`, shadcn wrapper) with two trailing empty `CarouselItem` spacers so the last question can center. Blur/opacity of items is computed from distance to the selected index. The transition timing comes from the `carousel-anim-N` classes in `globals.css`.
 
