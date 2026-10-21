@@ -51,6 +51,20 @@ const FRAGMENT_SHADER = `
   }
 `;
 
+// The page loader waits for the wolf's first drawn frame. The flag covers the
+// case where the wolf is ready before the loader starts listening.
+export const WOLF_READY_EVENT = "wolf:ready";
+declare global {
+  interface Window {
+    __wolfReady?: boolean;
+  }
+}
+function signalWolfReady() {
+  if (window.__wolfReady) return;
+  window.__wolfReady = true;
+  window.dispatchEvent(new Event(WOLF_READY_EVENT));
+}
+
 function hexToRgb(hex: string): [number, number, number] {
   const r = parseInt(hex.slice(1, 3), 16) / 255;
   const g = parseInt(hex.slice(3, 5), 16) / 255;
@@ -70,7 +84,11 @@ export function ShaderCanvas() {
     if (!canvas || !video) return;
 
     const gl = canvas.getContext("webgl");
-    if (!gl) return;
+    if (!gl) {
+      // no WebGL: there will never be a wolf, so don't hold the loader
+      signalWolfReady();
+      return;
+    }
 
     const compile = (type: number, src: string) => {
       const shader = gl.createShader(type)!;
@@ -133,6 +151,7 @@ export function ShaderCanvas() {
         gl.uniform2f(resLoc, canvas.width, canvas.height);
         gl.uniform3f(colorLoc, ...fg);
         gl.drawArrays(gl.TRIANGLES, 0, 6);
+        signalWolfReady();
       }
       animRef.current = requestAnimationFrame(render);
     };
@@ -149,7 +168,8 @@ export function ShaderCanvas() {
     <div className="relative w-32 h-32 sm:w-48 sm:h-48 ml-[10px]">
       <video
         ref={videoRef}
-        src="/wolf.mp4"
+        src="/wolf-web.mp4"
+        preload="auto"
         loop
         muted
         playsInline

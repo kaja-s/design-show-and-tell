@@ -466,16 +466,24 @@ body[data-proposal-open="true"] > :where(main, footer) {
 
 /* ---------------------------------------------------------------------------
    Page loader (src/app/components/page-loader.tsx)
-   Invisible for the first 400ms so fast loads never see it; then fades in.
-   Fade-out is driven inline by the component from its current opacity.
+   The overlay is opaque from the first paint so the server-rendered page never
+   shows and then gets covered; only the blocks wait 400ms before fading in.
+   Fade-out is driven inline by the component from its current opacity. The
+   page-loader-out animation (8s) is a no-JS cap; the component cancels it on mount.
    --------------------------------------------------------------------------- */
 .page-loader {
+  animation: page-loader-out 300ms ease-out 8s forwards;
+}
+.page-loader-mark {
   opacity: 0;
   /* delay is set inline by the component (SHOW_AFTER_MS) */
   animation: page-loader-in 200ms ease-out both;
 }
 @keyframes page-loader-in {
   to { opacity: 1; }
+}
+@keyframes page-loader-out {
+  to { opacity: 0; visibility: hidden; }
 }
 
 

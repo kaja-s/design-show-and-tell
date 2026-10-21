@@ -22,7 +22,7 @@ LOOPS_PROPOSAL_TRANSACTIONAL_ID=   # optional, see "Speaker proposals" below
 
 ## What's on the page
 
-- **Wolf.** `public/wolf.mp4` rendered through a WebGL halftone shader (`src/app/components/shader-canvas.tsx`). Colours follow the theme.
+- **Wolf.** `public/wolf-web.mp4` (a small web encode of the master `public/wolf.mp4`) rendered through a WebGL halftone shader (`src/app/components/shader-canvas.tsx`). Colours follow the theme.
 - **Countdown.** Live digits once a date is set; dashes plus a "late november 2026 · exact date soon" line while it isn't.
 - **FAQ.** A vertical carousel of questions with the answer below.
 - **Call for speakers.** The main button opens a modal form (name, email, idea) that emails the organizer.
