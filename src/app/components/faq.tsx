@@ -17,7 +17,7 @@ const faqs: { q: string; a: React.ReactNode }[] = [
     q: "what is it?",
     a: (
       <>
-        <strong className="font-bold">live demos. new experiments. no slides.</strong> an informal space for designers to share what they&apos;re working on, explore different approaches, and <strong className="font-bold">swap tricks and a-ha moments</strong>.
+        <strong className="font-bold">live demos. new experiments. no slides.</strong> an informal space for designers to share what they&apos;re working on, explore different approaches, and <strong className="font-bold">swap tricks</strong>.
       </>
     ),
   },
@@ -41,7 +41,8 @@ const faqs: { q: string; a: React.ReactNode }[] = [
     q: "what can i show?",
     a: (
       <>
-        <strong className="font-bold">anything.</strong> a side project, a work-in-progress, a fully developed feature, a tool you&apos;ve been exploring, or a design challenge you&apos;re stuck on.
+        <strong className="font-bold">anything.</strong>{" "}
+        a side project, a work-in-progress, a fully developed feature, a tool you&apos;ve been exploring, or a design challenge you&apos;re stuck on.
       </>
     ),
   },

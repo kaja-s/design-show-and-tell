@@ -65,9 +65,15 @@ export function NextEvent() {
                       href={slot.href}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="underline hover:opacity-70 transition-opacity"
+                      className="group/name -mx-1 px-1 transition-[background-color,color] duration-150 hover:bg-highlight hover:text-highlight-text focus-visible:bg-highlight focus-visible:text-highlight-text"
                     >
                       {slot.name}
+                      <span
+                        aria-hidden="true"
+                        className="ml-1.5 inline-block -translate-x-1 select-none opacity-0 transition-[opacity,translate] duration-150 ease-out motion-reduce:transition-none group-hover/name:translate-x-0 group-hover/name:opacity-100 group-focus-visible/name:translate-x-0 group-focus-visible/name:opacity-100"
+                      >
+                        ↗
+                      </span>
                     </a>
                   ) : (
                     slot.name
