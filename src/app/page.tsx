@@ -2,14 +2,15 @@
 
 import { useTheme } from "./theme-provider";
 import { Countdown } from "./components/countdown";
+import { NextEvent } from "./components/next-event";
 import { Faq } from "./components/faq";
-import { LastEvent } from "./components/last-event";
+import { PastEvents } from "./components/past-events";
+import { SiteFooter } from "./components/site-footer";
+// The CTAs live in <NextEvent />: join in the date row, call for speakers in
+// each open slot (they all open the one <SpeakerProposal /> dialog). Between
+// events, swap <NextEvent /> for <StayUpToDate />.
 import { SpeakerProposal } from "./components/speaker-proposal";
-// CTA by phase: <SpeakerProposal /> while looking for speakers, <StayUpToDate /> between
-// events once the lineup is full, <Rsvp /> once the lu.ma page is live (alongside
-// <SpeakerProposal /> while the lineup is still open).
 // import { StayUpToDate } from "./components/stay-up-to-date";
-import { Rsvp } from "./components/rsvp";
 import { ShaderCanvas } from "./components/shader-canvas";
 import { ConsoleWolf } from "./components/console-wolf";
 import { Poster } from "./components/poster";
@@ -31,9 +32,8 @@ export default function Home() {
       />
 
       <main className="flex flex-col items-center px-5 relative z-10">
-        {/* First fold: wolf, countdown, faq and the cta. Fills the viewport so the
-            last-event photos below only come into view on scroll. */}
-        <section className="w-full max-w-xl sm:min-h-screen flex flex-col justify-center pt-6 sm:pt-8 pb-12 sm:pb-20">
+        {/* Top: wolf, countdown and the next event (date + join, speaker slots). */}
+        <div className="w-full max-w-xl pt-6 sm:pt-8">
           <div className="flex justify-end mb-6 sm:mb-10">
             {/* Names the action and exposes the current state: "dark theme", pressed/not pressed. */}
             <button
@@ -72,52 +72,19 @@ export default function Home() {
           </div>
 
           <Countdown />
-          <Faq />
-          <div className="flex flex-wrap justify-center items-center gap-x-6 gap-y-3">
-            <Rsvp />
-            <SpeakerProposal />
-          </div>
+          <NextEvent />
           {/* <StayUpToDate /> */}
-        </section>
+        </div>
 
-        {/* Second fold: photos from the last event. */}
-        <div className="w-full max-w-xl pb-12 sm:pb-20">
-          <LastEvent />
+        {/* Below: the faq, then past events (collapsed). */}
+        <div className="w-full max-w-xl pb-12 sm:pb-16">
+          <Faq />
+          <PastEvents />
         </div>
       </main>
 
-      <footer className="pb-6 px-5 text-center space-y-3">
-        <p className="text-xs opacity-40">
-          colophon:{" "}
-          <a
-            href="https://www.iniabiodun.com/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline hover:opacity-100 transition-opacity"
-          >
-            ÌníOlúwa Abíódún
-          </a>
-          ,{" "}
-          <a
-            href="https://x.com/DanHollick/status/1978503090308304899"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline hover:opacity-100 transition-opacity"
-          >
-            Dan Hollick
-          </a>
-          , and{" "}
-          <a
-            href="https://github.com/mitul-s/mitul.ca"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline hover:opacity-100 transition-opacity"
-          >
-            Mitul Shah
-          </a>
-        </p>
-      </footer>
-
+      <SiteFooter />
+      <SpeakerProposal />
 
       {/* easter eggs: devtools console wolf, and the print-only poster (cmd+p) */}
       <ConsoleWolf />

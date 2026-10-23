@@ -1,6 +1,9 @@
 "use client";
 
-// Primary CTA between events while we're looking for speakers.
+// The speaker proposal dialog, plus the "call for speakers" trigger that opens
+// it. Mount <SpeakerProposal /> once per page and put a <CallForSpeakers /> in
+// every open speaker slot; the trigger and the dialog talk through a window
+// event, so any number of triggers share the one dialog.
 // "call for speakers" → a modal <dialog> with a short form (name, email, idea)
 // → POST /api/propose, which emails the organizer via Loops. If sending isn't
 // configured (503) or fails, the form offers a pre-filled mailto: so the idea
@@ -26,6 +29,19 @@ function mailtoHref(name: string, email: string, proposal: string) {
   const subject = "design show & tell — speaker proposal";
   const body = [`name: ${name}`, `email: ${email}`, "", proposal].join("\n");
   return `mailto:${ORGANIZER_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
+
+const OPEN_EVENT = "open-speaker-proposal";
+
+export function CallForSpeakers() {
+  return (
+    <button type="button" onClick={() => window.dispatchEvent(new Event(OPEN_EVENT))} className="group text-sm">
+      <span className="-mx-1 px-1 underline underline-offset-4 decoration-foreground/40 group-hover:no-underline group-hover:bg-highlight group-hover:text-highlight-text group-focus-visible:no-underline transition-[background-color,color] duration-150">
+        my turn
+      </span>
+      <span className="sr-only"> to speak</span>
+    </button>
+  );
 }
 
 export function SpeakerProposal() {
@@ -74,6 +90,12 @@ export function SpeakerProposal() {
     }
     if (dialog.open) dialog.close();
   }, [open, mounted]);
+
+  useEffect(() => {
+    const openDialog = () => setOpen(true);
+    window.addEventListener(OPEN_EVENT, openDialog);
+    return () => window.removeEventListener(OPEN_EVENT, openDialog);
+  }, []);
 
   const close = () => {
     setOpen(false);
@@ -149,13 +171,7 @@ export function SpeakerProposal() {
   });
 
   return (
-    <section className="flex justify-center">
-      <button type="button" onClick={() => setOpen(true)} className="group text-sm">
-        <span className="-mx-1 px-1 underline underline-offset-4 decoration-foreground/40 group-hover:no-underline group-hover:bg-highlight group-hover:text-highlight-text group-focus-visible:no-underline transition-[background-color,color] duration-150">
-          call for speakers
-        </span>
-      </button>
-
+    <>
       {mounted &&
         createPortal(
           <dialog
@@ -387,6 +403,6 @@ export function SpeakerProposal() {
           </dialog>,
           document.body,
         )}
-    </section>
+    </>
   );
 }
