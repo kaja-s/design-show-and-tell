@@ -17,16 +17,7 @@ const faqs: { q: string; a: React.ReactNode }[] = [
     q: "what is it?",
     a: (
       <>
-        <strong className="font-bold">live demos. new experiments. no slides.</strong> an informal space for designers to share what they&apos;re working on, explore different approaches, and <strong className="font-bold">steal ideas</strong> from each other.
-      </>
-    ),
-  },
-  {
-    q: "when + where?",
-    a: (
-      <>
-        <strong className="font-bold">november 19th, 2026 at 6pm</strong> at visionect (tržaška cesta 118, ljubljana).{" "}
-        <KeepMeUpdated />
+        <strong className="font-bold">live demos. new experiments. no slides.</strong> an informal space for designers to share what they&apos;re working on, explore different approaches, and <strong className="font-bold">swap tricks and a-ha moments</strong>.
       </>
     ),
   },
@@ -75,6 +66,15 @@ const faqs: { q: string; a: React.ReactNode }[] = [
           anuška
         </a>
         , two product designers who love bringing creative people together to share work and build community.
+      </>
+    ),
+  },
+  {
+    q: "might come next time?",
+    a: (
+      <>
+        <strong className="font-bold">we&apos;ll tell you when it&apos;s on.</strong> leave your email and you&apos;ll hear about the next one first.{" "}
+        <KeepMeUpdated />
       </>
     ),
   },
@@ -161,17 +161,10 @@ export function Faq() {
       </div>
 
       {/* Answer section */}
-      <div className="border border-foreground/20 p-4 sm:p-6 min-h-[180px]">
-        <div className="flex gap-3 mb-4 pb-3 border-b border-foreground/20 items-center">
-          <span className="text-[10px] tracking-wider opacity-50">Q:</span>
-          <p className="text-[14px] tracking-wide flex-1 opacity-60">{faqs[current].q}</p>
-        </div>
-        <div className="flex gap-3 items-start">
-          <span className="text-[10px] tracking-wider opacity-50 mt-[3px]">A:</span>
-          <div className="text-[14px] leading-relaxed flex-1">
-            {faqs[current].a}
-          </div>
-        </div>
+      <div className="border border-foreground/20 p-4 sm:p-6 min-h-[132px]">
+        {/* the selected question is already bold in the list above; keep it for screen readers */}
+        <p className="sr-only">{faqs[current].q}</p>
+        <div className="text-[14px] leading-relaxed">{faqs[current].a}</div>
       </div>
     </section>
   );

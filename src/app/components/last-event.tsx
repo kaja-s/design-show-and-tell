@@ -1,8 +1,8 @@
 "use client";
 
-// Snapshots from the last meetup, placed after the CTA so the CTA stays close
-// to the FAQ. Photos live in public/last-event/ and were taken from the
-// organizer's portfolio case study.
+// Snapshots from the last meetup, shown inside the collapsed past-events
+// section (past-events.tsx). Photos live in public/last-event/ and were taken
+// from the organizer's portfolio case study.
 //
 // Layout: the page is a 576px column, so this is the one place content is
 // allowed to bleed past it. On ≥ md the three photos are a collage inside a
@@ -237,7 +237,7 @@ export function LastEvent() {
   };
 
   return (
-    <section aria-labelledby="last-event-heading" className="mt-12 sm:mt-16">
+    <section className="mt-6 sm:mt-8">
 
       {/* ≥ md: collage on a 16:10 stage bleeding 96px past the column on each side.
           Each photo sits in a positioned handle that carries the drag offset and
