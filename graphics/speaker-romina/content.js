@@ -18,7 +18,7 @@ window.GRAPHIC = {
     sub: "Nov 19th, 2026 @ Visionect",
     corner: "",
     cmd: "romina kavcic",
-    out: "owner and design leader at DSG",
+    out: "owner of DSG and design leader",
   },
   still: true,                          // only the theme switch and the status line animate
   typeStatus: true,
