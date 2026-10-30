@@ -25,6 +25,9 @@
     --bg-b: #eafcff;
     --fg: #021093;
     --fg-muted: rgba(2, 16, 147, 0.5);
+    --hl: #021093;
+    --hl-text: #f1f7f8;
+    --hl-dim: rgba(241, 247, 248, 0.6);
   }
 
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -149,6 +152,38 @@
     padding: 12px 18px 14px 18px;
   }
 
+  /* `blockStyle: "highlight"` in content.js: solid --hl fills (the site's --highlight /
+     --highlight-text) instead of knockouts, right-aligned to the block's anchor */
+  body.hl #block { align-items: flex-end; gap: 15px; }
+  body.hl .knockout { background: var(--hl); color: var(--hl-text); }
+  body.hl .dim { color: var(--hl-dim); }
+  body.hl #toggle { background: none; }            /* the icon stays a bare glyph */
+  body.hl .logo { color: var(--hl-text); }
+  /* the status line stays secondary: no fill, on the page gradient; the date under it is muted */
+  body.hl #label.knockout, body.hl #sub.knockout { background: linear-gradient(180deg, var(--bg-a) 0%, var(--bg-b) 100%); background-attachment: fixed; color: var(--fg); }
+  body.hl #label .dim, body.hl #sub .dim { color: var(--fg-muted); }
+  body.hl #sub.knockout { left: 90px; top: 120px; font-size: 24px; font-weight: 400; line-height: 32px; padding: 4px 14px; color: var(--fg-muted); }
+  body.hl #label { left: 90px; top: 84px; font-size: 24px; font-weight: 400; line-height: 32px; padding: 4px 14px 4px 0; }   /* text starts on the 90px margin */
+  body.hl #cmd { font-size: 60px; font-weight: 500; line-height: 76px; padding: 4px 16px; }
+  body.hl #out { font-size: 32px; font-weight: 400; line-height: 44px; padding: 4px 16px; }
+  body.hl #block.has-talk #out { font-size: 24px; line-height: 36px; color: var(--hl-text); }
+  body.hl #talk { margin-top: 0; font-size: 30px; font-weight: 400; letter-spacing: 0; line-height: 42px; padding: 10px 16px; text-align: right; }
+
+  /* `still: true`: no typing, so no cursors — except on the status line with `typeStatus` */
+  html.still .cursor { display: none !important; }
+  html.still.type-status #label .cursor:not([style*="display: none"]), html.still.type-status #sub .cursor { display: inline-block !important; }
+
+  /* `rows` in content.js: free-form lines in the bottom block. Each row's slot is fixed to its
+     final width (right edges line up), and the fill inside grows left → right as it types */
+  #block.rows { gap: 0; }
+  .row { display: flex; }
+  .row .pill { display: inline-flex; align-items: baseline; white-space: pre; margin-left: -10px; padding: 0 10px; }
+  .row.title .pill { background: var(--hl); color: var(--hl-text); font-size: 48px; font-weight: 600; letter-spacing: -0.03em; }
+  .row.title .prompt { color: var(--hl-dim); font-weight: 500; letter-spacing: -0.02em; margin-right: 13px; }
+  .row.byline { margin-top: 14px; }
+  .row.byline .pill { background: var(--bg-a); color: var(--fg); font-size: 28px; line-height: 36px; font-weight: 500; padding: 2px 10px; }
+  .row.byline .tail { color: var(--fg-muted); font-weight: 400; }
+
   /* inline logo in the output line (`{logo}` in content.out), tinted with the text */
   .logo {
     display: inline-block;
@@ -168,6 +203,7 @@
     z-index: 45;
     transform-origin: 2px 2px;
     will-change: transform;
+    color: var(--fg);   /* one solid colour, following the theme like the toggle's stroke */
     filter: drop-shadow(0 2px 3px rgba(2, 16, 147, 0.25));
   }
 </style>
@@ -212,7 +248,7 @@
 
   <svg id="mouse" viewBox="0 0 15 22">
     <path d="M1.5 1.5 L1.5 17.5 L5.6 13.6 L8.5 20.3 L11.2 19.1 L8.4 12.6 L13.8 12.6 Z"
-          fill="#93c5fd"/>
+          fill="currentColor"/>
   </svg>
 
   <div id="noise" class="layer"></div>
@@ -220,7 +256,7 @@
 <script>
   // which graphic to show: comp.html?graphic=<folder name> → loads ../<folder>/content.js
   (function () {
-    const name = new URLSearchParams(location.search).get("graphic") || "call-for-speakers";
+    const name = new URLSearchParams(location.search).get("graphic") || "event";
     document.write('<script src="../' + name + '/content.js"><\/script>');
   })();
 </script>
@@ -260,6 +296,8 @@ const T = Object.assign({
   mouseOut: [9.95, 0.80],   // pointer leaves the frame
   fade:     [10.70, 0.60],  // content dissolves: text fades, wolf dots shrink away
 }, G.timeline);
+// on one row the date types on right after the label, whatever the label's length
+if (G.subInline && !(G.timeline && G.timeline.sub)) T.sub = [T.label[0] + CONTENT.label.length * T.label[1] + 0.1, T.sub[1]];
 const DURATION = G.duration || 12;
 const FPS = 24;
 
@@ -274,12 +312,26 @@ const VARIANT = VARIANTS[new URLSearchParams(location.search).get("variant")] ||
 // halftone source: the wolf video, or a still image from the graphic's folder
 // (`image` in content.js: grayscale on white, since white is discarded)
 const IMG = G.image ? new Image() : null;
-if (IMG) IMG.src = "../" + (new URLSearchParams(location.search).get("graphic") || "call-for-speakers") + "/" + G.image;
+if (IMG) IMG.src = "../" + (new URLSearchParams(location.search).get("graphic") || "event") + "/" + G.image;
 
 const THEME = {
-  light: { bgA: "#f4f4f4", bgB: "#eafcff", fg: "#021093" },
-  dark:  { bgA: "#040c2a", bgB: "#060e35", fg: "#93c5fd" },
+  light: { bgA: "#f4f4f4", bgB: "#eafcff", fg: "#021093", hlText: "#f1f7f8" },
+  dark:  { bgA: "#040c2a", bgB: "#060e35", fg: "#93c5fd", hlText: "#040c2a" },
 };
+// `lightBg: [top, bottom]` in content.js swaps the light theme's page gradient (dark stays as is)
+if (G.lightBg) [THEME.light.bgA, THEME.light.bgB] = G.lightBg;
+const FINAL_DOT = G.dot || 14;
+// `still: true`: only the theme switch moves. Text and halftone are there from frame 0, with no
+// typing, cursors, push-in, idle sway or closing dissolve; the pointer still clicks the moon.
+const STILL = !!G.still;
+// `placed: true`: the toggle, the command and its output are there from frame 0 (no pop, no typing,
+// no closing fade); only the status line still types and fades
+const PLACED = !!G.placed;
+if (STILL) document.documentElement.classList.add("still");
+// `typeStatus: true` (with `still`): the top status line still types on; everything else is static
+if (STILL && G.typeStatus) document.documentElement.classList.add("type-status");
+// `css`: extra rules for one graphic (e.g. a bigger title size in `rows`)
+if (G.css) document.head.insertAdjacentHTML("beforeend", "<style>" + G.css + "</style>");   // halftone cell size once the wolf has resolved
 
 /* ============================================================
    easing + colour helpers
@@ -405,11 +457,13 @@ function drawWolf(t, darkMix) {
   if (IMG ? !IMG.complete : video.readyState < 2) return;
   gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, IMG || video);
 
-  const pIn = outExpo(seg(t, T.wolfIn[0], T.wolfIn[1]));
-  const dot = 96 - (96 - 14) * pIn;            // coarse grid "focuses" into the final halftone
-  const reveal = outQuint(seg(t, T.wolfIn[0], T.wolfIn[1]));
-  const gain = 1 - inOutCubic(seg(t, T.fade[0], T.fade[1]));
-  const drift = t / DURATION;
+  // G.wolfIn === false: the wolf is there from frame 0 and never dissolves, so no push-in either (it would jump at the loop)
+  const still = STILL || G.wolfIn === false;
+  const pIn = still ? 1 : outExpo(seg(t, T.wolfIn[0], T.wolfIn[1]));
+  const dot = 96 - (96 - FINAL_DOT) * pIn;           // coarse grid "focuses" into the final halftone
+  const reveal = still ? 1 : outQuint(seg(t, T.wolfIn[0], T.wolfIn[1]));
+  const gain = still ? 1 : 1 - inOutCubic(seg(t, T.fade[0], T.fade[1]));
+  const drift = still ? 0 : t / DURATION;
   // slow push-in on whichever framing was picked
   const scale = VARIANT.scale + VARIANT.push * drift;
   const offX = VARIANT.offX - 0.01 * drift;
@@ -445,7 +499,8 @@ function makeTyper(el, prompt) {
   return { el, txt, cur };
 }
 const labelTyper = makeTyper($("label"), "> ");
-const subTyper = makeTyper($("sub"), "  ");   // indented to line up under the label's text
+// indented to line up under the label's text, or " | " after it with `subInline`
+const subTyper = makeTyper($("sub"), G.subInline ? " | " : "  ");
 if (!CONTENT.sub) $("sub").style.display = "none";
 // a long command (e.g. a speaker's full name) can pull the bottom block left of its 346px default
 if (G.blockLeft != null) $("block").style.left = G.blockLeft + "px";
@@ -453,8 +508,99 @@ const cornerTyper = makeTyper($("corner"), "");
 const cmdTyper = makeTyper($("cmd"), "> ");
 const outTyper = makeTyper($("out"), "");
 const talkTyper = makeTyper($("talk"), "");
+// placed lines never type, so their cursor would only leave an empty gap in the fill
+if (PLACED) for (const ty of [cmdTyper, outTyper]) ty.cur.style.display = "none";
 if (CONTENT.talk) $("block").classList.add("has-talk");
 else $("talk").style.display = "none";
+
+// optional layout overrides from content.js
+if (!CONTENT.label) $("label").style.display = "none";
+if (!CONTENT.corner) $("corner").style.display = "none";
+if (!CONTENT.out) $("out").style.display = "none";
+if (G.subInline && CONTENT.sub) {   // one status row: "> label | sub", centred on the toggle
+  const row = document.createElement("div");
+  row.style.cssText = "position:absolute;left:90px;top:84px;display:flex;";
+  $("label").before(row);
+  row.append($("label"), $("sub"));
+  for (const id of ["label", "sub"]) $(id).style.position = "static";
+  $("label").style.paddingRight = "0";
+  labelTyper.cur.style.display = "none";   // the cursor types on in the sub line instead; don't leave its gap
+  $("sub").style.paddingLeft = "0";
+}
+if (G.keepCase) document.body.style.textTransform = "none";   // copy exactly as typed in content.js
+if (G.blockStyle === "highlight") document.body.classList.add("hl");
+if (G.block) {   // { right, top | bottom } in px; replaces the default left/bottom anchor
+  const b = $("block").style;
+  b.left = "auto";
+  b.right = G.block.right + "px";
+  if (G.block.top != null) { b.bottom = "auto"; b.top = G.block.top + "px"; }
+  else b.bottom = G.block.bottom + "px";
+}
+if (G.toggle) {  // { right, top, size }: the icon's box, in px
+  const tr = $("topright").style, s = G.toggle.size || 32;
+  tr.right = G.toggle.right - 3 + "px";
+  tr.top = G.toggle.top - 3 + "px";
+  $("toggle").style.width = $("toggle").style.height = s + 6 + "px";
+  for (const svg of $("toggle").querySelectorAll("svg")) svg.style.width = svg.style.height = s + "px";
+}
+
+// `rows`: [{ kind: "title" | "byline", text, prompt?, tail?, lineHeight? }] replaces cmd/out/talk.
+// One cursor travels through them; `tail` types on in the muted colour after `text`.
+const ROWS = (G.rows || []).map((r) => {
+  const row = document.createElement("div");
+  row.className = "row " + r.kind;
+  const pill = document.createElement("span");
+  pill.className = "pill";
+  if (r.lineHeight) pill.style.lineHeight = r.lineHeight + "px";
+  const pr = document.createElement("span");
+  pr.className = "prompt";
+  pr.textContent = r.prompt || "";
+  if (!r.prompt) pr.style.display = "none";
+  const txt = document.createElement("span");
+  const tail = document.createElement("span");
+  tail.className = "tail";
+  const cur = document.createElement("span");
+  cur.className = "cursor";
+  pill.append(pr, txt, tail, cur);
+  row.append(pill);
+  return { ...r, row, pill, txt, tailEl: tail, cur, full: r.text + (r.tail || "") };
+});
+if (ROWS.length) {
+  for (const id of ["cmd", "out", "talk"]) $(id).style.display = "none";
+  $("block").classList.add("rows");
+  $("block").append(...ROWS.map((r) => r.row));
+}
+let rowsMeasured = false;
+// fix each row's slot to its final width so the fill grows from a fixed left edge
+function measureRows() {
+  for (const r of ROWS) {
+    r.txt.textContent = r.text;
+    r.tailEl.textContent = r.full.slice(r.text.length);
+    r.cur.style.display = "none";
+    r.row.style.width = r.pill.getBoundingClientRect().width - 10 + "px";   // minus the -10px overhang
+    r.cur.style.display = "";
+  }
+}
+// final widths of the typed highlight lines (cmd, out), cursor included
+let slotsMeasured = false;
+const slotWidths = new Map();
+function measureSlots() {
+  cmdTyper.txt.textContent = CONTENT.cmd;
+  const at = OUT_TEXT.indexOf(LOGO_CHAR);
+  outTyper.txt.textContent = logoEl && at >= 0 ? OUT_TEXT.slice(0, at) : OUT_TEXT;
+  if (logoEl && at >= 0) { outTail.textContent = OUT_TEXT.slice(at + 1); logoEl.style.display = "inline-block"; }
+  for (const el of [$("cmd"), $("out")]) { el.style.marginRight = "0px"; slotWidths.set(el, el.getBoundingClientRect().width); }
+}
+// start time of each row: they type back to back, `rowGap` seconds apart
+function rowTimes() {
+  let at = T.cmd[0];
+  return ROWS.map((r) => {
+    const per = r.kind === "byline" ? (G.bylineSpeed || 0.025) : (G.rowSpeed || 0.035);
+    const start = at;
+    at += r.full.length * per + (G.rowGap ?? 0.15);
+    return { start, per, end: start + r.full.length * per };
+  });
+}
 
 // `{logo}` in content.out is swapped for G.logo (inline SVG using currentColor);
 // it types as a single character and pops in when the typing reaches it
@@ -525,6 +671,7 @@ const bez = (P, p) => {
 };
 
 function layout(t) {
+  const tt = STILL ? 1e3 : t;   // the clock text and entrances read: parked at "long finished" when still
   // theme: flips on mousedown with the site's 0.3s crossfade
   const darkMix = inOutCubic(seg(t, T.click1, 0.22)) - inOutCubic(seg(t, T.click2, 0.22));
   const root = document.documentElement.style;
@@ -532,28 +679,66 @@ function layout(t) {
   root.setProperty("--bg-b", mixHex(THEME.light.bgB, THEME.dark.bgB, darkMix));
   root.setProperty("--fg", mixHex(THEME.light.fg, THEME.dark.fg, darkMix));
   root.setProperty("--fg-muted", mixHex(THEME.light.fg, THEME.dark.fg, darkMix).replace("rgb(", "rgba(").replace(")", ",0.5)"));
+  const hlText = mixHex(THEME.light.hlText, THEME.dark.hlText, darkMix);
+  root.setProperty("--hl", mixHex(THEME.light.fg, THEME.dark.fg, darkMix));
+  root.setProperty("--hl-text", hlText);
+  root.setProperty("--hl-dim", hlText.replace("rgb(", "rgba(").replace(")", ",0.6)"));
 
   // status line
-  typeInto(labelTyper, CONTENT.label, T.label[0], T.label[1], t, CONTENT.sub ? T.sub[0] : 3.0);
-  if (CONTENT.sub) typeInto(subTyper, CONTENT.sub, T.sub[0], T.sub[1], t, 3.0);
-  typeInto(cornerTyper, CONTENT.corner, T.corner[0], T.corner[1], t, 1.6);
+  // `labelCursor: true` keeps the label's cursor blinking for the whole piece
+  const ts = STILL && !G.typeStatus ? 1e3 : t;   // the status line's clock
+  typeInto(labelTyper, CONTENT.label, T.label[0], T.label[1], ts, CONTENT.sub ? T.sub[0] : G.labelCursor ? null : 3.0);
+  if (CONTENT.sub) typeInto(subTyper, CONTENT.sub, T.sub[0], T.sub[1], ts, G.subInline && G.labelCursor ? null : 3.0);
+  typeInto(cornerTyper, CONTENT.corner, T.corner[0], T.corner[1], tt, 1.6);
 
   // the command and its output
-  typeInto(cmdTyper, CONTENT.cmd, T.cmd[0], T.cmd[1], t, T.out[0] + 0.1);
-  typeInto(outTyper, OUT_TEXT, T.out[0], T.out[1], t, CONTENT.talk ? T.talk[0] : null);
-  if (CONTENT.talk) typeInto(talkTyper, CONTENT.talk, T.talk[0], T.talk[1], t, null);
+  const tb = PLACED ? 1e3 : tt;   // the clock the bottom block and the toggle read
+  typeInto(cmdTyper, CONTENT.cmd, T.cmd[0], T.cmd[1], tb, T.out[0] + 0.1);
+  // with `labelCursor`, one cursor at a time: label → command → output → back to the label
+  const outDone = T.out[0] + OUT_TEXT.length * T.out[1] + 0.5;
+  typeInto(outTyper, OUT_TEXT, T.out[0], T.out[1], tb, CONTENT.talk ? T.talk[0] : G.labelCursor ? outDone : null);
+  if (G.labelCursor && !PLACED && t >= T.cmd[0] && t < outDone) labelTyper.cur.style.opacity = 0;
+  if (CONTENT.talk) typeInto(talkTyper, CONTENT.talk, T.talk[0], T.talk[1], tt, null);
+  if (ROWS.length) {
+    if (!rowsMeasured) { measureRows(); rowsMeasured = true; }   // once, after fonts are in
+    const times = rowTimes();
+    ROWS.forEach((r, i) => {
+      const { start, per, end } = times[i];
+      const n = Math.max(0, Math.min(r.full.length, Math.floor((tt - start) / per)));
+      r.txt.textContent = r.full.slice(0, Math.min(n, r.text.length));
+      r.tailEl.textContent = n > r.text.length ? r.full.slice(r.text.length, n) : "";
+      r.row.style.opacity = tt >= start ? 1 : 0;
+      // the cursor sits on the row being typed; the last row keeps it, blinking, once done
+      const last = i === ROWS.length - 1;
+      const active = t >= start && (last || t < (times[i + 1]?.start ?? Infinity));
+      const blink = t < end || Math.floor((t - end) * 2.6) % 2 === 0;
+      // display, not opacity: a hidden cursor would still widen the fill
+      r.cur.style.display = active ? "" : "none";
+      r.cur.style.opacity = blink ? 1 : 0;
+    });
+  }
   if (logoEl) {
     const typed = outTyper.txt.textContent, at = typed.indexOf(LOGO_CHAR);
     outTyper.txt.textContent = at < 0 ? typed : typed.slice(0, at);
     outTail.textContent = at < 0 ? "" : typed.slice(at + 1);
-    const pop = outQuint(seg(t, T.out[0] + OUT_TEXT.indexOf(LOGO_CHAR) * T.out[1], 0.25));
+    const pop = outQuint(seg(tt, T.out[0] + OUT_TEXT.indexOf(LOGO_CHAR) * T.out[1], 0.25));
     logoEl.style.display = at < 0 ? "none" : "inline-block";
     logoEl.style.opacity = pop;
     logoEl.style.transform = `scale(${(0.9 + 0.1 * pop).toFixed(3)})`;
   }
 
+  // highlight blocks are right-aligned, so a growing line would type right → left. Hold each
+  // line's left edge where its finished text starts and let the fill grow rightwards instead.
+  if (G.blockStyle === "highlight") {
+    if (!slotsMeasured) { measureSlots(); slotsMeasured = true; }   // once, after fonts are in
+    for (const [el, w] of slotWidths) el.style.marginRight = w - el.getBoundingClientRect().width + "px";
+  }
+
   // everything in the ui layer dissolves at the end
-  $("ui").style.opacity = 1 - inOutCubic(seg(t, T.fade[0], T.fade[1]));
+  const fadeOut = 1 - inOutCubic(seg(t, T.fade[0], T.fade[1]));
+  $("ui").style.opacity = STILL || PLACED ? 1 : fadeOut;
+  if (PLACED && !STILL && t >= T.label[0]) $("label").style.opacity = fadeOut;
+  if (PLACED && !STILL && CONTENT.sub && t >= T.sub[0]) $("sub").style.opacity = fadeOut;
 
   // ---- pointer: in → click → wander → back → click → out ----
   let mp = null, press = 1;
@@ -582,14 +767,14 @@ function layout(t) {
   // ---- toggle: brand blue, lifts on hover, moon ⇄ sun on each click ----
   const hover = outQuint(seg(t, T.hover1, 0.2)) * (1 - outQuint(seg(t, T.mouseAway[0], 0.3)))
               + outQuint(seg(t, T.hover2, 0.2)) * (1 - outQuint(seg(t, T.mouseOut[0], 0.3)));
-  const toggleIn = outBack(seg(t, T.corner[0], 0.3));
+  const toggleIn = PLACED ? 1 : outBack(seg(tt, T.corner[0], 0.3));
   toggleEl.style.opacity = toggleIn > 0 ? 1 : 0;
   toggleEl.style.transform = `scale(${(toggleIn * (1 + 0.12 * hover)).toFixed(3)})`;
 
   const swap1 = seg(t, T.click1, 0.55);   // moon → sun
   const swap2 = seg(t, T.click2, 0.55);   // sun → moon
   // moon: idle sway; rotates away and shrinks on the first click, rotates back in on the second
-  const sway = Math.sin(t * 1.6) * 6;
+  const sway = STILL ? 0 : Math.sin(t * 1.6) * 6;
   const moonOut = inOutCubic(clamp01(swap1 * 1.6)) - inOutCubic(clamp01((swap2 - 0.25) / 0.75));
   moonEl.style.opacity = 1 - moonOut;
   moonEl.style.transform = `rotate(${sway - 90 * moonOut}deg) scale(${1 - 0.5 * moonOut})`;
@@ -626,6 +811,7 @@ const ready = new Promise((resolve) => {
   video.addEventListener("canplaythrough", check);
   video.addEventListener("loadedmetadata", () => { videoFrames = Math.round(video.duration * VIDEO_FPS); });
   document.fonts.ready.then(() => { aimAtToggle(); check(); });
+  for (const r of G.rows || []) document.fonts.load('600 48px "Geist Mono"', r.text + (r.tail || "") + (r.prompt || ""));
   // make sure every subset is actually fetched before the first frame
   document.fonts.load('600 56px "Geist Mono"', CONTENT.cmd);
   document.fonts.load('500 28px "Geist Mono"', CONTENT.out + "ž·");
@@ -647,7 +833,11 @@ function seekTo(time) {
 window.renderFrame = async function (frameIndex, fps) {
   await ready;
   const t = frameIndex / fps;
-  const vFrame = Math.round(t * VIDEO_FPS) % videoFrames;
+  // a visible wolf has to howl a whole number of times per loop: stretch the video to fit
+  const cycles = Math.max(1, Math.round(DURATION * VIDEO_FPS / videoFrames));
+  const vFrame = G.wolfIn === false
+    ? Math.round(t / DURATION * cycles * videoFrames) % videoFrames
+    : Math.round(t * VIDEO_FPS) % videoFrames;
   if (!IMG) await seekTo((vFrame + 0.5) / VIDEO_FPS);
   const darkMix = layout(t);
   drawWolf(t, darkMix);

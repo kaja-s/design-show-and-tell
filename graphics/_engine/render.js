@@ -4,9 +4,8 @@
  * Chrome, and encodes the result as an mp4 (1080×1080, 24fps, seamless loop) in that graphic's folder.
  *
  * Usage (from the project root):
- *   node graphics/_engine/render.js call-for-speakers              # → graphics/call-for-speakers/<file>.mp4
- *   node graphics/_engine/render.js save-the-date --variant a      # alternative wolf framing
- *   node graphics/_engine/render.js call-for-speakers --stills     # key frames as PNGs → scratch/stills
+ *   node graphics/_engine/render.js event                   # → graphics/event/<file>.mp4
+ *   node graphics/_engine/render.js speaker-nika --stills    # key frames as PNGs → scratch/stills
  *   CHROME_PATH=/path/to/chrome node graphics/_engine/render.js <name>
  *
  * Needs: Google Chrome (or Chromium) installed, ffmpeg on PATH, puppeteer-core (devDependency).
