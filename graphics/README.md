@@ -17,6 +17,16 @@ graphics/
     prepare.py       cut-out portrait → nika-halftone.png (square, grayscale on white)
     nika-halftone.png
     aikido.svg       logo for the byline (inlined into content.js)
+  speaker-nina/
+    content.js       speaker announcement: still portrait + Canonical logo in the role line
+    nina.jpg         original photo (1200×1600)
+    nina-cutout.png  nina.jpg with the background removed (macOS Vision subject lifting)
+    prepare.py       cut-out → nina-halftone.png; scaled so her hair bleeds off the left edge,
+                     only the photo's right edge fades out
+    nina-halftone.png
+    canonical.svg    Canonical logo, one colour: tag and wordmark in currentColor, the circle of
+                     friends cut out in --hl (inlined into content.js; `css` there sizes it and
+                     tightens the role line so the tag has equal insets)
 ```
 
 The static designs live in the Paper file "design show&tell" (frames "join us" and "nika"); the
@@ -29,6 +39,7 @@ Needs Google Chrome installed and `ffmpeg` on PATH. Run from the project root:
 ```bash
 node graphics/_engine/render.js event                  # → graphics/event/event.mp4
 node graphics/_engine/render.js speaker-nika           # → graphics/speaker-nika/speaker nika.mp4
+node graphics/_engine/render.js speaker-nina           # → graphics/speaker-nina/speaker nina.mp4
 node graphics/_engine/render.js speaker-nika --stills  # key frames as PNGs for review → scratch/stills
 ```
 
@@ -71,7 +82,8 @@ Copy `speaker-nika/`, swap the copy, logo and photo. The image must be square an
 because the shader drops near-white pixels: cut the person out of the background first (macOS Vision
 subject lifting, or any background remover), then adjust the face position and scale in `prepare.py`.
 Faces need more contrast than the wolf to survive the dots, which is what the gamma and unsharp mask
-there are for. Re-tune `framing` so the head clears the status line.
+there are for. Re-tune `framing` so the head clears the status line. If the photo is cropped tight, scale
+it up so its edges bleed off the post rather than ending inside it (see `speaker-nina/prepare.py`).
 
 Change `_engine/comp.html` only for new choreography. Its shader math mirrors
 `src/app/components/shader-canvas.tsx`; if the site's halftone or theme colours change, update `THEME`
