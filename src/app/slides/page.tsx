@@ -5,7 +5,7 @@ import { useTheme } from "../theme-provider";
 import { ShaderCanvas, signalWolfReady } from "../components/shader-canvas";
 import { HalftoneImage } from "./halftone-image";
 import FeatherIcon from "feather-icons-react";
-import { EVENT, HOSTS, SPEAKERS, SPONSOR, TIMELINE, VILLAGE, type Person } from "./deck";
+import { CLOSING, EVENT, HOSTS, SPEAKERS, SPONSOR, TIMELINE, VILLAGE, type Person } from "./deck";
 
 // /slides: the intro deck for the projector. A fixed 1920×1080 stage scaled to
 // fit the window, so the layout is identical on any screen.
@@ -30,7 +30,7 @@ const SPEAKER_SLIDES = SPEAKERS.map((person, i) => {
   return Intro;
 });
 
-const SLIDES = [TitleSlide, HostsSlide, SponsorSlide, TimelineSlide, VillageSlide, ...SPEAKER_SLIDES];
+const SLIDES = [TitleSlide, HostsSlide, SponsorSlide, TimelineSlide, VillageSlide, ...SPEAKER_SLIDES, ClosingSlide];
 
 const NAV_EVENT = "slides:go";
 function subscribe(cb: () => void) {
@@ -439,6 +439,33 @@ function SpeakerSlide({ person, label }: { person: Person; label: string }) {
       <div className="slide-in [--d:200ms] size-[720px] -mr-[60px] [&>canvas]:size-full">
         <Portrait person={person} size={720} cells={70} />
       </div>
+    </div>
+  );
+}
+
+/** After the last talk: thanks, how long we're around, and where to hear about the next one. */
+function ClosingSlide() {
+  const speakers = new Intl.ListFormat("en", { type: "conjunction" }).format(SPEAKERS.map((p) => p.name.split(" ")[0]));
+  return (
+    <div className="h-full grid grid-cols-[1fr_auto] gap-[120px] items-center">
+      <div className="slide-in">
+        <p className="text-[32px] text-foreground-muted">that&apos;s it for the talks</p>
+        <h2 className="text-[56px] leading-[1.15] font-bold mt-[24px]">
+          <Tag>hang out + pizza</Tag>
+        </h2>
+        <p className="text-[40px] mt-[64px] leading-[1.3] text-pretty">thank you {speakers}.</p>
+        <p className="text-[30px] mt-[24px] leading-[1.45] text-foreground-muted">
+          we&apos;re here till {EVENT.ends}.
+          <br />
+          the village is still open.
+        </p>
+      </div>
+      <figure className="slide-in [--d:200ms] flex flex-col items-center gap-[28px]">
+        {/* always dark-on-white, like the village code */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/qr.svg" alt={`qr code for ${CLOSING.siteUrl}`} className="size-[400px] bg-white p-[28px]" />
+        <figcaption className="text-[24px] text-foreground-muted whitespace-nowrap">next show &amp; tell: {CLOSING.siteUrl}</figcaption>
+      </figure>
     </div>
   );
 }

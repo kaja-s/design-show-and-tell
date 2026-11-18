@@ -91,3 +91,9 @@ export const VILLAGE = {
   joinUrl: "design-show-and-tell.vercel.app/village/join",
   steps: ["scan the code", "make your villager", "find someone you haven't met yet"],
 };
+
+/** The last slide, up during the hang out. The qr (public/qr.svg) points at the site, where
+    people can sign up to hear about the next one. */
+export const CLOSING = {
+  siteUrl: "design-show-and-tell.vercel.app",
+};
