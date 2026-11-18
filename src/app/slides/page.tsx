@@ -467,6 +467,7 @@ function SpeakerSlide({ person, label }: { person: Person; label: string }) {
 /** After the last talk: thanks, how long we're around, and where to hear about the next one. */
 function ClosingSlide() {
   const speakers = new Intl.ListFormat("en", { type: "conjunction" }).format(SPEAKERS.map((p) => p.name.split(" ")[0]));
+  const count = useVillagerCount();
   return (
     <div className="h-full grid grid-cols-[1fr_auto] gap-[120px] items-center">
       <div className="slide-in">
@@ -479,6 +480,12 @@ function ClosingSlide() {
           we&apos;re here till {EVENT.ends}.
           <br />
           the village is still open.
+          {count ? (
+            <>
+              <br />
+              {count} {count === 1 ? "designer lives" : "designers live"} there now.
+            </>
+          ) : null}
         </p>
       </div>
       <figure className="slide-in [--d:200ms] flex flex-col items-center gap-[28px]">
