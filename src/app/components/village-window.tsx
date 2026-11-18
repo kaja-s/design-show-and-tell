@@ -27,25 +27,7 @@ export function VillageWindow() {
   const line = useRef<HTMLDivElement>(null);
   const [near, setNear] = useState(false);
   const [open, setOpen] = useState(false);
-  const [count, setCount] = useState<number | null>(null);
   const touch = useCoarsePointer();
-
-  // the live headcount over the title (the game polls its own list)
-  useEffect(() => {
-    if (!near) return;
-    let stop = false;
-    const load = () =>
-      fetch("/api/villagers", { cache: "no-store" })
-        .then((r) => (r.ok ? r.json() : Promise.reject()))
-        .then((d: { villagers: unknown[] }) => !stop && setCount(d.villagers.length))
-        .catch(() => {});
-    load();
-    const t = window.setInterval(load, 15000);
-    return () => {
-      stop = true;
-      window.clearInterval(t);
-    };
-  }, [near]);
 
   useEffect(() => {
     const el = tv.current;
@@ -96,13 +78,6 @@ export function VillageWindow() {
     // always night-blue, in both themes: the tv glows on a dark wall
     <section aria-labelledby="village-title" className="village-section relative z-10 bg-[#040c2a] text-[#93c5fd] min-h-svh px-4 py-6 flex flex-col items-center justify-center gap-4 sm:gap-5">
       <header className="flex flex-col items-center gap-2.5 sm:gap-3 text-center">
-        <p className="inline-flex items-center gap-2 text-[11px] tracking-[0.12em] text-[#93c5fd]/75 tabular-nums" aria-live="polite">
-          <span aria-hidden="true" className="relative inline-flex size-1.5">
-            <span className="absolute inset-0 rounded-full bg-[#f6d27a] motion-safe:animate-ping opacity-60" />
-            <span className="relative size-1.5 rounded-full bg-[#f6d27a]" />
-          </span>
-          live{count !== null ? ` · ${count} ${count === 1 ? "designer lives" : "designers live"} here` : ""}
-        </p>
         <h2 id="village-title" className="text-[26px] leading-[1.05] sm:text-[40px] font-medium tracking-[-0.03em] text-white text-balance">
           slovenian designer village
         </h2>
