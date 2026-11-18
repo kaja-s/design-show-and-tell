@@ -13,6 +13,7 @@ import { CLOSING, EVENT, HOSTS, SPEAKERS, SPONSOR, TIMELINE, VILLAGE, type Perso
 //   → ↓ space pagedown enter   next (clickers send pagedown/pageup)
 //   ← ↑ pageup backspace       previous
 //   home / end                 first / last
+//   1–9                        that slide (e.g. back to an intro after a talk)
 //   f                          fullscreen
 //   d                          day / night (same toggle as the site)
 //   click                      right half next, left half previous
@@ -98,6 +99,7 @@ export default function Slides() {
       else if (["ArrowLeft", "ArrowUp", "PageUp", "Backspace"].includes(k)) go(index - 1);
       else if (k === "Home") go(0);
       else if (k === "End") go(SLIDES.length - 1);
+      else if (/^[1-9]$/.test(k)) go(Number(k) - 1);
       else if (k === "f") {
         if (document.fullscreenElement) document.exitFullscreen();
         else document.documentElement.requestFullscreen().catch(() => {});
