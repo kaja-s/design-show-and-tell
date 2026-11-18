@@ -32,6 +32,13 @@ const SPEAKER_SLIDES = SPEAKERS.map((person, i) => {
 
 const SLIDES = [TitleSlide, HostsSlide, SponsorSlide, TimelineSlide, VillageSlide, ...SPEAKER_SLIDES, ClosingSlide];
 
+const PRELOAD = [
+  ...[...HOSTS, ...SPEAKERS].flatMap((p) => (p.photo ? [p.photo] : [])),
+  "/qr-village.svg",
+  "/qr.svg",
+];
+const PRELOADED: HTMLImageElement[] = [];
+
 const NAV_EVENT = "slides:go";
 function subscribe(cb: () => void) {
   window.addEventListener("hashchange", cb);
@@ -52,6 +59,18 @@ export default function Slides() {
   const index = useSyncExternalStore(subscribe, readHash, () => 0);
   const [scale, setScale] = useState(0);
   const [idle, setIdle] = useState(false);
+
+  // only the current slide renders, so fetch every slide's images now and keep them: a later
+  // slide still has its photos and qr codes if the venue wifi drops mid-deck
+  useEffect(() => {
+    PRELOADED.push(
+      ...PRELOAD.map((src) => {
+        const img = new Image();
+        img.src = src;
+        return img;
+      }),
+    );
+  }, []);
 
   // start on the slide in the hash; there's no wolf to wait for past slide 1
   useEffect(() => {
