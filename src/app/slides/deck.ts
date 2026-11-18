@@ -42,7 +42,6 @@ export const HOSTS: Person[] = [
 
 export const SPONSOR = {
   name: "visionect",
-  line: "for opening your office to us tonight.",
 };
 
 export const SPEAKERS: Person[] = [

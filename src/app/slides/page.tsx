@@ -220,7 +220,6 @@ function SponsorSlide() {
         <VisionectLogo className="block h-[150px] w-auto" />
         <span className="sr-only">{SPONSOR.name}</span>
       </h2>
-      <p className="text-[48px] mt-[56px]">{SPONSOR.line}</p>
     </div>
   );
 }
