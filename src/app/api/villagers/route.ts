@@ -6,12 +6,16 @@ import { EVENT, validateInput } from "@/app/village/lib/villager";
 const CREATE_LIMIT = 40;
 const CREATE_WINDOW_SEC = 600;
 
-// The whole village (no photos, no edit tokens). The big screen polls this.
-export async function GET() {
+// The whole village (no photos, no edit tokens, no emails). The big screen
+// polls this. With a valid x-admin-key it also returns { emails: {id: email} }.
+export async function GET(request: Request) {
   try {
     const all = await getStore().list();
     const villagers = all.map(toPublic).sort((a, b) => a.createdAt - b.createdAt);
-    return NextResponse.json({ villagers }, { headers: { "Cache-Control": "no-store" } });
+    const admin = process.env.VILLAGE_ADMIN_KEY;
+    const isAdmin = !!admin && request.headers.get("x-admin-key") === admin;
+    const emails = isAdmin ? Object.fromEntries(all.map((v) => [v.id, v.email ?? ""])) : undefined;
+    return NextResponse.json({ villagers, ...(emails ? { emails } : {}) }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     console.error("village list error:", error);
     return NextResponse.json({ error: "couldn't load the village. try again in a moment." }, { status: 500 });
@@ -30,6 +34,13 @@ export async function POST(request: Request) {
     const { value, errors } = validateInput(await request.json().catch(() => null));
     if (Object.keys(errors).length) return NextResponse.json({ error: "check the highlighted fields.", errors }, { status: 400 });
 
+    if (await store.idForEmail(value.email)) {
+      return NextResponse.json(
+        { error: "that email already lives in the village.", errors: { email: "you've already moved in. edit from the phone you joined on." } },
+        { status: 409 },
+      );
+    }
+
     const token = crypto.randomUUID();
     const now = Date.now();
     const villager: StoredVillager = {
@@ -46,9 +57,11 @@ export async function POST(request: Request) {
       createdAt: now,
       updatedAt: now,
       tokenHash: await hashToken(token),
+      email: value.email,
     };
     if (value.photo) await store.putPhoto(villager.id, value.photo);
     await store.put(villager);
+    await store.setEmail(value.email, villager.id);
     return NextResponse.json({ villager: toPublic(villager), token }, { status: 201 });
   } catch (error) {
     console.error("village create error:", error);

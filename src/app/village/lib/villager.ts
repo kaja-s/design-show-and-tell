@@ -7,34 +7,24 @@
 // Which show & tell a villager moved in at. Bump with the event cycle.
 export const EVENT = { id: "2026-11-19", label: "19 nov 2026" };
 
+// Character options. Sprites (lib/sprites.ts) are drawn in these colours over
+// a city in the site's blues, so the palette favours colours that pop on it.
 export const SKIN = ["#f8dcc8", "#eebd98", "#d29a6c", "#a8714a", "#74462b"];
-export const HAIR_COLORS = ["#2b1d14", "#6b4226", "#c79a5b", "#ecdcb4", "#b9bcc9", "#3b5bdb", "#e2725b"];
-export const CLOTH = ["#021093", "#3b5bdb", "#93c5fd", "#ffffff", "#1e293b", "#e2725b", "#f2c14e", "#5fa38a"];
-export const PANTS = ["#1e293b", "#021093", "#4b5b84", "#6b5644", "#d9dde8"];
+export const HAIR_COLORS = ["#1b1d33", "#4a2c1d", "#8a5a3b", "#d9a65b", "#ece3cf", "#b9bcc9", "#d9453b", "#3b5bdb"];
+export const COLORS = ["#d9453b", "#f28b3c", "#f2c14e", "#3f9b6e", "#7cc3f0", "#3b5bdb", "#021093", "#9b5de5", "#f2a7c3", "#f4f4f4", "#262a40", "#8a5a3b"];
+export const PANTS = ["#2f3350", "#4b5568", "#021093", "#6b5644", "#d9dde8", "#262a40"];
 export const OPTIONS = {
-  hair: ["none", "short", "bun", "long", "curly", "mohawk"],
-  hat: ["none", "beanie", "bobble hat", "earmuffs", "ushanka"],
-  coat: ["puffer", "hoodie", "long coat"],
-  extra: ["none", "glasses", "headphones", "coffee", "sketchbook", "camera"],
-  emote: ["wave", "jump", "dance"],
-  costume: ["none", "santa", "elf", "reindeer", "penguin", "snowman", "skier", "astronaut", "wizard", "dino"],
+  hair: ["none", "short", "messy", "bun", "ponytail", "long", "curly"],
+  top: ["tee", "stripes", "hoodie", "jacket", "puffer"],
+  hat: ["none", "beanie", "cap"],
+  extra: ["none", "glasses", "headphones", "clip", "scarf"],
+  carry: ["none", "coffee", "tote", "basket", "sketchbook"],
+  pet: ["none", "dog", "cat"],
+  emote: ["wave", "jump", "spin"],
 } as const;
 
-export const TAGS = [
-  "product design",
-  "ux research",
-  "ui design",
-  "brand design",
-  "illustration",
-  "motion",
-  "design engineering",
-  "service design",
-  "art direction",
-  "type design",
-  "3d",
-  "design lead",
-  "student",
-];
+// A short list to pick from; anything else can be typed in on the join form.
+export const TAGS = ["product design", "ui/ux design", "brand design", "illustration", "motion", "student"];
 export const MAX_TAGS = 3;
 export const MAX_INTRO = 140;
 
@@ -42,15 +32,16 @@ export type Config = {
   skin: string;
   hair: (typeof OPTIONS.hair)[number];
   hairColor: string;
-  hat: (typeof OPTIONS.hat)[number];
-  hatColor: string;
-  coat: (typeof OPTIONS.coat)[number];
-  coatColor: string;
+  top: (typeof OPTIONS.top)[number];
+  topColor: string;
   pants: string;
-  scarf: string | null;
+  hat: (typeof OPTIONS.hat)[number];
+  // hat colour, also used for the clip, scarf and headphones
+  accent: string;
   extra: (typeof OPTIONS.extra)[number];
+  carry: (typeof OPTIONS.carry)[number];
+  pet: (typeof OPTIONS.pet)[number];
   emote: (typeof OPTIONS.emote)[number];
-  costume: (typeof OPTIONS.costume)[number];
 };
 
 // What everyone can read. The photo is served separately (/api/villagers/[id]/photo)
@@ -70,14 +61,17 @@ export type Villager = {
   updatedAt: number;
 };
 
+// email is private: stored with the villager for a future "edit from any
+// device" login, never returned by the public api.
 export type VillagerInput = Pick<Villager, "name" | "tags" | "intro" | "portfolio" | "linkedin" | "twitter" | "config"> & {
+  email: string;
   // data:image/jpeg;base64,… (256px square from the join form), null to remove, undefined to keep
   photo?: string | null;
 };
 
 export const VISITOR: Config = {
-  skin: "#eebd98", hair: "short", hairColor: "#6b4226", hat: "bobble hat", hatColor: "#e2725b", coat: "puffer",
-  coatColor: "#f2c14e", pants: "#1e293b", scarf: "#e2725b", extra: "none", emote: "wave", costume: "none",
+  skin: "#eebd98", hair: "short", hairColor: "#4a2c1d", top: "puffer", topColor: "#f2c14e", pants: "#2f3350",
+  hat: "beanie", accent: "#d9453b", extra: "scarf", carry: "none", pet: "none", emote: "wave",
 };
 
 export function mulberry(seed: number) {
@@ -94,10 +88,10 @@ const pick = <T,>(r: () => number, list: readonly T[]) => list[Math.floor(r() * 
 
 export function randomConfig(r: () => number = Math.random): Config {
   return {
-    skin: pick(r, SKIN), hair: pick(r, OPTIONS.hair), hairColor: pick(r, HAIR_COLORS), hat: pick(r, OPTIONS.hat),
-    hatColor: pick(r, CLOTH), coat: pick(r, OPTIONS.coat), coatColor: pick(r, CLOTH), pants: pick(r, PANTS),
-    scarf: r() < 0.6 ? pick(r, CLOTH) : null, extra: pick(r, OPTIONS.extra), emote: pick(r, OPTIONS.emote),
-    costume: r() < 0.3 ? pick(r, OPTIONS.costume.slice(1)) : "none",
+    skin: pick(r, SKIN), hair: pick(r, OPTIONS.hair.slice(1)), hairColor: pick(r, HAIR_COLORS), top: pick(r, OPTIONS.top),
+    topColor: pick(r, COLORS), pants: pick(r, PANTS), hat: r() < 0.35 ? pick(r, OPTIONS.hat.slice(1)) : "none", accent: pick(r, COLORS),
+    extra: r() < 0.5 ? pick(r, OPTIONS.extra.slice(1)) : "none", carry: r() < 0.4 ? pick(r, OPTIONS.carry.slice(1)) : "none",
+    pet: r() < 0.2 ? pick(r, OPTIONS.pet.slice(1)) : "none", emote: pick(r, OPTIONS.emote),
   };
 }
 
@@ -122,21 +116,34 @@ export function normLink(value: string, kind: "portfolio" | "linkedin" | "twitte
 const isHex = (v: unknown): v is string => typeof v === "string" && /^#[0-9a-f]{6}$/i.test(v);
 const oneOf = <T extends string>(v: unknown, list: readonly T[]): v is T => typeof v === "string" && (list as readonly string[]).includes(v);
 
+// Lenient: any field that's missing or invalid falls back to a default, so
+// characters saved with older options (the 3d village) still draw.
 export function cleanConfig(x: unknown): Config | null {
   if (!x || typeof x !== "object") return null;
   const c = x as Record<string, unknown>;
-  if (!isHex(c.skin) || !isHex(c.hairColor) || !isHex(c.hatColor) || !isHex(c.coatColor) || !isHex(c.pants)) return null;
-  if (c.scarf !== null && !isHex(c.scarf)) return null;
-  if (!oneOf(c.hair, OPTIONS.hair) || !oneOf(c.hat, OPTIONS.hat) || !oneOf(c.coat, OPTIONS.coat)) return null;
-  if (!oneOf(c.extra, OPTIONS.extra) || !oneOf(c.emote, OPTIONS.emote)) return null;
-  const costume = oneOf(c.costume, OPTIONS.costume) ? c.costume : "none";
+  const d = VISITOR;
+  const hex = (v: unknown, fb: string) => (isHex(v) ? v : fb);
+  const opt = <T extends string>(v: unknown, list: readonly T[], fb: T): T => (oneOf(v, list) ? v : fb);
   return {
-    skin: c.skin, hair: c.hair, hairColor: c.hairColor, hat: c.hat, hatColor: c.hatColor, coat: c.coat, coatColor: c.coatColor,
-    pants: c.pants, scarf: c.scarf as string | null, extra: c.extra, emote: c.emote, costume,
+    skin: hex(c.skin, d.skin),
+    hair: opt(c.hair, OPTIONS.hair, "short"),
+    hairColor: hex(c.hairColor, d.hairColor),
+    top: opt(c.top, OPTIONS.top, "tee"),
+    topColor: hex(c.topColor ?? c.coatColor, "#3b5bdb"),
+    pants: hex(c.pants, d.pants),
+    hat: opt(c.hat, OPTIONS.hat, "none"),
+    accent: hex(c.accent ?? c.hatColor, d.accent),
+    extra: opt(c.extra, OPTIONS.extra, "none"),
+    carry: opt(c.carry, OPTIONS.carry, "none"),
+    pet: opt(c.pet, OPTIONS.pet, "none"),
+    emote: opt(c.emote, OPTIONS.emote, "wave"),
   };
 }
 
-export type FieldErrors = Partial<Record<"name" | "tags" | "intro" | "portfolio" | "linkedin" | "twitter" | "config" | "photo", string>>;
+export type FieldErrors = Partial<Record<"name" | "email" | "tags" | "intro" | "portfolio" | "linkedin" | "twitter" | "config" | "photo", string>>;
+// Same pattern as components/form-field.tsx (that module is client-only).
+export const VILLAGE_EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+export const normEmail = (v: string) => v.trim().toLowerCase();
 const PHOTO_RE = /^data:image\/(jpeg|png|webp);base64,[a-z0-9+/=]+$/i;
 const MAX_PHOTO_CHARS = 300_000;
 
@@ -149,6 +156,10 @@ export function validateInput(body: unknown): { value: VillagerInput; errors: Fi
   if (!name) errors.name = "add your name.";
   else if (name.length > 40) errors.name = "keep it under 40 characters.";
 
+  const email = normEmail(str("email"));
+  if (!email) errors.email = "add your email.";
+  else if (!VILLAGE_EMAIL_RE.test(email) || email.length > 200) errors.email = "that doesn't look like an email.";
+
   const tags = Array.isArray(b.tags)
     ? [...new Set(b.tags.filter((t): t is string => typeof t === "string").map((t) => t.trim().toLowerCase()).filter(Boolean))]
     : [];
@@ -157,12 +168,10 @@ export function validateInput(body: unknown): { value: VillagerInput; errors: Fi
   else if (tags.some((t) => t.length > 24)) errors.tags = "keep each role under 24 characters.";
 
   const intro = str("intro");
-  if (!intro) errors.intro = "add a line about you.";
-  else if (intro.length > MAX_INTRO) errors.intro = `keep it under ${MAX_INTRO} characters.`;
+  if (intro.length > MAX_INTRO) errors.intro = `keep it under ${MAX_INTRO} characters.`;
 
   const portfolio = str("portfolio");
-  if (!portfolio) errors.portfolio = "add a link to your work.";
-  else if (!looksLikeUrl(portfolio) || portfolio.length > 200) errors.portfolio = "that doesn't look like a link.";
+  if (portfolio && (!looksLikeUrl(portfolio) || portfolio.length > 200)) errors.portfolio = "that doesn't look like a link.";
 
   const linkedin = str("linkedin");
   if (linkedin.length > 200) errors.linkedin = "that link is too long.";
@@ -180,7 +189,7 @@ export function validateInput(body: unknown): { value: VillagerInput; errors: Fi
   }
 
   return {
-    value: { name, tags: tags.slice(0, MAX_TAGS), intro, portfolio, linkedin, twitter, config: config ?? randomConfig(), photo },
+    value: { name, email, tags: tags.slice(0, MAX_TAGS), intro, portfolio, linkedin, twitter, config: config ?? randomConfig(), photo },
     errors,
   };
 }

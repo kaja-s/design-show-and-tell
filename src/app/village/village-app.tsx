@@ -12,9 +12,10 @@ import FeatherIcon from "feather-icons-react";
 import { useTheme } from "../theme-provider";
 import { signalWolfReady } from "../components/shader-canvas";
 import { Village } from "./lib/world";
-import { portrait } from "./lib/characters";
+import { portrait } from "./lib/sprites";
 import { normLink, photoUrl, type Villager } from "./lib/villager";
 import { readMe } from "./lib/me";
+import { Keys, useCoarsePointer } from "./keys";
 
 const POLL_SCREEN_MS = 3000;
 const POLL_EXPLORE_MS = 15000;
@@ -27,10 +28,13 @@ const CHIP_ON = "bg-highlight text-highlight-text border-highlight";
 export function Avatar({ v, size }: { v: Villager; size: number }) {
   const src = useMemo(() => (v.hasPhoto ? photoUrl(v) : portrait(v.config)), [v]);
   // eslint-disable-next-line @next/next/no-img-element
-  return <img src={src} alt="" width={size} height={size} className="rounded-full object-cover bg-[#dbe8ff] shrink-0" style={{ width: size, height: size }} />;
+  return <img src={src} alt="" width={size} height={size} className="rounded-full object-cover bg-[#dbe8ff] shrink-0 [image-rendering:pixelated]" style={{ width: size, height: size }} />;
 }
 
-export function VillageApp({ screen, me }: { screen: boolean; me: string | null }) {
+// inline: the homepage footer. Same village, fewer controls, and it only
+// takes the keyboard once you click into it.
+// active: inline only, true once the tv has opened; the village takes the keys then.
+export function VillageApp({ screen, me, inline = false, active = true }: { screen: boolean; me: string | null; inline?: boolean; active?: boolean }) {
   const { theme, toggle } = useTheme();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const minimapRef = useRef<HTMLCanvasElement>(null);
@@ -45,9 +49,11 @@ export function VillageApp({ screen, me }: { screen: boolean; me: string | null 
   const [progress, setProgress] = useState({ met: 0, total: 0 });
   const [zoomed, setZoomed] = useState(false);
   const [dirOpen, setDirOpen] = useState(false);
-  const [onboard, setOnboard] = useState(!screen && !me);
+  const [onboard, setOnboard] = useState(!screen && !me && !inline);
+  const playing = !inline || active;
   const [banner, setBanner] = useState<string | null>(null);
   const [myId] = useState(() => readMe()?.id ?? null);
+  const touch = useCoarsePointer();
   const bannerTimer = useRef<number>(0);
 
   const showBanner = useCallback((text: string) => {
@@ -68,24 +74,24 @@ export function VillageApp({ screen, me }: { screen: boolean; me: string | null 
         onProgress: (met, total) => setProgress({ met, total }),
         onArrival: (a) => showBanner(`${a.name} moved in`),
         onAllMet: () => window.setTimeout(() => showBanner("you've met everyone"), 600),
-        onFirstFrame: signalWolfReady,
+        onFirstFrame: inline ? () => {} : signalWolfReady,
       },
-      { mode: screen ? "projector" : "explore", night: document.documentElement.classList.contains("dark") },
+      { mode: screen ? "projector" : inline ? "inline" : "explore", night: document.documentElement.classList.contains("dark") },
     );
     village.current = v;
     return () => {
       v.dispose();
       village.current = null;
     };
-  }, [screen, showBanner]);
+  }, [screen, inline, showBanner]);
 
   useEffect(() => {
     village.current?.setNight(theme === "dark");
   }, [theme]);
 
   useEffect(() => {
-    if (village.current) village.current.inputEnabled = !onboard && !dirOpen;
-  }, [onboard, dirOpen]);
+    if (village.current) village.current.inputEnabled = !onboard && !dirOpen && playing;
+  }, [onboard, dirOpen, playing]);
 
   // the villagers: the first load arrives quietly, later ones move in with a puff
   useEffect(() => {
@@ -141,37 +147,59 @@ export function VillageApp({ screen, me }: { screen: boolean; me: string | null 
   const empty = villagers !== null && count === 0;
 
   return (
-    <main className="relative h-dvh w-full overflow-hidden select-none" data-mode={screen ? "projector" : "explore"}>
+    <main className={`relative w-full overflow-hidden select-none ${inline ? "h-full text-left" : "h-dvh"}`} data-mode={screen ? "projector" : inline ? "inline" : "explore"}>
       <canvas
         ref={canvasRef}
         tabIndex={0}
-        aria-label="3d village. arrow keys or wasd to walk, enter to talk to the person next to you, or click someone."
-        className="absolute inset-0 size-full block touch-none outline-none"
+        aria-label="the village. arrow keys or wasd to walk, enter to talk to the person next to you, or click someone."
+        className={`absolute inset-0 size-full block [-webkit-tap-highlight-color:transparent] ${inline ? "touch-pan-y" : "touch-none outline-none"}`}
       />
       <div ref={labelsRef} className="absolute inset-0 pointer-events-none overflow-hidden" />
 
-      {/* the bubble over whoever you're hovering or standing next to; the scene moves it */}
+      {/* next to someone (the scene draws a "…" over them): press enter, or tap this */}
       <button
         ref={bubbleRef}
         type="button"
-        hidden={!bubble || screen}
+        hidden={!bubble || screen || !!card || (inline && !playing)}
         onClick={() => village.current?.talkToBubble()}
-        aria-label={bubble ? `talk to ${bubble.v.name}` : undefined}
-        className="village-bubble absolute left-0 top-0 flex items-center gap-2.5 py-1.5 pl-1.5 pr-4 max-w-[290px] text-left rounded-full bg-background/95 backdrop-blur border border-foreground/15 shadow-[0_14px_30px_-14px_rgba(2,16,147,.55)] will-change-transform"
+        className={`village-bubble absolute left-1/2 -translate-x-1/2 ${inline ? "bottom-4" : "bottom-6"} z-[3] flex items-center gap-3 min-w-[240px] max-w-[calc(100%-24px)] bg-background text-foreground border-2 border-foreground px-2.5 py-2 text-sm text-left shadow-[0_14px_30px_-14px_rgba(2,16,147,.55)] transition-[scale] duration-150 ease-out active:scale-[0.98]`}
       >
-        {bubble && (
-          <>
-            <Avatar v={bubble.v} size={46} />
-            <span className="flex flex-col min-w-0 leading-tight">
-              <b className="font-medium text-sm truncate">{(bubble.met ? "✓ " : "") + bubble.v.name}</b>
-              <small className="text-[11px] opacity-60 truncate">{bubble.v.tags.join(" · ")}</small>
-            </span>
-          </>
-        )}
+        <span aria-hidden="true" className="shrink-0 size-7 grid place-items-center border-2 border-foreground">
+          <FeatherIcon icon="corner-down-right" size={14} />
+        </span>
+        {bubble && <span className="truncate">{touch ? "tap to talk to" : "talk to"} {bubble.v.name}{bubble.met ? " ✓" : ""}</span>}
       </button>
 
       {screen ? (
         <ProjectorOverlay count={count} />
+      ) : inline ? (
+        <>
+          <div className="absolute inset-x-2.5 top-2.5 flex justify-between gap-2 pointer-events-none">
+            <div className="flex flex-wrap items-center gap-1.5 pointer-events-auto">
+              <div className="h-8 inline-flex items-center gap-2 bg-background/90 backdrop-blur-sm border border-foreground/15 px-2.5 text-xs tabular-nums" aria-live="polite" aria-label={`met ${progress.met} of ${progress.total}`}>
+                met {progress.met}/{progress.total}
+              </div>
+              {playing && (
+                <button type="button" className={`${CHIP} ${CHIP_ON}`} onClick={findNew} disabled={!count}>
+                  meet someone →
+                </button>
+              )}
+            </div>
+            <Link href="/village" className={`${CHIP} pointer-events-auto shrink-0 whitespace-nowrap`}>
+              open village
+              <FeatherIcon icon="arrow-up-right" size={13} />
+            </Link>
+          </div>
+          {card && <Card v={card} mine={card.id === myId} left={progress.total - progress.met} onClose={() => village.current?.closeCard()} onNext={findNew} />}
+          {empty && (
+            <p className="absolute left-1/2 bottom-4 -translate-x-1/2 bg-background/95 border border-foreground/15 px-4 py-2.5 text-sm whitespace-nowrap">
+              nobody here yet ·{" "}
+              <Link href="/village/join" className="underline underline-offset-2 hover:bg-highlight hover:text-highlight-text hover:no-underline">
+                move in →
+              </Link>
+            </p>
+          )}
+        </>
       ) : (
         <>
           <div className="absolute inset-x-3 top-3 flex justify-between gap-2 pointer-events-none">
@@ -204,6 +232,7 @@ export function VillageApp({ screen, me }: { screen: boolean; me: string | null 
           </div>
 
           {dirOpen && villagers && <Directory villagers={villagers} onPick={visit} />}
+          <Keys touch={touch} className="absolute right-3 bottom-3 h-9 px-3 hidden sm:flex bg-background/90 backdrop-blur-sm border border-foreground/15" />
 
           <div className="absolute left-3 bottom-3 bg-background/90 backdrop-blur border border-foreground/15 p-1.5">
             <canvas ref={minimapRef} width={336} height={336} className="block size-[112px] sm:size-[152px] cursor-crosshair touch-none" aria-label="map of the village. click to walk there." />
@@ -211,7 +240,7 @@ export function VillageApp({ screen, me }: { screen: boolean; me: string | null 
 
           {card && <Card v={card} mine={card.id === myId} left={progress.total - progress.met} onClose={() => village.current?.closeCard()} onNext={findNew} />}
 
-          {onboard && <Onboarding count={count} onStart={() => { setOnboard(false); canvasRef.current?.focus({ preventScroll: true }); }} />}
+          {onboard && <Onboarding count={count} touch={touch} onStart={() => { setOnboard(false); canvasRef.current?.focus({ preventScroll: true }); }} />}
           {empty && !onboard && (
             <p className="village-pop absolute left-1/2 bottom-6 -translate-x-1/2 bg-background/95 border border-foreground/15 px-4 py-2.5 text-sm whitespace-nowrap">
               nobody here yet ·{" "}
@@ -316,11 +345,16 @@ function Directory({ villagers, onPick }: { villagers: Villager[]; onPick: (id: 
 }
 
 const HOW = [
-  ["walk", "arrows, or click the snow"],
+  ["walk", "arrows, or click the street"],
   ["say hi", "enter, or click someone"],
   ["meet everyone", "collect their cards"],
 ];
-function Onboarding({ count, onStart }: { count: number; onStart: () => void }) {
+const HOW_TOUCH = [
+  ["walk", "tap where you want to go"],
+  ["say hi", "tap someone"],
+  ["meet everyone", "collect their cards"],
+];
+function Onboarding({ count, onStart, touch }: { count: number; onStart: () => void; touch: boolean }) {
   return (
     <div className="absolute inset-0 z-[5] grid place-items-center bg-[#040c2a]/25 p-4">
       <div role="dialog" aria-labelledby="ob-title" className="village-pop bg-background border border-foreground/15 p-6 w-full max-w-[340px] flex flex-col gap-5">
@@ -331,7 +365,7 @@ function Onboarding({ count, onStart }: { count: number; onStart: () => void }) 
           <span className="text-xs opacity-60 tabular-nums">{count} designers live here</span>
         </div>
         <ol className="flex flex-col gap-3">
-          {HOW.map(([title, how], i) => (
+          {(touch ? HOW_TOUCH : HOW).map(([title, how], i) => (
             <li key={title} className="village-stagger flex items-baseline gap-3" style={{ animationDelay: `${80 + i * 50}ms` }}>
               <span className="text-xs opacity-50 tabular-nums">{i + 1}</span>
               <span className="flex flex-col">
