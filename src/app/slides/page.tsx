@@ -196,8 +196,8 @@ function HostsSlide() {
       <div className="slide-in [--d:100ms] grid grid-cols-2 gap-[96px] flex-1">
         {HOSTS.map((h) => (
           <div key={h.name} className="flex flex-col">
-            {/* each host sits in a tinted square; the ink reaches its left and bottom edges, so portrait and text share one edge */}
-            <div className="size-[400px] mb-[32px] bg-foreground/[0.07] overflow-hidden [&>canvas]:size-full">
+            {/* sources are framed so the ink reaches the left edge: portrait and text share one edge */}
+            <div className="size-[400px] mb-[32px] [&>canvas]:size-full">
               <Portrait person={h} size={400} cells={60} />
             </div>
             <div className="max-w-[720px]">
