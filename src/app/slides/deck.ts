@@ -63,7 +63,7 @@ export const SPEAKERS: Person[] = [
   },
   {
     name: "romina kavcic",
-    role: "product leader, owner of dsg",
+    role: "owner of dsg and design leader",
     talk: "agentic design",
     photo: "/slides/romina-halftone.png",
     initials: "rk",
