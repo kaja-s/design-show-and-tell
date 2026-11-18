@@ -13,6 +13,8 @@ export const EVENT = {
 export type Person = {
   name: string;
   role: string;
+  /** shown as its logo on the line under the role (hosts) */
+  company?: "codeplain" | "visionect";
   bio?: string;
   talk?: string;
   /** square, grayscale on white (white is dropped by the halftone). null = no photo yet */
@@ -26,16 +28,18 @@ export type Person = {
 export const HOSTS: Person[] = [
   {
     name: "kaja skerlj",
-    role: "founding product designer at *codeplain",
+    role: "founding product designer",
+    company: "codeplain",
     bio: "making interfaces for ai code generation.",
-    photo: "/slides/kaja-halftone.png",
+    photo: "/slides/kaja-tint.png",
     initials: "ks",
   },
   {
     name: "anuška đogić",
-    role: "product designer at visionect",
+    role: "product designer",
+    company: "visionect",
     bio: "product designer specializing in web, mobile, and digital product design.",
-    photo: "/slides/anuska-halftone.png",
+    photo: "/slides/anuska-tint.png",
     initials: "ađ",
   },
 ];
