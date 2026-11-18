@@ -403,7 +403,7 @@ function TimelineSlide() {
                   )}
                 </span>
                 {s.sub && (
-                  <span className={`block text-[26px] mt-[4px] ${live ? "opacity-75" : "text-foreground-muted"}`}>{s.sub}</span>
+                  <span className={`block text-[30px] mt-[6px] ${live ? "opacity-75" : "text-foreground-muted"}`}>{s.sub}</span>
                 )}
               </span>
             </li>
