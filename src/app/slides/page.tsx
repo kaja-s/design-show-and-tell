@@ -417,7 +417,9 @@ function TimelineSlide() {
 }
 
 function VillageSlide() {
-  const count = useVillagerCount();
+  const villagers = useVillagers();
+  const count = villagers ? villagers.length : null;
+  const newest = villagers ? villagers.slice(-4).reverse() : [];
   return (
     <div className="h-full grid grid-cols-[1fr_auto] gap-[120px] items-center">
       <div className="slide-in">
@@ -434,6 +436,20 @@ function VillageSlide() {
         </ol>
         <p className="mt-[56px] text-[30px] text-foreground-muted tabular-nums h-[1.4em]">
           {count === null ? "" : count === 0 ? "nobody's moved in yet. be the first." : `${count} ${count === 1 ? "designer has" : "designers have"} moved in`}
+        </p>
+        {/* the newest arrivals, newest first; keyed by id so only a new name plays the entrance */}
+        <p className="slide-in mt-[16px] h-[1.4em] flex items-baseline gap-[28px] text-[30px] whitespace-nowrap overflow-hidden max-w-[980px]">
+          {newest.map((v, i) =>
+            i === 0 ? (
+              <span key={v.id} className="font-bold">
+                <Tag>{v.name}</Tag>
+              </span>
+            ) : (
+              <span key={v.id} className="text-foreground-muted">
+                {v.name}
+              </span>
+            ),
+          )}
         </p>
       </div>
       <figure className="slide-in [--d:200ms] flex flex-col items-center gap-[28px]">
@@ -467,7 +483,7 @@ function SpeakerSlide({ person, label }: { person: Person; label: string }) {
 /** After the last talk: thanks, how long we're around, and where to hear about the next one. */
 function ClosingSlide() {
   const speakers = new Intl.ListFormat("en", { type: "conjunction" }).format(SPEAKERS.map((p) => p.name.split(" ")[0]));
-  const count = useVillagerCount();
+  const count = useVillagers()?.length;
   return (
     <div className="h-full grid grid-cols-[1fr_auto] gap-[120px] items-center">
       <div className="slide-in">
@@ -517,15 +533,17 @@ function useNowSlot() {
   return slot;
 }
 
-/** How many villagers have moved in; polls while the slide is up. */
-function useVillagerCount() {
-  const [count, setCount] = useState<number | null>(null);
+type Arrival = { id: string; name: string };
+
+/** Everyone who has moved in, oldest first; polls while the slide is up. null until the first answer. */
+function useVillagers() {
+  const [villagers, setVillagers] = useState<Arrival[] | null>(null);
   useEffect(() => {
     let alive = true;
     const load = () =>
       fetch("/api/villagers", { cache: "no-store" })
         .then((r) => (r.ok ? r.json() : null))
-        .then((d) => alive && d && setCount(d.villagers.length))
+        .then((d) => alive && d && setVillagers(d.villagers.map(({ id, name }: Arrival) => ({ id, name }))))
         .catch(() => {});
     load();
     const t = window.setInterval(load, 5000);
@@ -534,7 +552,7 @@ function useVillagerCount() {
       window.clearInterval(t);
     };
   }, []);
-  return count;
+  return villagers;
 }
 
 /* ── sponsor logo ───────────────────────────────────────────────────────── */
