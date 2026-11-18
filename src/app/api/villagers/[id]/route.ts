@@ -12,11 +12,14 @@ async function authorised(request: NextRequest, tokenHash: string) {
   return !!token && (await hashToken(token)) === tokenHash;
 }
 
-export async function GET(_request: NextRequest, ctx: RouteContext<"/api/villagers/[id]">) {
+// The owner's phone (or the admin) also gets the private email back, so the
+// edit form can show it.
+export async function GET(request: NextRequest, ctx: RouteContext<"/api/villagers/[id]">) {
   const { id } = await ctx.params;
   const v = await getStore().get(id);
   if (!v) return NextResponse.json({ error: "nobody lives here anymore." }, { status: 404 });
-  return NextResponse.json({ villager: toPublic(v) }, { headers: { "Cache-Control": "no-store" } });
+  const own = await authorised(request, v.tokenHash);
+  return NextResponse.json({ villager: toPublic(v), ...(own ? { email: v.email ?? "" } : {}) }, { headers: { "Cache-Control": "no-store" } });
 }
 
 export async function PATCH(request: NextRequest, ctx: RouteContext<"/api/villagers/[id]">) {
@@ -30,6 +33,16 @@ export async function PATCH(request: NextRequest, ctx: RouteContext<"/api/villag
     const { value, errors } = validateInput(await request.json().catch(() => null));
     if (Object.keys(errors).length) return NextResponse.json({ error: "check the highlighted fields.", errors }, { status: 400 });
 
+    if (value.email !== current.email) {
+      const owner = await store.idForEmail(value.email);
+      if (owner && owner !== id) {
+        return NextResponse.json(
+          { error: "that email already lives in the village.", errors: { email: "someone else in the village uses this email." } },
+          { status: 409 },
+        );
+      }
+    }
+
     if (value.photo !== undefined) await store.putPhoto(id, value.photo);
     const next = {
       ...current,
@@ -40,10 +53,15 @@ export async function PATCH(request: NextRequest, ctx: RouteContext<"/api/villag
       linkedin: value.linkedin,
       twitter: value.twitter,
       config: value.config,
+      email: value.email,
       hasPhoto: value.photo === undefined ? current.hasPhoto : !!value.photo,
       updatedAt: Date.now(),
     };
     await store.put(next);
+    if (value.email !== current.email) {
+      if (current.email) await store.setEmail(current.email, null);
+      await store.setEmail(value.email, id);
+    }
     return NextResponse.json({ villager: toPublic(next) });
   } catch (error) {
     console.error("village update error:", error);

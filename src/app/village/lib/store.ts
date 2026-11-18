@@ -9,8 +9,9 @@ import { promises as fs } from "fs";
 import path from "path";
 import type { Villager } from "./villager";
 
-// The record as stored: the public villager plus the hash of its edit token.
-export type StoredVillager = Villager & { tokenHash: string };
+// The record as stored: the public villager plus the hash of its edit token
+// and the private email (absent on villagers from before emails were asked).
+export type StoredVillager = Villager & { tokenHash: string; email?: string };
 
 export type Store = {
   kind: "redis" | "file";
@@ -20,12 +21,16 @@ export type Store = {
   remove(id: string): Promise<void>;
   getPhoto(id: string): Promise<string | null>;
   putPhoto(id: string, dataUrl: string | null): Promise<void>;
+  // email -> villager id, so one email can't move in twice
+  idForEmail(email: string): Promise<string | null>;
+  setEmail(email: string, id: string | null): Promise<void>;
   // true if this caller is under the limit (count per window)
   allow(key: string, limit: number, windowSec: number): Promise<boolean>;
 };
 
 const VILLAGERS = "village:villagers";
 const PHOTO = (id: string) => `village:photo:${id}`;
+const EMAIL = (email: string) => `village:email:${email}`;
 
 const parse = (raw: unknown): StoredVillager | null => {
   if (!raw) return null;
@@ -53,8 +58,17 @@ function redisStore(redis: Redis): Store {
       await redis.hset(VILLAGERS, { [v.id]: JSON.stringify(v) });
     },
     async remove(id) {
+      const v = parse(await redis.hget(VILLAGERS, id));
       await redis.hdel(VILLAGERS, id);
       await redis.del(PHOTO(id));
+      if (v?.email && (await redis.get<string>(EMAIL(v.email))) === id) await redis.del(EMAIL(v.email));
+    },
+    async idForEmail(email) {
+      return (await redis.get<string>(EMAIL(email))) ?? null;
+    },
+    async setEmail(email, id) {
+      if (id) await redis.set(EMAIL(email), id);
+      else await redis.del(EMAIL(email));
     },
     async getPhoto(id) {
       return (await redis.get<string>(PHOTO(id))) ?? null;
@@ -72,7 +86,7 @@ function redisStore(redis: Redis): Store {
   };
 }
 
-type FileData = { villagers: Record<string, StoredVillager>; photos: Record<string, string> };
+type FileData = { villagers: Record<string, StoredVillager>; photos: Record<string, string>; emails?: Record<string, string> };
 const FILE = path.join(process.cwd(), ".village.json");
 
 function fileStore(): Store {
@@ -103,7 +117,22 @@ function fileStore(): Store {
       return (await read()).villagers[id] ?? null;
     },
     put: (v) => update((d) => void (d.villagers[v.id] = v)),
-    remove: (id) => update((d) => { delete d.villagers[id]; delete d.photos[id]; }),
+    remove: (id) =>
+      update((d) => {
+        const email = d.villagers[id]?.email;
+        if (email && d.emails?.[email] === id) delete d.emails[email];
+        delete d.villagers[id];
+        delete d.photos[id];
+      }),
+    async idForEmail(email) {
+      return (await read()).emails?.[email] ?? null;
+    },
+    setEmail: (email, id) =>
+      update((d) => {
+        d.emails ??= {};
+        if (id) d.emails[email] = id;
+        else delete d.emails[email];
+      }),
     async getPhoto(id) {
       return (await read()).photos[id] ?? null;
     },
@@ -124,8 +153,9 @@ export function getStore(): Store {
 }
 
 export function toPublic(stored: StoredVillager): Villager {
-  const { tokenHash, ...v } = stored;
+  const { tokenHash, email, ...v } = stored;
   void tokenHash;
+  void email;
   return v;
 }
 

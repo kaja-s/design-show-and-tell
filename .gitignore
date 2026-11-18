@@ -42,3 +42,4 @@ next-env.d.ts
 
 # village local store (when Upstash env vars are missing)
 /.village.json
+.env*.local

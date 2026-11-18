@@ -3,7 +3,7 @@
 import { useTheme } from "./theme-provider";
 import { Countdown } from "./components/countdown";
 import { Faq } from "./components/faq";
-import { LastEvent } from "./components/last-event";
+// import { LastEvent } from "./components/last-event";
 import { SpeakerProposal } from "./components/speaker-proposal";
 // CTA by phase: <SpeakerProposal /> while looking for speakers, <StayUpToDate /> between
 // events once the lineup is full, <Rsvp /> once the lu.ma page is live (alongside
@@ -13,6 +13,7 @@ import { Rsvp } from "./components/rsvp";
 import { ShaderCanvas } from "./components/shader-canvas";
 import { ConsoleWolf } from "./components/console-wolf";
 import { Poster } from "./components/poster";
+import { VillageWindow } from "./components/village-window";
 import FeatherIcon from "feather-icons-react";
 
 export default function Home() {
@@ -80,48 +81,16 @@ export default function Home() {
           {/* <StayUpToDate /> */}
         </section>
 
-        {/* Second fold: photos from the last event. */}
+        {/* Second fold: photos from the last event. Hidden for now; the village
+            in the footer follows the hero directly.
         <div className="w-full max-w-xl pb-12 sm:pb-20">
           <LastEvent />
-        </div>
+        </div> */}
       </main>
 
-      <footer className="pb-6 px-5 text-center space-y-3">
-        <p className="text-sm">
-          <a href="/village" className="underline underline-offset-2 hover:bg-highlight hover:text-highlight-text hover:no-underline">
-            visit the slovenian designer village →
-          </a>
-        </p>
-        <p className="text-xs opacity-40">
-          colophon:{" "}
-          <a
-            href="https://www.iniabiodun.com/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline hover:opacity-100 transition-opacity"
-          >
-            ÌníOlúwa Abíódún
-          </a>
-          ,{" "}
-          <a
-            href="https://x.com/DanHollick/status/1978503090308304899"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline hover:opacity-100 transition-opacity"
-          >
-            Dan Hollick
-          </a>
-          , and{" "}
-          <a
-            href="https://github.com/mitul-s/mitul.ca"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline hover:opacity-100 transition-opacity"
-          >
-            Mitul Shah
-          </a>
-        </p>
-      </footer>
+      {/* The village, in an old tv that switches on as you scroll; the page ends here. */}
+      <VillageWindow />
+
 
 
       {/* easter eggs: devtools console wolf, and the print-only poster (cmd+p) */}

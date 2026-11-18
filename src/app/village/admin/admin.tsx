@@ -20,16 +20,24 @@ export function Admin() {
     }
   });
   const [villagers, setVillagers] = useState<Villager[] | null>(null);
+  const [emails, setEmails] = useState<Record<string, string>>({});
   const [confirm, setConfirm] = useState<string | null>(null);
   const [message, setMessage] = useState("");
 
+  useEffect(() => signalWolfReady(), []);
+  // reload when the key changes: a matching key also returns everyone's email
   useEffect(() => {
-    signalWolfReady();
-    fetch("/api/villagers", { cache: "no-store" })
-      .then((res) => (res.ok ? res.json() : Promise.reject()))
-      .then((d: { villagers: Villager[] }) => setVillagers(d.villagers.slice().reverse()))
-      .catch(() => setMessage("couldn't load the villagers."));
-  }, []);
+    const t = window.setTimeout(() => {
+      fetch("/api/villagers", { cache: "no-store", headers: key ? { "x-admin-key": key } : {} })
+        .then((res) => (res.ok ? res.json() : Promise.reject()))
+        .then((d: { villagers: Villager[]; emails?: Record<string, string> }) => {
+          setVillagers(d.villagers.slice().reverse());
+          setEmails(d.emails ?? {});
+        })
+        .catch(() => setMessage("couldn't load the villagers."));
+    }, key ? 400 : 0);
+    return () => window.clearTimeout(t);
+  }, [key]);
   const remove = async (v: Villager) => {
     const res = await fetch(`/api/villagers/${v.id}`, { method: "DELETE", headers: { "x-admin-key": key } });
     setConfirm(null);
@@ -67,6 +75,7 @@ export function Admin() {
             <Avatar v={v} size={40} />
             <div className="flex-1 min-w-0">
               <div className="truncate">{v.name}</div>
+              {emails[v.id] !== undefined && <div className="text-xs truncate">{emails[v.id] || "no email"}</div>}
               <div className="text-xs opacity-60 truncate">
                 {v.tags.join(" · ")} · {new Date(v.createdAt).toLocaleString("sl-SI")}
               </div>
