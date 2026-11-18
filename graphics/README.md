@@ -85,6 +85,14 @@ Faces need more contrast than the wolf to survive the dots, which is what the ga
 there are for. Re-tune `framing` so the head clears the status line. If the photo is cropped tight, scale
 it up so its edges bleed off the post rather than ending inside it (see `speaker-nina/prepare.py`).
 
+## host portraits
+
+`hosts/` isn't a graphic: it makes the host photos for the `/slides` hosts slide. Each host has an
+original photo (`<name>.jpg`) and a cut-out (`<name>-cutout.png`, made with `swift hosts/lift.swift
+hosts/<name>.jpg hosts/<name>-cutout.png`, macOS Vision subject lifting). `python3 hosts/prepare.py`
+turns the cut-outs into `public/slides/<name>-tint.png` (the blue-toned photo the slide shows) and
+`<name>-halftone.png`; each host's crop and tone curve live at the top of that file.
+
 Change `_engine/comp.html` only for new choreography. Its shader math mirrors
 `src/app/components/shader-canvas.tsx`; if the site's halftone or theme colours change, update `THEME`
 and the fragment shader there too.
