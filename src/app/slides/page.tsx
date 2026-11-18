@@ -172,8 +172,8 @@ function TitleSlide() {
   return (
     // the site's centered hero, tightened: wolf, name, date. The small print sits in the corners.
     <div className="h-full relative flex flex-col items-center justify-center text-center">
-      <p className="slide-in absolute top-0 left-0 text-[26px] text-foreground-muted">meetup for designers</p>
-      <p className="slide-in absolute top-0 right-0 text-[26px] text-foreground-muted">
+      <p className="slide-in absolute -top-[56px] left-0 text-[26px] text-foreground-muted">meetup for designers</p>
+      <p className="slide-in absolute -top-[56px] right-0 text-[26px] text-foreground-muted">
         no. <span className="normal-case!">{EVENT.edition}</span>
       </p>
       <ShaderCanvas className="slide-in relative size-[460px] -mt-[48px] shrink-0" cells={38} />
@@ -187,40 +187,139 @@ function TitleSlide() {
   );
 }
 
+/* Host card variants, to pick one before the event: /slides?hosts=a…d#2, or press `v`
+   on slide 2 to cycle. a is the current card. */
+const HOST_CARDS = ["a", "b", "c", "d"] as const;
+type HostCard = (typeof HOST_CARDS)[number];
+const HOSTS_EVENT = "hosts:change";
+
+function readHostCard(): HostCard {
+  const v = new URLSearchParams(window.location.search).get("hosts");
+  return (HOST_CARDS as readonly string[]).includes(v ?? "") ? (v as HostCard) : "a";
+}
+function subscribeHostCard(cb: () => void) {
+  window.addEventListener(HOSTS_EVENT, cb);
+  window.addEventListener("popstate", cb);
+  return () => {
+    window.removeEventListener(HOSTS_EVENT, cb);
+    window.removeEventListener("popstate", cb);
+  };
+}
+
+function CompanyLogo({ person, className }: { person: Person; className: string }) {
+  if (!person.company) return null;
+  return (
+    <>
+      {person.company === "codeplain" ? (
+        <CodeplainLogo className={`block w-auto ${className}`} />
+      ) : (
+        <VisionectLogo className={`block w-auto ${className}`} />
+      )}
+      <span className="sr-only">{person.company}</span>
+    </>
+  );
+}
+
+function HostPhoto({ person }: { person: Person }) {
+  return (
+    <div className="size-[400px] mb-[32px]">
+      {person.photo ? (
+        // a plain photo toned blue (graphics/hosts/prepare.py), not the halftone
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={person.photo} alt="" className="block size-full" />
+      ) : (
+        <Portrait person={person} size={400} cells={60} />
+      )}
+    </div>
+  );
+}
+
+/** a: name, muted role, logo, bio at body size (the current card). */
+function HostCardA({ h }: { h: Person }) {
+  return (
+    <div className="max-w-[720px]">
+      <p className="text-[48px] font-bold leading-tight">{h.name}</p>
+      <p className="text-[30px] mt-[12px] text-foreground-muted">{h.role}</p>
+      <p className="mt-[20px] [--logo-h:34px]">
+        <CompanyLogo person={h} className="h-[var(--logo-h)]" />
+      </p>
+      <p className="text-[30px] mt-[32px] leading-[1.4] text-pretty">{h.bio}</p>
+    </div>
+  );
+}
+
+/** b: the company is a small label above the name; role sits tight under it; bio steps down. */
+function HostCardB({ h }: { h: Person }) {
+  return (
+    <div className="max-w-[720px]">
+      <p className="[--logo-h:28px] text-foreground-muted">
+        <CompanyLogo person={h} className="h-[var(--logo-h)]" />
+      </p>
+      <p className="text-[52px] font-bold leading-tight mt-[20px]">{h.name}</p>
+      <p className="text-[32px] mt-[6px]">{h.role}</p>
+      <p className="text-[26px] mt-[28px] leading-[1.45] text-foreground-muted text-pretty max-w-[600px]">{h.bio}</p>
+    </div>
+  );
+}
+
+/** c: name, then one line "role at <logo>", then the bio. */
+function HostCardC({ h }: { h: Person }) {
+  return (
+    <div className="max-w-[720px]">
+      <p className="text-[52px] font-bold leading-tight">{h.name}</p>
+      <p className="text-[30px] mt-[10px] flex items-baseline gap-[14px] flex-wrap [--logo-h:30px]">
+        <span className="text-foreground-muted">{h.role} at</span>
+        <span className="self-center translate-y-[2px]">
+          <CompanyLogo person={h} className="h-[var(--logo-h)]" />
+        </span>
+      </p>
+      <p className="text-[28px] mt-[32px] leading-[1.45] text-pretty max-w-[620px]">{h.bio}</p>
+    </div>
+  );
+}
+
+/** d: name, role, bio; the logo signs off under a rule, level across both cards. */
+function HostCardD({ h }: { h: Person }) {
+  return (
+    <div className="max-w-[640px] flex-1 flex flex-col">
+      <p className="text-[52px] font-bold leading-tight">{h.name}</p>
+      <p className="text-[30px] mt-[8px] text-foreground-muted">{h.role}</p>
+      <p className="text-[28px] mt-[28px] leading-[1.45] text-pretty">{h.bio}</p>
+      <p className="mt-auto pt-[24px] border-t-2 border-foreground/20 [--logo-h:30px]">
+        <CompanyLogo person={h} className="h-[var(--logo-h)]" />
+      </p>
+    </div>
+  );
+}
+
 function HostsSlide() {
+  const card = useSyncExternalStore(subscribeHostCard, readHostCard, () => "a" as HostCard);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "v" || e.metaKey || e.ctrlKey || e.altKey) return;
+      const next = HOST_CARDS[(HOST_CARDS.indexOf(readHostCard()) + 1) % HOST_CARDS.length];
+      const url = new URL(window.location.href);
+      url.searchParams.set("hosts", next);
+      window.history.replaceState(null, "", url);
+      window.dispatchEvent(new Event(HOSTS_EVENT));
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  const Card = { a: HostCardA, b: HostCardB, c: HostCardC, d: HostCardD }[card];
   return (
     <div className="h-full flex flex-col">
       <h2 className="slide-in text-[56px] font-bold mb-[40px]">
         <Tag>by designers, for designers</Tag>
       </h2>
-      <div className="slide-in [--d:100ms] grid grid-cols-2 gap-[96px] flex-1">
+      {/* keyed so switching replays the entrance */}
+      <div key={card} className="slide-in [--d:100ms] grid grid-cols-2 gap-[96px] flex-1 pb-[48px]">
         {HOSTS.map((h) => (
           <div key={h.name} className="flex flex-col">
-            {/* sources are framed so the ink reaches the left edge: portrait and text share one edge */}
-            <div className="size-[400px] mb-[32px]">
-              {h.photo ? (
-                // a plain photo toned blue (graphics/hosts/prepare.py), not the halftone
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={h.photo} alt="" className="block size-full" />
-              ) : (
-                <Portrait person={h} size={400} cells={60} />
-              )}
-            </div>
-            <div className="max-w-[720px]">
-              <p className="text-[48px] font-bold leading-tight">{h.name}</p>
-              <p className="text-[30px] mt-[12px] text-foreground-muted">{h.role}</p>
-              {h.company && (
-                <p className="mt-[20px]">
-                  {h.company === "codeplain" ? (
-                    <CodeplainLogo className="block h-[34px] w-auto" />
-                  ) : (
-                    <VisionectLogo className="block h-[30px] w-auto" />
-                  )}
-                  <span className="sr-only">{h.company}</span>
-                </p>
-              )}
-              <p className="text-[30px] mt-[32px] leading-[1.4] text-pretty">{h.bio}</p>
-            </div>
+            <HostPhoto person={h} />
+            <Card h={h} />
           </div>
         ))}
       </div>
