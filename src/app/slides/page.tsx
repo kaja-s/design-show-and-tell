@@ -188,14 +188,14 @@ function TitleSlide() {
 }
 
 /* Host card variants, to pick one before the event: /slides?hosts=a…d#2, or press `v`
-   on slide 2 to cycle. a is the current card. */
+   on slide 2 to cycle. c is the default; a is the earlier card. */
 const HOST_CARDS = ["a", "b", "c", "d"] as const;
 type HostCard = (typeof HOST_CARDS)[number];
 const HOSTS_EVENT = "hosts:change";
 
 function readHostCard(): HostCard {
   const v = new URLSearchParams(window.location.search).get("hosts");
-  return (HOST_CARDS as readonly string[]).includes(v ?? "") ? (v as HostCard) : "a";
+  return (HOST_CARDS as readonly string[]).includes(v ?? "") ? (v as HostCard) : "c";
 }
 function subscribeHostCard(cb: () => void) {
   window.addEventListener(HOSTS_EVENT, cb);
@@ -222,11 +222,17 @@ function CompanyLogo({ person, className }: { person: Person; className: string 
 
 function HostPhoto({ person }: { person: Person }) {
   return (
-    <div className="size-[400px] mb-[32px]">
+    <div className="relative size-[400px] mb-[32px]">
       {person.photo ? (
-        // a plain photo toned blue (graphics/hosts/prepare.py), not the halftone
+        // a plain photo toned blue (graphics/hosts/prepare.py), not the halftone; anchored
+        // bottom-left so a larger one grows upward and still sits on the name
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={person.photo} alt="" className="block size-full" />
+        <img
+          src={person.photo}
+          alt=""
+          className="absolute bottom-0 left-0 block max-w-none"
+          style={{ width: person.photoSize ?? 400, height: person.photoSize ?? 400 }}
+        />
       ) : (
         <Portrait person={person} size={400} cells={60} />
       )}
@@ -293,7 +299,7 @@ function HostCardD({ h }: { h: Person }) {
 }
 
 function HostsSlide() {
-  const card = useSyncExternalStore(subscribeHostCard, readHostCard, () => "a" as HostCard);
+  const card = useSyncExternalStore(subscribeHostCard, readHostCard, () => "c" as HostCard);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
