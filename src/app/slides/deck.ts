@@ -34,7 +34,7 @@ export const HOSTS: Person[] = [
   {
     name: "anuška đogić",
     role: "product designer at visionect",
-    bio: "designs for e-paper at visionect, and opened the doors for us tonight.",
+    bio: "product designer specializing in web, mobile, and digital product design.",
     photo: "/slides/anuska-halftone.png",
     initials: "ađ",
   },
