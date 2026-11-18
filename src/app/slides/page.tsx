@@ -191,7 +191,7 @@ function HostsSlide() {
   return (
     <div className="h-full flex flex-col">
       <h2 className="slide-in text-[56px] font-bold mb-[40px]">
-        <Tag>hi, we&apos;re your hosts</Tag>
+        <Tag>by designers, for designers</Tag>
       </h2>
       <div className="slide-in [--d:100ms] grid grid-cols-2 gap-[96px] flex-1">
         {HOSTS.map((h) => (
