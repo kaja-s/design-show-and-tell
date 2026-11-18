@@ -35,7 +35,7 @@ export const HOSTS: Person[] = [
     company: "codeplain",
     bio: "making interfaces for ai code generation.",
     photo: "/slides/kaja-tint.png",
-    photoSize: 600,
+    photoSize: 540,
     initials: "ks",
   },
   {
