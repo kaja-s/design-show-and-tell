@@ -26,8 +26,8 @@ export type Person = {
 export const HOSTS: Person[] = [
   {
     name: "kaja skerlj",
-    role: "product designer at codeplain",
-    bio: "designs tools for building software with ai. made this website, and the village you're about to move into.",
+    role: "founding product designer at *codeplain",
+    bio: "making interfaces for ai code generation.",
     photo: "/slides/kaja-halftone.png",
     initials: "ks",
   },
