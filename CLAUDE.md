@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A single-page landing site for "design show & tell", a recurring in-person designer meetup (current venue: Visionect, Tržaška cesta 118). Deployed on Vercel at https://design-show-and-tell.vercel.app. Next.js 16 (App Router), React 19, Tailwind v4, TypeScript. There is one route (`/`) and one API route (`/api/subscribe`). No tests exist.
+A landing site for "design show & tell", a recurring in-person designer meetup (current venue: Visionect, Tržaška cesta 118), plus the "slovenian designer village" (`/village`, see below). Deployed on Vercel at https://design-show-and-tell.vercel.app. Next.js 16 (App Router), React 19, Tailwind v4, TypeScript, three.js (village only). No tests exist.
 
 ## Commands
 
@@ -22,6 +22,8 @@ node graphics/_engine/render.js <name>  # render a looping social motion graphic
 
 `LOOPS_API_KEY` must be set in `.env.local` for the subscribe form to work locally. Without it the API route returns 500.
 
+The village stores villagers in Upstash Redis when `KV_REST_API_URL` + `KV_REST_API_TOKEN` (what the Vercel Upstash integration injects) or `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` are set; otherwise in `.village.json` in the project root (gitignored), which works for local hosting but not on Vercel (read-only filesystem, the API returns 503). `VILLAGE_ADMIN_KEY` enables deleting anyone from `/village/admin`.
+
 ## Motion graphics (`graphics/`)
 
 `graphics/_engine/comp.html` is one shared composition (WebGL port of the halftone shader + DOM typography + a scripted pointer that clicks the theme toggle; every frame is a pure function of time, and it loops). Each graphic is a folder with a `content.js` that supplies copy, duration, wolf framing and timeline overrides; `graphics/_engine/render.js <name>` drives it through headless Chrome into ffmpeg. `graphics/README.md` has the details.
@@ -33,7 +35,9 @@ The site alternates between two states, and most changes to this repo are flippi
 1. `src/app/components/countdown.tsx` – `NEXT_EVENT` date (local time, no timezone suffix). Between events set it to `null`: the slot then shows the `SAVE_THE_DATE` line ("late november 2026 · exact date soon") instead of a zeroed countdown. Either way the loading dashes resolve into the content over 400ms (`cd-*` block in `globals.css`). The slot glitches every 5s (`GLITCH = "slip"` in countdown.tsx; the `cdg-*` block in `globals.css` also holds the unused slice/flicker/jitter variants).
 2. `src/app/components/faq.tsx` – the "when + where?" entry in `faqs` (answers are `ReactNode`, so links go inline in the array).
 3. `src/app/components/rsvp.tsx` – the lu.ma `href`.
-4. `src/app/page.tsx` – pick the CTA for the phase: `<SpeakerProposal />` while looking for speakers, `<StayUpToDate />` between events once the lineup is full, `<Rsvp />` once the lu.ma page is live. While the lineup is still open after the lu.ma page goes live, `<Rsvp />` and `<SpeakerProposal />` sit side by side in a `flex-wrap` row. Unused imports are commented out there.
+4. `src/app/village/lib/villager.ts` – `EVENT` (id + label) so new villagers are stamped "moved in at show & tell · <date>"; the card shows the label only for the current id, so add older ones there if you want them labelled.
+5. `src/app/page.tsx` – pick the CTA for the phase: `<SpeakerProposal />` while looking for speakers, `<StayUpToDate />` between events once the lineup is full, `<Rsvp />` once the lu.ma page is live. While the lineup is still open after the lu.ma page goes live, `<Rsvp />` and `<SpeakerProposal />` sit side by side in a `flex-wrap` row. Unused imports are commented out there.
+6. `src/app/slides/deck.ts` – the intro deck's copy: date/venue, hosts, sponsor, speakers + timeline, who's up first.
 
 ## Architecture notes
 
@@ -48,6 +52,10 @@ The site alternates between two states, and most changes to this repo are flippi
 **FAQ is a vertical Embla carousel** (`src/components/ui/carousel.tsx`, shadcn wrapper) with two trailing empty `CarouselItem` spacers so the last question can center. Blur/opacity of items is computed from distance to the selected index. Their opacity/blur transition is on the question buttons in `faq.tsx`.
 
 **Subscribe flow:** `StayUpToDate` (unmounted) and the inline `KeepMeUpdated` link in the "when + where?" FAQ answer post `{name?, email}` to `/api/subscribe`. The route makes one Loops `events/send` call: it creates or updates the contact, adds it to the hardcoded mailing list ID, and fires the `signup` event. A Loop in the Loops dashboard triggered by `signup` sends the welcome email; set it to run once per contact.
+
+**Slovenian designer village (`src/app/village/`):** the activity after the intro slides. The slide's QR (`public/qr-village.svg`, regenerate with the qrcode command above pointing at `/village/join`) opens `/village/join` (`join/join-flow.tsx`): name → look (mii-style character: hair, hat, coat, scarf, extras, costume, skin, hello move; live `lib/preview.ts` canvas) → card (optional photo cropped to 256px, 1–3 role tags, description ≤140, portfolio, optional linkedin/twitter) → done. The phone keeps `{id, token}` in localStorage (`lib/me.ts`); edits and "remove me" send `x-edit-token`. `/village` (`village-app.tsx` + `lib/world.ts`) is the explorable 3d village: a round alpine village (cabins in two rings around a lit christmas tree, a pond, lamps, a fence marking the edge; three villagers per cabin, cabins appear as people move in), walk with arrows/wasd or click, Enter or click to talk, minimap, "met n of N", "find someone new". Names show only in the hover/nearby bubble (photo, name, tags); the card has photo, linkedin/twitter icons, tags, description, portfolio. Day/night follows the site theme. `/village?screen` is the projector view (orbiting camera, QR, camera flies to each new arrival; polls every 3s, explore polls every 15s). `/village/admin` deletes with `VILLAGE_ADMIN_KEY`. API: `GET/POST /api/villagers`, `GET/PATCH/DELETE /api/villagers/[id]`, `GET /api/villagers/[id]/photo` (photos are stored separately so the polled list stays small; urls carry `?v=updatedAt` and are cached immutable). Characters are built from three.js primitives in `lib/characters.ts`; villagers without a photo get a rendered portrait of their character. Validation lives in `lib/villager.ts` and is shared by the form and the API. The village pages call `signalWolfReady()` after their first frame so the page loader (which waits for the wolf) doesn't sit for 6s. Lights use three's physical units (roughly π× old values).
+
+**Intro slides (`/slides`):** the deck shown before the first talk (title + wolf, hosts, sponsor, timeline, village QR, "up first"). All copy lives in `slides/deck.ts`; `slides/page.tsx` lays it out on a fixed 1920×1080 stage scaled to the window. Keys: →/space/pagedown next (clickers send pagedown), ← back, home/end, `f` fullscreen, `d` day/night; click right/left half also works; the slide number is in the hash (`/slides#5`). Portraits go through the wolf's halftone shader via `slides/halftone-image.tsx` (`shader-canvas.tsx` exports the shaders, `HALFTONE_INK`, and takes `className`/`resolution`; dot size is the `u_dot` uniform). Sources in `public/slides/*-halftone.png` are square grayscale on white; the speakers' are copies from `graphics/speaker-*/`, the hosts' were cut out of photos they sent with macOS Vision and framed head-and-shoulders, ink reaching the left edge so it lines up with the text. A host with `photo: null` shows a dashed initials box. The timeline highlights the running slot on the event day; the village slide polls `/api/villagers` for a live count. Entrances are the `.slide-in` block in `globals.css` (100ms stagger, fade-only under reduced motion).
 
 **Last-event photos:** `last-event.tsx` renders three photos from `public/last-event/` (copied from the organizer's portfolio case study) as an overlapping collage on a 16:10 stage at `md` and up, and as a horizontal snap scroller below. It is the only content allowed to bleed past the 576px column (negative horizontal margins). The duotone comes from a grayscale image under a `bg-foreground` overlay using `mix-blend-lighten` in light mode and `dark:mix-blend-darken`; `globals.css` defines `@custom-variant dark` so Tailwind's `dark:` follows the `.dark` class rather than the OS. The frame's base classes deliberately omit `relative` so callers can pass `absolute`.
 
@@ -68,6 +76,6 @@ The site alternates between two states, and most changes to this repo are flippi
 ## Conventions
 
 - Site copy is lowercase; keep new text lowercase (the CSS lowercases most elements anyway, but not inputs/placeholders).
-- Icons come from `feather-icons-react` (`<FeatherIcon icon="moon" />`). `lucide-react` is installed only because the shadcn carousel imports it.
+- Icons come from `feather-icons-react` (`<FeatherIcon icon="moon" />`), including the linkedin/twitter icons on village cards. `lucide-react` is installed only because the shadcn carousel imports it.
 - Path alias: `@/` → `src/`. shadcn config (`components.json`) uses the `new-york` style with `rsc: false`.
 - Fonts: Geist Mono via `next/font/google`, exposed as `--font-geist-mono`; the countdown deliberately uses system `Monaco`.

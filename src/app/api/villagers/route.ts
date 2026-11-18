@@ -1,0 +1,57 @@
+import { NextResponse } from "next/server";
+import { getStore, hashToken, toPublic, type StoredVillager } from "@/app/village/lib/store";
+import { EVENT, validateInput } from "@/app/village/lib/villager";
+
+// Everyone at the venue shares one wifi address, so the limit is generous.
+const CREATE_LIMIT = 40;
+const CREATE_WINDOW_SEC = 600;
+
+// The whole village (no photos, no edit tokens). The big screen polls this.
+export async function GET() {
+  try {
+    const all = await getStore().list();
+    const villagers = all.map(toPublic).sort((a, b) => a.createdAt - b.createdAt);
+    return NextResponse.json({ villagers }, { headers: { "Cache-Control": "no-store" } });
+  } catch (error) {
+    console.error("village list error:", error);
+    return NextResponse.json({ error: "couldn't load the village. try again in a moment." }, { status: 500 });
+  }
+}
+
+// Move in. Returns the villager plus a private edit token the phone keeps.
+export async function POST(request: Request) {
+  try {
+    const store = getStore();
+    const ip = request.headers.get("x-forwarded-for")?.split(",")[0].trim() || "local";
+    if (!(await store.allow(`create:${ip}`, CREATE_LIMIT, CREATE_WINDOW_SEC))) {
+      return NextResponse.json({ error: "lots of people are moving in from here. try again in a few minutes." }, { status: 429 });
+    }
+
+    const { value, errors } = validateInput(await request.json().catch(() => null));
+    if (Object.keys(errors).length) return NextResponse.json({ error: "check the highlighted fields.", errors }, { status: 400 });
+
+    const token = crypto.randomUUID();
+    const now = Date.now();
+    const villager: StoredVillager = {
+      id: crypto.randomUUID().slice(0, 12),
+      name: value.name,
+      tags: value.tags,
+      intro: value.intro,
+      portfolio: value.portfolio,
+      linkedin: value.linkedin,
+      twitter: value.twitter,
+      config: value.config,
+      hasPhoto: !!value.photo,
+      event: EVENT.id,
+      createdAt: now,
+      updatedAt: now,
+      tokenHash: await hashToken(token),
+    };
+    if (value.photo) await store.putPhoto(villager.id, value.photo);
+    await store.put(villager);
+    return NextResponse.json({ villager: toPublic(villager), token }, { status: 201 });
+  } catch (error) {
+    console.error("village create error:", error);
+    return NextResponse.json({ error: "the village can't take new people right now. try again in a moment." }, { status: 503 });
+  }
+}

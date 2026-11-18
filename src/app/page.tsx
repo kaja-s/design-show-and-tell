@@ -87,6 +87,11 @@ export default function Home() {
       </main>
 
       <footer className="pb-6 px-5 text-center space-y-3">
+        <p className="text-sm">
+          <a href="/village" className="underline underline-offset-2 hover:bg-highlight hover:text-highlight-text hover:no-underline">
+            visit the slovenian designer village →
+          </a>
+        </p>
         <p className="text-xs opacity-40">
           colophon:{" "}
           <a

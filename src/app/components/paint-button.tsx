@@ -19,12 +19,14 @@ export function PaintButton({
   type = "button",
   onClick,
   href,
+  className = "",
 }: {
   children: React.ReactNode;
   disabled?: boolean;
   type?: "button" | "submit";
   onClick?: () => void;
   href?: string;
+  className?: string; // extra classes, e.g. full width on the village join form
 }) {
   const [painted, setPainted] = useState<Set<number>>(new Set());
   const btnRef = useRef<HTMLElement>(null);
@@ -82,7 +84,7 @@ export function PaintButton({
         rel="noopener noreferrer"
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
-        className={CLASS}
+        className={`${CLASS} ${className}`}
       >
         {content}
       </a>
@@ -97,7 +99,7 @@ export function PaintButton({
       onClick={onClick}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
-      className={CLASS}
+      className={`${CLASS} ${className}`}
     >
       {content}
     </button>

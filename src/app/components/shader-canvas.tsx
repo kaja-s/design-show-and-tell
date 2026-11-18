@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import { useTheme } from "../theme-provider";
 
-const VERTEX_SHADER = `
+export const VERTEX_SHADER = `
   attribute vec2 a_position;
   attribute vec2 a_texCoord;
   varying vec2 v_texCoord;
@@ -13,12 +13,13 @@ const VERTEX_SHADER = `
   }
 `;
 
-const FRAGMENT_SHADER = `
+export const FRAGMENT_SHADER = `
   precision mediump float;
   varying vec2 v_texCoord;
   uniform sampler2D u_texture;
   uniform vec2 u_resolution;
   uniform vec3 u_color;
+  uniform float u_dot;
 
   void main() {
     vec4 tex = texture2D(u_texture, v_texCoord);
@@ -30,7 +31,7 @@ const FRAGMENT_SHADER = `
       return;
     }
 
-    float dotSize = 5.0;
+    float dotSize = u_dot;
     float angle = 1.1868; // ~68 degrees
     vec2 p = gl_FragCoord.xy;
     float s = sin(angle);
@@ -52,27 +53,39 @@ const FRAGMENT_SHADER = `
 `;
 
 // The page loader waits for the wolf's first drawn frame. The flag covers the
-// case where the wolf is ready before the loader starts listening.
+// case where the wolf is ready before the loader starts listening. The village
+// pages have no wolf and call this after their own first 3d frame.
 export const WOLF_READY_EVENT = "wolf:ready";
 declare global {
   interface Window {
     __wolfReady?: boolean;
   }
 }
-function signalWolfReady() {
+export function signalWolfReady() {
   if (window.__wolfReady) return;
   window.__wolfReady = true;
   window.dispatchEvent(new Event(WOLF_READY_EVENT));
 }
 
-function hexToRgb(hex: string): [number, number, number] {
+// The halftone ink per theme. Also hardcoded in scripts/capture-shader.js and
+// graphics/_engine/comp.html; keep in sync with --foreground in globals.css.
+export const HALFTONE_INK = { light: "#021093", dark: "#93c5fd" } as const;
+
+export function hexToRgb(hex: string): [number, number, number] {
   const r = parseInt(hex.slice(1, 3), 16) / 255;
   const g = parseInt(hex.slice(3, 5), 16) / 255;
   const b = parseInt(hex.slice(5, 7), 16) / 255;
   return [r, g, b];
 }
 
-export function ShaderCanvas() {
+// The wolf. `className` sizes the box (defaults to the homepage's). By default the
+// canvas is 192px with 5px dots (the homepage look). Pass `cells` (dots across)
+// to render at the real device resolution instead, for a large wolf that stays
+// crisp, e.g. on the slides where the stage is CSS-scaled.
+export function ShaderCanvas({
+  className = "relative w-32 h-32 sm:w-48 sm:h-48 ml-[10px]",
+  cells,
+}: { className?: string; cells?: number } = {}) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const animRef = useRef<number>(0);
@@ -134,22 +147,28 @@ export function ShaderCanvas() {
 
     const resLoc = gl.getUniformLocation(program, "u_resolution");
     const colorLoc = gl.getUniformLocation(program, "u_color");
+    const dotLoc = gl.getUniformLocation(program, "u_dot");
 
     // Enable transparency
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
     const render = () => {
+      if (cells) {
+        const px = Math.max(1, Math.round(canvas.getBoundingClientRect().width * devicePixelRatio));
+        if (canvas.width !== px) canvas.width = canvas.height = px;
+      }
       if (video.readyState >= video.HAVE_CURRENT_DATA) {
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, video);
 
-        const fg = theme === "dark" ? hexToRgb("#93c5fd") : hexToRgb("#021093");
+        const fg = hexToRgb(HALFTONE_INK[theme]);
 
         gl.clearColor(0, 0, 0, 0); // Clear with transparent
         gl.clear(gl.COLOR_BUFFER_BIT);
         gl.viewport(0, 0, canvas.width, canvas.height);
         gl.uniform2f(resLoc, canvas.width, canvas.height);
         gl.uniform3f(colorLoc, ...fg);
+        gl.uniform1f(dotLoc, cells ? canvas.width / cells : 5.0);
         gl.drawArrays(gl.TRIANGLES, 0, 6);
         signalWolfReady();
       }
@@ -162,10 +181,10 @@ export function ShaderCanvas() {
     return () => {
       cancelAnimationFrame(animRef.current);
     };
-  }, [theme]);
+  }, [theme, cells]);
 
   return (
-    <div className="relative w-32 h-32 sm:w-48 sm:h-48 ml-[10px]">
+    <div className={className}>
       <video
         ref={videoRef}
         src="/wolf-web.mp4"
