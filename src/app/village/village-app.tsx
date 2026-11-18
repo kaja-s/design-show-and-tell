@@ -191,14 +191,6 @@ export function VillageApp({ screen, me, inline = false, active = true }: { scre
             </Link>
           </div>
           {card && <Card v={card} mine={card.id === myId} left={progress.total - progress.met} onClose={() => village.current?.closeCard()} onNext={findNew} />}
-          {empty && (
-            <p className="absolute left-1/2 bottom-4 -translate-x-1/2 bg-background/95 border border-foreground/15 px-4 py-2.5 text-sm whitespace-nowrap">
-              nobody here yet ·{" "}
-              <Link href="/village/join" className="underline underline-offset-2 hover:bg-highlight hover:text-highlight-text hover:no-underline">
-                move in →
-              </Link>
-            </p>
-          )}
         </>
       ) : (
         <>
