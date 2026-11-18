@@ -180,7 +180,7 @@ function TitleSlide() {
       <h1 className="slide-in [--d:100ms] text-[80px] leading-[1.15] font-bold tracking-[-0.02em] mt-[48px]">
         <Tag>design show &amp; tell</Tag>
       </h1>
-      <p className="slide-in [--d:200ms] text-[32px] mt-[40px] tabular-nums">
+      <p className="slide-in [--d:200ms] text-[32px] mt-[24px] tabular-nums">
         {EVENT.dateLabel}
       </p>
     </div>
