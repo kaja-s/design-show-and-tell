@@ -177,7 +177,7 @@ function TitleSlide() {
         no. <span className="normal-case!">{EVENT.edition}</span>
       </p>
       <ShaderCanvas className="slide-in relative size-[460px] -mt-[48px] shrink-0" cells={38} />
-      <h1 className="slide-in [--d:100ms] text-[80px] leading-[1.15] font-bold tracking-[-0.02em] mt-[56px]">
+      <h1 className="slide-in [--d:100ms] text-[80px] leading-[1.15] font-bold tracking-[-0.02em] mt-[45px]">
         <Tag>design show &amp; tell</Tag>
       </h1>
       <p className="slide-in [--d:200ms] text-[32px] mt-[40px] tabular-nums">
