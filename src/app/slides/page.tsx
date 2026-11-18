@@ -117,7 +117,11 @@ export default function Slides() {
             <Slide />
           </section>
 
-          <footer className="absolute inset-x-[120px] bottom-[48px] flex justify-between text-[22px] text-foreground-muted tabular-nums" aria-hidden="true">
+          {/* the cover already says all of this */}
+          <footer
+            className={`absolute inset-x-[120px] bottom-[48px] flex justify-between text-[22px] text-foreground-muted tabular-nums ${index === 0 ? "invisible" : ""}`}
+            aria-hidden="true"
+          >
             <span>
               design show & tell{" "}
               {/* a roman numeral: opt out of the global lowercase (which outranks a plain utility) */}
@@ -165,17 +169,26 @@ function Portrait({ person, size, cells }: { person: Person; size: number; cells
 
 function TitleSlide() {
   return (
-    // one centered stack, like the site's hero. The wolf's frame is empty above the head,
-    // so the negative top margin centers what you see rather than the square.
-    <div className="slide-in h-full flex flex-col items-center justify-center text-center">
-      <ShaderCanvas className="relative size-[500px] -mt-[120px] shrink-0" cells={40} />
-      <p className="text-[32px] mt-[8px] text-foreground-muted">meetup for designers</p>
-      <h1 className="text-[104px] leading-[1.05] font-bold mt-[24px]">
-        <Tag>design show &amp; tell</Tag>
-      </h1>
-      <p className="text-[40px] mt-[40px] tabular-nums">
-        {EVENT.dateLabel}
-      </p>
+    // a cover, not a centered stack: the title on two heavy lines at the left, the wolf
+    // large on the right, both sitting on one baseline (the wolf's feet meet the frame's
+    // bottom edge, so items-end lines them up with the venue line).
+    <div className="h-full grid grid-cols-[1fr_auto] content-center items-end gap-[64px]">
+      <div className="slide-in">
+        <p className="text-[34px] text-foreground-muted">
+          meetup for designers · no. <span className="normal-case!">{EVENT.edition}</span>
+        </p>
+        {/* the break keeps each line's block hugging its text */}
+        <h1 className="text-[120px] leading-[1.12] font-bold tracking-[-0.02em] mt-[28px]">
+          <Tag>
+            design show
+            <br />
+            &amp; tell
+          </Tag>
+        </h1>
+        <p className="text-[48px] font-bold mt-[64px] tabular-nums">{EVENT.dateLabel}</p>
+        <p className="text-[34px] mt-[12px] text-foreground-muted">{EVENT.venue}</p>
+      </div>
+      <ShaderCanvas className="slide-in [--d:150ms] relative size-[580px] -mr-[24px] -mb-[8px] shrink-0" cells={44} />
     </div>
   );
 }
