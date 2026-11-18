@@ -43,7 +43,6 @@ export const HOSTS: Person[] = [
 export const SPONSOR = {
   name: "visionect",
   line: "for opening your office to us tonight.",
-  note: "e-paper displays, designed and made here in ljubljana.",
 };
 
 export const SPEAKERS: Person[] = [
@@ -73,11 +72,11 @@ export const SPEAKERS: Person[] = [
 export type Slot = { at: string; title: string; sub?: string; speaker?: Person };
 
 export const TIMELINE: Slot[] = [
-  { at: "18:00", title: "welcome + meet", sub: "you are here" },
+  { at: "18:00", title: "welcome + meet" },
   { at: "18:30", title: SPEAKERS[0].name, sub: SPEAKERS[0].talk, speaker: SPEAKERS[0] },
   { at: "18:50", title: SPEAKERS[1].name, sub: SPEAKERS[1].talk, speaker: SPEAKERS[1] },
   { at: "19:10", title: SPEAKERS[2].name, sub: SPEAKERS[2].talk, speaker: SPEAKERS[2] },
-  { at: "19:30", title: "hang out + pizza", sub: "and the village" },
+  { at: "19:30", title: "hang out + pizza" },
 ];
 
 export const VILLAGE = {

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { useTheme } from "../theme-provider";
 import { ShaderCanvas, signalWolfReady } from "../components/shader-canvas";
 import { HalftoneImage } from "./halftone-image";
+import FeatherIcon from "feather-icons-react";
 import { EVENT, FIRST_UP, HOSTS, SPONSOR, TIMELINE, VILLAGE, type Person } from "./deck";
 
 // /slides: the intro deck for the projector. A fixed 1920×1080 stage scaled to
@@ -167,17 +168,81 @@ function Portrait({ person, size, cells }: { person: Person; size: number; cells
 
 /* ── slides ─────────────────────────────────────────────────────────────── */
 
+/* Cover variants, to pick one before the event: /slides?cover=a…e, or press `v` on
+   slide 1 to cycle. a is the split from before; d and e are dark covers that stay
+   dark in either theme (they override the colour tokens locally and tint the wolf). */
+const COVERS = ["a", "b", "c", "d", "e"] as const;
+type Cover = (typeof COVERS)[number];
+const COVER_EVENT = "cover:change";
+
+function readCover(): Cover {
+  const c = new URLSearchParams(window.location.search).get("cover");
+  return (COVERS as readonly string[]).includes(c ?? "") ? (c as Cover) : "a";
+}
+function subscribeCover(cb: () => void) {
+  window.addEventListener(COVER_EVENT, cb);
+  window.addEventListener("popstate", cb);
+  return () => {
+    window.removeEventListener(COVER_EVENT, cb);
+    window.removeEventListener("popstate", cb);
+  };
+}
+
+const START = TIMELINE[0].at;
+
+// Local token overrides for the dark covers. `@theme inline` writes var(--foreground)
+// straight into the utilities, so setting these on a wrapper re-colours everything in it.
+const NIGHT = {
+  "--foreground": "#93c5fd",
+  "--foreground-muted": "rgba(147, 197, 253, 0.55)",
+  "--highlight": "#93c5fd",
+  "--highlight-text": "#040c2a",
+} as React.CSSProperties;
+const NAVY = {
+  "--foreground": "#ffffff",
+  "--foreground-muted": "rgba(255, 255, 255, 0.6)",
+  "--highlight": "#93c5fd",
+  "--highlight-text": "#021093",
+} as React.CSSProperties;
+
+/** Paints the whole window behind a dark cover (main clips it to the viewport). */
+function Backdrop({ color }: { color: string }) {
+  return <div aria-hidden="true" className="absolute -inset-[1600px]" style={{ background: color }} />;
+}
+
 function TitleSlide() {
+  const cover = useSyncExternalStore(subscribeCover, readCover, () => "a" as Cover);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== "v" || e.metaKey || e.ctrlKey || e.altKey) return;
+      const next = COVERS[(COVERS.indexOf(readCover()) + 1) % COVERS.length];
+      const url = new URL(window.location.href);
+      url.searchParams.set("cover", next);
+      window.history.replaceState(null, "", url);
+      window.dispatchEvent(new Event(COVER_EVENT));
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
+
+  const Variant = { a: CoverSplit, b: CoverQuiet, c: CoverDate, d: CoverNight, e: CoverNavy }[cover];
+  // keyed so switching replays the entrance
+  return <Variant key={cover} />;
+}
+
+function Edition() {
+  return <span className="normal-case!">{EVENT.edition}</span>;
+}
+
+/** a: the title on two heavy lines, the wolf's feet on the venue line. */
+function CoverSplit() {
   return (
-    // a cover, not a centered stack: the title on two heavy lines at the left, the wolf
-    // large on the right, both sitting on one baseline (the wolf's feet meet the frame's
-    // bottom edge, so items-end lines them up with the venue line).
     <div className="h-full grid grid-cols-[1fr_auto] content-center items-end gap-[64px]">
       <div className="slide-in">
         <p className="text-[34px] text-foreground-muted">
-          meetup for designers · no. <span className="normal-case!">{EVENT.edition}</span>
+          meetup for designers · no. <Edition />
         </p>
-        {/* the break keeps each line's block hugging its text */}
         <h1 className="text-[120px] leading-[1.12] font-bold tracking-[-0.02em] mt-[28px]">
           <Tag>
             design show
@@ -193,6 +258,125 @@ function TitleSlide() {
   );
 }
 
+/** when / where rows under a rule: labels small and muted, values one step below the title. */
+function Details({ className = "" }: { className?: string }) {
+  return (
+    <dl
+      className={`border-t-2 border-foreground/25 pt-[32px] grid grid-cols-[150px_1fr] gap-x-[24px] gap-y-[16px] items-baseline ${className}`}
+    >
+      <dt className="text-[26px] text-foreground-muted">when</dt>
+      <dd className="text-[40px] tabular-nums">
+        {EVENT.dateLabel} · {START}
+      </dd>
+      <dt className="text-[26px] text-foreground-muted">where</dt>
+      <dd className="text-[40px]">{EVENT.venue}</dd>
+    </dl>
+  );
+}
+
+/** b: a smaller one-line title; date and venue get labels instead of competing with it. */
+function CoverQuiet() {
+  return (
+    <div className="h-full grid grid-cols-[1fr_auto] content-center items-end gap-[64px]">
+      <div className="slide-in">
+        <p className="text-[30px] text-foreground-muted">
+          meetup for designers · no. <Edition />
+        </p>
+        <h1 className="text-[80px] leading-[1.15] font-bold tracking-[-0.02em] mt-[24px] whitespace-nowrap">
+          <Tag>design show &amp; tell</Tag>
+        </h1>
+        <Details className="mt-[88px] max-w-[960px]" />
+      </div>
+      <ShaderCanvas className="slide-in [--d:150ms] relative size-[540px] -mr-[24px] -mb-[8px] shrink-0" cells={42} />
+    </div>
+  );
+}
+
+/** c: the date is the headline (it's what people need tonight); the name becomes the label. */
+function CoverDate() {
+  return (
+    <div className="h-full grid grid-cols-[1fr_auto] content-center items-end gap-[64px]">
+      <div className="slide-in">
+        <h1 className="text-[48px] leading-[1.2] font-bold">
+          <Tag>design show &amp; tell</Tag>
+        </h1>
+        <p className="text-[136px] leading-[1] font-bold tracking-[-0.04em] mt-[56px] tabular-nums">november 19</p>
+        <p className="text-[40px] mt-[36px] tabular-nums">
+          {START} · {EVENT.venue}
+        </p>
+        <p className="text-[28px] mt-[48px] text-foreground-muted">
+          meetup for designers · no. <Edition />
+        </p>
+      </div>
+      <ShaderCanvas className="slide-in [--d:150ms] relative size-[580px] -mr-[24px] -mb-[8px] shrink-0" cells={44} />
+    </div>
+  );
+}
+
+/** d: dark, the site's centered hero tightened up; the small print moves to the corners. */
+function CoverNight() {
+  return (
+    <div className="h-full relative text-foreground" style={NIGHT}>
+      <Backdrop color="#040c2a" />
+      <div className="relative h-full flex flex-col items-center justify-center text-center">
+        <p className="slide-in absolute top-0 left-0 text-[26px] text-foreground-muted">meetup for designers</p>
+        <p className="slide-in absolute top-0 right-0 text-[26px] text-foreground-muted">
+          no. <Edition />
+        </p>
+        <ShaderCanvas className="slide-in relative size-[460px] -mt-[48px] shrink-0" cells={38} ink="#93c5fd" />
+        <h1 className="slide-in [--d:100ms] text-[80px] leading-[1.15] font-bold tracking-[-0.02em] mt-[16px]">
+          <Tag>design show &amp; tell</Tag>
+        </h1>
+        <p className="slide-in [--d:200ms] text-[40px] mt-[48px] tabular-nums">
+          {EVENT.dateLabel} · {START}
+        </p>
+        <p className="slide-in [--d:200ms] text-[30px] mt-[12px] text-foreground-muted">{EVENT.venue}</p>
+      </div>
+    </div>
+  );
+}
+
+/** e: brand navy, a plain two-line title (no block), details in a ruled row the wolf stands on. */
+function CoverNavy() {
+  return (
+    <div className="h-full relative text-foreground" style={NAVY}>
+      <Backdrop color="#021093" />
+      <div className="relative h-full flex flex-col justify-center">
+        <div className="grid grid-cols-[1fr_auto] items-end gap-[64px]">
+          <div className="slide-in pb-[40px]">
+            <p className="text-[30px] text-foreground-muted">meetup for designers</p>
+            <h1 className="text-[120px] leading-[1.05] font-bold tracking-[-0.03em] mt-[28px]">
+              <span className="text-highlight" aria-hidden="true">
+                &gt;{" "}
+              </span>
+              design show
+              <br />
+              <span className="invisible" aria-hidden="true">
+                &gt;{" "}
+              </span>
+              &amp; tell
+            </h1>
+          </div>
+          <ShaderCanvas
+            className="slide-in [--d:150ms] relative size-[520px] -mr-[24px] -mb-[4px] shrink-0"
+            cells={40}
+            ink="#93c5fd"
+          />
+        </div>
+        <div className="slide-in [--d:200ms] border-t-2 border-foreground/40 pt-[28px] grid grid-cols-[1fr_1.4fr_auto] gap-[48px] text-[34px]">
+          <p className="tabular-nums">
+            {EVENT.dateLabel} · {START}
+          </p>
+          <p>{EVENT.venue}</p>
+          <p className="text-foreground-muted">
+            no. <Edition />
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function HostsSlide() {
   return (
     <div className="h-full flex flex-col">
@@ -202,8 +386,8 @@ function HostsSlide() {
       <div className="slide-in [--d:100ms] grid grid-cols-2 gap-[96px] flex-1">
         {HOSTS.map((h) => (
           <div key={h.name} className="flex flex-col">
-            {/* sources are framed so the ink reaches the left edge: portrait and text share one edge */}
-            <div className="size-[400px] mb-[24px] [&>canvas]:size-full">
+            {/* each host sits in a tinted square; the ink reaches its left and bottom edges, so portrait and text share one edge */}
+            <div className="size-[400px] mb-[32px] bg-foreground/[0.07] overflow-hidden [&>canvas]:size-full">
               <Portrait person={h} size={400} cells={60} />
             </div>
             <div className="max-w-[720px]">
@@ -227,7 +411,6 @@ function SponsorSlide() {
         <span className="sr-only">{SPONSOR.name}</span>
       </h2>
       <p className="text-[48px] mt-[56px]">{SPONSOR.line}</p>
-      <p className="text-[30px] mt-[20px] text-foreground-muted">{SPONSOR.note}</p>
     </div>
   );
 }
@@ -242,23 +425,28 @@ function TimelineSlide() {
       <ol className="slide-in [--d:100ms] flex flex-col gap-[20px]">
         {TIMELINE.map((s, i) => {
           const live = i === now;
+          // the pin is "you are here": the running slot on the night, the first one otherwise
+          const here = i === (now >= 0 ? now : 0);
           return (
             <li
               key={s.at}
-              className={`grid grid-cols-[160px_96px_1fr] items-center gap-x-[40px] px-[24px] py-[14px] -mx-[24px] ${
+              className={`grid grid-cols-[160px_1fr] items-center gap-x-[40px] px-[24px] py-[18px] -mx-[24px] ${
                 live ? "bg-highlight text-highlight-text" : ""
               }`}
             >
               <span className="text-[40px] tabular-nums">{s.at}</span>
-              <span className="size-[96px] [&>canvas]:size-full">
-                {s.speaker && <Portrait person={s.speaker} size={96} cells={30} />}
-              </span>
               <span>
-                <span className="block text-[40px] font-bold leading-tight">{s.title}</span>
+                <span className="flex items-center gap-[20px] text-[40px] font-bold leading-tight">
+                  {s.title}
+                  {here && (
+                    <>
+                      <FeatherIcon icon="map-pin" size={36} strokeWidth={2.5} aria-hidden="true" className="shrink-0" />
+                      <span className="sr-only">you are here</span>
+                    </>
+                  )}
+                </span>
                 {s.sub && (
-                  <span className={`block text-[26px] mt-[4px] ${live ? "opacity-75" : "text-foreground-muted"}`}>
-                    {live && !s.speaker ? "happening now" : s.sub}
-                  </span>
+                  <span className={`block text-[26px] mt-[4px] ${live ? "opacity-75" : "text-foreground-muted"}`}>{s.sub}</span>
                 )}
               </span>
             </li>
@@ -274,8 +462,7 @@ function VillageSlide() {
   return (
     <div className="h-full grid grid-cols-[1fr_auto] gap-[120px] items-center">
       <div className="slide-in">
-        <p className="text-[32px] text-foreground-muted mb-[24px]">a small activity</p>
-        <h2 className="text-[88px] leading-[1.05] font-bold">
+        <h2 className="text-[56px] leading-[1.15] font-bold whitespace-nowrap">
           <Tag>slovenian designer village</Tag>
         </h2>
         <ol className="mt-[64px] flex flex-col gap-[20px] text-[40px]">
@@ -294,7 +481,7 @@ function VillageSlide() {
         {/* always dark-on-white: scanners need the contrast and the quiet zone in both themes */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/qr-village.svg" alt={`qr code for ${VILLAGE.joinUrl}`} className="size-[520px] bg-white p-[28px]" />
-        <figcaption className="text-[24px] text-foreground-muted">{VILLAGE.joinUrl}</figcaption>
+        <figcaption className="text-[24px] text-foreground-muted whitespace-nowrap">{VILLAGE.joinUrl}</figcaption>
       </figure>
     </div>
   );
