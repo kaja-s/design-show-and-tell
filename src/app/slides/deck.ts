@@ -52,6 +52,7 @@ export const SPONSOR = {
   name: "visionect",
 };
 
+// In running order: each gets an intro slide after the village ("up first", then "up next").
 export const SPEAKERS: Person[] = [
   {
     name: "nika vižintin prinz",
@@ -90,6 +91,3 @@ export const VILLAGE = {
   joinUrl: "design-show-and-tell.vercel.app/village/join",
   steps: ["scan the code", "make your villager", "find someone you haven't met yet"],
 };
-
-/** The slide after the activity: who goes first. */
-export const FIRST_UP = SPEAKERS[0];

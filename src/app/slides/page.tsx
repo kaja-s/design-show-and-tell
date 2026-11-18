@@ -5,7 +5,7 @@ import { useTheme } from "../theme-provider";
 import { ShaderCanvas, signalWolfReady } from "../components/shader-canvas";
 import { HalftoneImage } from "./halftone-image";
 import FeatherIcon from "feather-icons-react";
-import { EVENT, FIRST_UP, HOSTS, SPONSOR, TIMELINE, VILLAGE, type Person } from "./deck";
+import { EVENT, HOSTS, SPEAKERS, SPONSOR, TIMELINE, VILLAGE, type Person } from "./deck";
 
 // /slides: the intro deck for the projector. A fixed 1920×1080 stage scaled to
 // fit the window, so the layout is identical on any screen.
@@ -22,7 +22,15 @@ import { EVENT, FIRST_UP, HOSTS, SPONSOR, TIMELINE, VILLAGE, type Person } from 
 const W = 1920;
 const H = 1080;
 
-const SLIDES = [TitleSlide, HostsSlide, SponsorSlide, TimelineSlide, VillageSlide, FirstUpSlide];
+// one intro per talk, in running order: the first comes straight after the village, the
+// others go up between talks
+const SPEAKER_SLIDES = SPEAKERS.map((person, i) => {
+  const Intro = () => <SpeakerSlide person={person} label={i === 0 ? "up first" : "up next"} />;
+  Intro.displayName = `SpeakerSlide(${person.initials})`;
+  return Intro;
+});
+
+const SLIDES = [TitleSlide, HostsSlide, SponsorSlide, TimelineSlide, VillageSlide, ...SPEAKER_SLIDES];
 
 const NAV_EVENT = "slides:go";
 function subscribe(cb: () => void) {
@@ -417,19 +425,19 @@ function VillageSlide() {
   );
 }
 
-function FirstUpSlide() {
+function SpeakerSlide({ person, label }: { person: Person; label: string }) {
   return (
     <div className="h-full grid grid-cols-[1fr_auto] items-center gap-[80px]">
       <div className="slide-in">
         <p className="text-[40px] mb-[32px]">
-          <Tag>up first</Tag>
+          <Tag>{label}</Tag>
         </p>
-        <h2 className="text-[112px] leading-[1.02] font-bold tracking-[-0.03em] text-balance">{FIRST_UP.name}</h2>
-        <p className="text-[36px] mt-[28px] text-foreground-muted">{FIRST_UP.role}</p>
-        <p className="text-[44px] mt-[64px] leading-[1.3] max-w-[900px] text-pretty">“{FIRST_UP.talk}”</p>
+        <h2 className="text-[112px] leading-[1.02] font-bold tracking-[-0.03em] text-balance">{person.name}</h2>
+        <p className="text-[36px] mt-[28px] text-foreground-muted">{person.role}</p>
+        <p className="text-[44px] mt-[64px] leading-[1.3] max-w-[900px] text-pretty">“{person.talk}”</p>
       </div>
       <div className="slide-in [--d:200ms] size-[720px] -mr-[60px] [&>canvas]:size-full">
-        <Portrait person={FIRST_UP} size={720} cells={70} />
+        <Portrait person={person} size={720} cells={70} />
       </div>
     </div>
   );
