@@ -7,7 +7,7 @@ export const EVENT = {
   day: "2026-11-19",
   dateLabel: "november 19, 2026",
   venue: "visionect, tržaška cesta 118",
-  ends: "20:00",
+  ends: "20:30", // as on the lu.ma page
 };
 
 export type Person = {
