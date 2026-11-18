@@ -181,7 +181,7 @@ function TitleSlide() {
         <Tag>design show &amp; tell</Tag>
       </h1>
       <p className="slide-in [--d:200ms] text-[32px] mt-[40px] tabular-nums">
-        {EVENT.dateLabel} · {TIMELINE[0].at}
+        {EVENT.dateLabel}
       </p>
     </div>
   );
