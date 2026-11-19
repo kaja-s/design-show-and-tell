@@ -1,7 +1,8 @@
 "use client";
 
-// What two of the village's easter eggs open (see lib/eggs.ts): the
-// final_v3_FINAL mailbox's stack of files, and the mailbox for letters to kaja.
+// What three of the village's easter eggs open (see lib/eggs.ts): the
+// final_v3_FINAL mailbox's stack of files, lost & found at the ferry building,
+// and the mailbox for letters to kaja.
 import { useState } from "react";
 import FeatherIcon from "feather-icons-react";
 import { FIELD_CLASS, FieldError, FieldLabel } from "../components/form-field";
@@ -43,6 +44,40 @@ export function FilesPanel({ onClose }: { onClose: () => void }) {
               {name}
             </span>
             <small className="shrink-0 text-[11px] opacity-50">{when}</small>
+          </li>
+        ))}
+      </ul>
+    </aside>
+  );
+}
+
+const LOST: [string, string][] = [
+  ["the original brief", "last seen in a kickoff deck"],
+  ["the brand guidelines pdf", "v4, or was it v4_final"],
+  ["your layer names", "frame 2847, rectangle 19, group copy"],
+  ["the client's feedback from round 2", "\"make it pop\""],
+  ["a hex code someone swore by", "#1a73e8? #1a74e8?"],
+  ["the good version from tuesday", "before the stakeholder review"],
+  ["the 12-column grid", "it was here a minute ago"],
+];
+
+export function LostPanel({ onClose }: { onClose: () => void }) {
+  return (
+    <aside role="dialog" aria-labelledby="lost-title" className={PANEL}>
+      <Close onClose={onClose} />
+      <div className="flex flex-col gap-1 pr-10">
+        <h2 id="lost-title" className="text-lg font-medium leading-tight">
+          lost &amp; found
+        </h2>
+        <span className="text-xs opacity-60">handed in at the ferry building. ask at the counter.</span>
+      </div>
+      <ul className="flex flex-col" aria-label="lost things">
+        {LOST.map(([what, note], i) => (
+          <li key={what} className="village-stagger flex flex-col py-1.5 border-b border-foreground/10 last:border-0" style={{ animationDelay: `${40 + i * 40}ms` }}>
+            <span className="text-sm">{what}</span>
+            <small className="text-[11px] opacity-50" style={{ textTransform: "none" }}>
+              {note}
+            </small>
           </li>
         ))}
       </ul>

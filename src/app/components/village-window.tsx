@@ -11,8 +11,10 @@
 // ---------------------------------------------------------------------------
 import dynamic from "next/dynamic";
 // import Link from "next/link"; // for the hidden "move in" link
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Keys, useCoarsePointer } from "../village/keys";
+import { useTheme } from "../theme-provider";
+import { CHANNELS, CHANNEL_NOTES, Noise, NoSignal, TvSlides } from "./tv-channels";
 
 const VillageApp = dynamic(() => import("../village/village-app").then((m) => m.VillageApp), {
   ssr: false,
@@ -20,6 +22,13 @@ const VillageApp = dynamic(() => import("../village/village-app").then((m) => m.
 });
 
 const clamp = (v: number) => Math.min(1, Math.max(0, v));
+const REDUCED = "(prefers-reduced-motion: reduce)";
+const subscribeReduced = (cb: () => void) => {
+  const mq = matchMedia(REDUCED);
+  mq.addEventListener("change", cb);
+  return () => mq.removeEventListener("change", cb);
+};
+const readReduced = () => matchMedia(REDUCED).matches;
 const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
 
 export function VillageWindow() {
@@ -32,6 +41,29 @@ export function VillageWindow() {
   const [near, setNear] = useState(false);
   const [open, setOpen] = useState(false);
   const touch = useCoarsePointer();
+  const { theme } = useTheme();
+  // the knobs: left turns the channel, right switches day and night (until
+  // turned, the tv follows the site theme)
+  const [channel, setChannel] = useState(0);
+  const [nightKnob, setNightKnob] = useState<boolean | null>(null);
+  const night = nightKnob ?? theme === "dark";
+  const reduced = useSyncExternalStore(subscribeReduced, readReduced, () => false);
+  // a burst of static between channels
+  const [snow, setSnow] = useState(false);
+  const snowTimer = useRef(0);
+  useEffect(() => () => window.clearTimeout(snowTimer.current), []);
+  const turnChannel = () => {
+    setChannel((c) => (c + 1) % CHANNELS.length);
+    if (reduced) return;
+    setSnow(true);
+    window.clearTimeout(snowTimer.current);
+    snowTimer.current = window.setTimeout(() => setSnow(false), 280);
+  };
+  const [dip, setDip] = useState(0);
+  const turnNight = () => {
+    setNightKnob(!night);
+    setDip((d) => d + 1);
+  };
 
   useEffect(() => {
     const el = tv.current;
@@ -129,22 +161,46 @@ export function VillageWindow() {
         {/* phones: the set fills the screen (178px = padding, title, chin, feet and the key legend) */}
         <div ref={body} className="tv-body relative rounded-[24px] sm:rounded-[38px] p-2 pb-11 sm:p-5 sm:pb-14" style={{ clipPath: "inset(50% 50%)" }}>
           <div ref={screen} className="tv-screen relative overflow-hidden rounded-[16px] sm:rounded-[26px] w-[calc(100vw-32px)] h-[max(360px,calc(100svh-178px))] sm:h-auto sm:w-[min(64vw,calc((100svh-330px)*4/3))] sm:aspect-[4/3]">
-            <div ref={picture} className="absolute inset-0 text-foreground bg-[#f1f4fc] dark:bg-[#16275e]">
-              <div className={`absolute inset-0 ${open ? "" : "pointer-events-none"}`} inert={!open}>
-                {near && <VillageApp screen={false} me={null} inline active={open} />}
+            <div ref={picture} className={`absolute inset-0 text-foreground ${night ? "bg-[#16275e]" : "bg-[#f1f4fc]"}`}>
+              <div key={dip} className={`absolute inset-0 ${dip && !reduced ? "tv-dip" : ""} ${open ? "" : "pointer-events-none"}`} inert={!open}>
+                {near && channel < 2 && <VillageApp screen={channel === 1} me={null} inline active={open && channel === 0} night={night} />}
+                {channel === 2 && <TvSlides night={night} />}
+                {channel === 3 && <NoSignal reduced={reduced} />}
               </div>
+              {snow && <Noise />}
             </div>
             {/* the warm-up glow: a soft colour band and heavy scanlines while it opens */}
             <div ref={crt} aria-hidden="true" className="tv-crt absolute inset-0 pointer-events-none" />
             <div aria-hidden="true" className="tv-glass absolute inset-0 pointer-events-none" />
           </div>
           {/* chin: name plate, speaker, knobs */}
-          <div aria-hidden="true" className="absolute inset-x-4 sm:inset-x-7 bottom-2 sm:bottom-4 h-7 flex items-center justify-between gap-4">
-            <span className="text-[10px] tracking-[0.2em] text-[#93c5fd]/80">dst·tv</span>
-            <span className="tv-grille flex-1 h-3 max-w-40" />
+          <div className="absolute inset-x-4 sm:inset-x-7 bottom-2 sm:bottom-4 h-7 flex items-center justify-between gap-4">
+            <span aria-hidden="true" className="text-[10px] tracking-[0.2em] text-[#93c5fd]/80 tabular-nums">
+              dst·tv <span className="opacity-70">ch{channel + 1}</span>
+            </span>
+            <span aria-hidden="true" className="tv-grille flex-1 h-3 max-w-40" />
             <span className="flex gap-2">
-              <span className="tv-knob size-5 sm:size-6 rounded-full" />
-              <span className="tv-knob size-5 sm:size-6 rounded-full rotate-90" />
+              {/* left: channel. The notch points at one of four stops. */}
+              <button
+                type="button"
+                onClick={turnChannel}
+                aria-label={`channel ${channel + 1}: ${CHANNELS[channel]}. turn to the next channel`}
+                title={`ch${channel + 1} · ${CHANNELS[channel]}`}
+                className="tv-knob-button hit relative rounded-full"
+              >
+                <span className="tv-knob block size-5 sm:size-6 rounded-full" style={{ rotate: `${-60 + channel * 40}deg` }} />
+              </button>
+              {/* right: day and night */}
+              <button
+                type="button"
+                onClick={turnNight}
+                aria-pressed={night}
+                aria-label="night"
+                title={night ? "night" : "day"}
+                className="tv-knob-button hit relative rounded-full"
+              >
+                <span className="tv-knob block size-5 sm:size-6 rounded-full" style={{ rotate: night ? "45deg" : "-45deg" }} />
+              </button>
             </span>
           </div>
         </div>
@@ -155,7 +211,13 @@ export function VillageWindow() {
         </div>
       </div>
 
-      <Keys touch={touch} className="justify-center" />
+      {channel === 0 ? (
+        <Keys touch={touch} className="justify-center" />
+      ) : (
+        <p className="text-xs text-[#93c5fd]/80 text-center min-h-5" aria-live="polite">
+          ch{channel + 1} · {CHANNEL_NOTES[channel]}
+        </p>
+      )}
     </section>
   );
 }
