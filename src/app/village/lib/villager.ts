@@ -146,7 +146,7 @@ export function cleanConfig(x: unknown): Config | null {
   };
 }
 
-export type FieldErrors = Partial<Record<"name" | "email" | "tags" | "intro" | "portfolio" | "linkedin" | "twitter" | "config" | "photo", string>>;
+export type FieldErrors = Partial<Record<"name" | "email" | "tags" | "intro" | "portfolio" | "linkedin" | "twitter" | "config" | "photo" | "text", string>>;
 // Same pattern as components/form-field.tsx (that module is client-only).
 export const VILLAGE_EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export const normEmail = (v: string) => v.trim().toLowerCase();
@@ -201,3 +201,17 @@ export function validateInput(body: unknown): { value: VillagerInput; errors: Fi
 }
 
 export const photoUrl = (v: Pick<Villager, "id" | "updatedAt">) => `/api/villagers/${v.id}/photo?v=${v.updatedAt}`;
+
+// A letter for the organiser, from the mailbox in the village. Name and email
+// are optional (the email is only so she can write back).
+export const MAX_LETTER = 2000;
+export function validateLetter(body: unknown): { value: { name: string; email: string; text: string }; errors: FieldErrors } {
+  const b = (body ?? {}) as Record<string, unknown>;
+  const str = (v: unknown) => (typeof v === "string" ? v.trim() : "");
+  const name = str(b.name).slice(0, 60), email = str(b.email).toLowerCase(), text = str(b.text);
+  const errors: FieldErrors = {};
+  if (!text) errors.text = "write something first.";
+  else if (text.length > MAX_LETTER) errors.text = `keep it under ${MAX_LETTER} characters.`;
+  if (email && (!VILLAGE_EMAIL_RE.test(email) || email.length > 200)) errors.email = "that doesn't look like an email.";
+  return { value: { name, email, text }, errors };
+}

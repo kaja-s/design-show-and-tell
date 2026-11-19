@@ -466,6 +466,18 @@ body[data-proposal-open="true"] > :where(main, footer, .village-section) {
   background: var(--highlight);
   color: var(--highlight-text);
 }
+/* what the barista, the client, the menu and the hydrant say (lib/eggs.ts and world.ts say()) */
+.village-label.village-say {
+  max-width: 220px;
+  white-space: normal;
+  text-align: center;
+  font-size: 12px;
+  padding: 4px 8px;
+  background: var(--background);
+  border: 1.5px solid var(--foreground);
+  box-shadow: 0 8px 20px -10px rgba(2, 16, 147, 0.5);
+  animation: village-pop 180ms var(--ease-out);
+}
 /* The bubble grows from the person it points at (its tail), the card slides
    in from its edge, steps and lists settle up a few pixels. All entrances,
    so ease-out, and short: these open many times a session. */
