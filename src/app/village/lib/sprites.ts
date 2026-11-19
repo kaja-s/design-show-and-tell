@@ -123,16 +123,18 @@ const EXTRAS: Record<Config["extra"], Rows> = {
 const GLASSES_SIDE: Rows = [row(8, ".........GGGG..."), row(9, ".....GGGGG..G..."), row(10, ".........G..G...")];
 const CARRY: Record<Config["carry"], Rows> = {
   none: [],
-  coffee: [row(16, ".ow"), row(17, ".ww"), row(18, ".XX"), row(19, ".Xx"), row(20, ".XX")],
+  // a paper cup in the left hand: lid, cup, brown sleeve, outlined so it reads on a light page
+  coffee: [row(15, ".oo."), row(16, "oXXo"), row(17, "owwo"), ...rows(18, 19, "oxxo"), row(20, "oXXo"), row(21, ".oo.")],
   tote: [row(19, ".............o.o"), ...rows(20, 23, "............XXXX").map(([r, l]) => [r, r === 21 ? "............XxxX" : l] as [number, string])],
-  basket: [row(18, ".............oo."), row(19, "............o..o"), row(20, "............XXXX"), row(21, "............XxxX"), row(22, "............xXXx"), row(23, ".............XX.")],
+  // a closed laptop tucked under the right arm, with a sticker in the accent colour
+  laptop: [row(16, "............oooo"), row(17, "............oXXo"), row(18, "............oXAo"), ...rows(19, 20, "............oXXo"), row(21, "............oxxo"), row(22, "............oooo")],
   sketchbook: [row(17, "XXXX"), ...rows(18, 20, "XwwX"), row(21, "XXXX")],
 };
 const CARRY_COLORS: Record<Config["carry"], [string, string]> = {
   none: ["#000000", "#000000"],
-  coffee: ["#f4f4f4", "#8a5a3b"],
+  coffee: ["#e9e2d6", "#8a5a3b"],
   tote: ["#ece3cf", "#3b5bdb"],
-  basket: ["#c28a4a", "#8a5a3b"],
+  laptop: ["#c9ced6", "#8a909c"],
   sketchbook: ["#262a40", "#f4f4f4"],
 };
 // the right arm comes up to wave (and its resting pixels are cleared)

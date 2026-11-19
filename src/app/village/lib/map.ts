@@ -62,9 +62,10 @@ type Kind = "victorian" | "flat" | "shop" | "tower";
 export type Building = {
   kind: Kind; x: number; w: number; rear: number; top: number; base: number;
   wall: "A" | "B" | "C"; door: number; home: { x: number; y: number }; windows: { x: number; y: number }[];
+  nudge?: boolean; // drawn a pixel low: the 8px-grid easter egg (eggs.ts)
 };
 export type TallProp = { kind: "tree" | "pine" | "palm" | "lamp" | "sign"; x: number; y: number };
-type SmallProp = { kind: "bench" | "planter" | "bin" | "hydrant" | "news" | "rack" | "flowers"; x: number; y: number; c?: string };
+export type SmallProp = { kind: "bench" | "planter" | "bin" | "hydrant" | "news" | "rack" | "flowers"; x: number; y: number; c?: string };
 export type Layout = {
   buildings: Building[];
   solids: Rect[];
@@ -490,7 +491,14 @@ export function drawStatic(g: G, p: Palette, occupancy: number[]) {
   R(g, sw.x + 23, sw.y - 11, 5, 1, "#ffffff"); R(g, sw.x + 23, sw.y - 9, 5, 1, "#ffffff");
 
   // buildings, back to front
-  L.buildings.forEach((b, k) => building(g, p, b, occupancy[k] ?? 0));
+  L.buildings.forEach((b, k) => {
+    if (b.nudge) {
+      g.save();
+      g.translate(0, 1);
+    }
+    building(g, p, b, occupancy[k] ?? 0);
+    if (b.nudge) g.restore();
+  });
   L.towers.forEach((t) => tower(g, p, t.x, t.rear, t.base));
   diner(g, p, L.diner);
   L.small.forEach((s) => smallProp(g, p, s));

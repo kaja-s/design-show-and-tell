@@ -1,7 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import { JoinFlow } from "./join-flow";
-import { VariantPicker } from "./variants/picker";
-import { STEP_VARIANTS, type StepVariant } from "./variants/ids";
 
 export const metadata: Metadata = { title: "move into the village · design show & tell" };
 
@@ -19,13 +17,6 @@ export const viewport: Viewport = {
   colorScheme: "light",
 };
 
-// ?__variant=trail|tower|channel picks the step bar (temporary harness)
-export default async function JoinPage({ searchParams }: { searchParams: Promise<{ __variant?: string }> }) {
-  const { __variant } = await searchParams;
-  const active = (STEP_VARIANTS.find((v) => v.id === __variant)?.id ?? "trail") as StepVariant;
-  return (
-    <VariantPicker active={active}>
-      <JoinFlow steps={active} />
-    </VariantPicker>
-  );
+export default function JoinPage() {
+  return <JoinFlow />;
 }

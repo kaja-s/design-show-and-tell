@@ -13,10 +13,7 @@ import { PaintButton } from "../../components/paint-button";
 import { EMAIL_RE, EmailSuggestion, FIELD_CLASS, FieldError, FieldLabel, suggestEmail } from "../../components/form-field";
 import { signalWolfReady } from "../../components/shader-canvas";
 import { Preview } from "../lib/preview";
-import { TrailSteps } from "./variants/trail";
-import { TowerSteps } from "./variants/tower";
-import { ChannelSteps } from "./variants/channel";
-import type { StepVariant } from "./variants/ids";
+import { TrailSteps } from "./step-trail";
 import { clearMe, readMe, writeMe } from "../lib/me";
 import {
   COLORS, HAIR_COLORS, MAX_INTRO, MAX_TAGS, OPTIONS, PANTS, SKIN, TAGS, defaultConfig, looksLikeUrl, randomConfig,
@@ -77,8 +74,7 @@ function PreviewCanvas({ config, emote, loop, className }: { config: Config; emo
   return <canvas ref={ref} className={`block w-full touch-pan-y cursor-grab active:cursor-grabbing select-none ${className}`} aria-label="your character. tap or drag sideways to turn around." />;
 }
 
-// steps: which step-bar variant to show (temporary harness, see variants/picker.tsx)
-export function JoinFlow({ steps = "trail" }: { steps?: StepVariant }) {
+export function JoinFlow() {
   const [step, setStep] = useState<Step>(1);
   const [config, setConfig] = useState<Config>(() => defaultConfig());
   const [tab, setTab] = useState("skin");
@@ -273,7 +269,7 @@ export function JoinFlow({ steps = "trail" }: { steps?: StepVariant }) {
 
   return (
     <main className="join-flow mx-auto w-full max-w-sm min-h-dvh flex flex-col px-[max(1.25rem,env(safe-area-inset-left),env(safe-area-inset-right))] pt-[max(1.5rem,env(safe-area-inset-top))] pb-[max(2rem,calc(env(safe-area-inset-bottom)+1rem))] gap-4">
-      {step > 0 && step < 4 && (steps === "trail" ? <TrailSteps step={step} config={config} /> : steps === "tower" ? <TowerSteps step={step} config={config} /> : <ChannelSteps step={step} config={config} />)}
+      {step > 0 && step < 4 && <TrailSteps step={step} config={config} />}
 
       {step === 0 && mine && (
         <section key="s0" className="village-step flex-1 flex flex-col gap-5">
@@ -508,9 +504,11 @@ export function JoinFlow({ steps = "trail" }: { steps?: StepVariant }) {
 
       {step === 4 && mine && (
         <section key="s4" className="village-step flex-1 flex flex-col gap-3.5">
-          <PreviewCanvas config={config} emote={emoteTick} loop className="h-[300px] -mx-5" />
-          <h1 className="text-2xl font-medium leading-tight tracking-tight">you&apos;re in, {mine.name}.</h1>
-          <div className="flex-1" />
+          {/* the character and the greeting sit together in the middle of the free space */}
+          <div className="flex-1 flex flex-col justify-center items-center gap-3.5 text-center">
+            <PreviewCanvas config={config} emote={emoteTick} loop className="h-[300px] w-[calc(100%+2.5rem)] -mx-5" />
+            <h1 className="text-2xl font-medium leading-tight tracking-tight text-balance">you&apos;re in, {mine.name}.</h1>
+          </div>
           <PaintButton className="w-full py-3 text-center" onClick={() => window.location.assign(`/village?me=${mine.id}`)}>visit the village</PaintButton>
           <div className="flex justify-center flex-wrap gap-x-6 gap-y-3 text-sm">
             <button type="button" className={TEXT_BUTTON} onClick={() => go(2)}>
