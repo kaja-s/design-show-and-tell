@@ -1,10 +1,17 @@
 import type { Metadata } from "next";
-import { Geist_Mono } from "next/font/google";
+import { Geist_Mono, Pixelify_Sans } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "./theme-provider";
 import { CaseProvider } from "./case-provider";
 import { Analytics } from "@vercel/analytics/next";
 import { PageLoader } from "./components/page-loader";
+
+// the village's name, set in pixels like the village itself
+const pixelify = Pixelify_Sans({
+  variable: "--font-pixel",
+  subsets: ["latin", "latin-ext"],
+  weight: ["500", "600"],
+});
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
@@ -40,14 +47,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${geistMono.variable} h-full antialiased`} suppressHydrationWarning>
+    <html lang="en" className={`${geistMono.variable} ${pixelify.variable} h-full antialiased`} suppressHydrationWarning>
       <head>
         <script
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
                 const theme = localStorage.getItem('theme');
-                if (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                // the join flow (opened from the slide's qr code) is always light
+                const lightOnly = location.pathname.startsWith('/village/join');
+                if (!lightOnly && (theme === 'dark' || (!theme && window.matchMedia('(prefers-color-scheme: dark)').matches))) {
                   document.documentElement.classList.add('dark');
                 }
                 const caseMode = localStorage.getItem('caseMode') || 'lower';

@@ -47,6 +47,7 @@ export function VillageApp({ screen, me, inline = false, active = true }: { scre
   const [bubble, setBubble] = useState<{ v: Villager; met: boolean } | null>(null);
   const [card, setCard] = useState<Villager | null>(null);
   const [progress, setProgress] = useState({ met: 0, total: 0 });
+  const [met, setMet] = useState<Set<string>>(() => new Set());
   const [zoomed, setZoomed] = useState(false);
   const [dirOpen, setDirOpen] = useState(false);
   const [onboard, setOnboard] = useState(!screen && !me && !inline);
@@ -70,7 +71,10 @@ export function VillageApp({ screen, me, inline = false, active = true }: { scre
       { canvas, minimap: minimapRef.current, bubble: bubbleEl, labels },
       {
         onBubble: (b, met) => setBubble(b ? { v: b, met } : null),
-        onCard: setCard,
+        onCard: (v) => {
+          setCard(v);
+          if (v) setMet((m) => (m.has(v.id) ? m : new Set(m).add(v.id)));
+        },
         onProgress: (met, total) => setProgress({ met, total }),
         onArrival: (a) => showBanner(`${a.name} moved in`),
         onAllMet: () => window.setTimeout(() => showBanner("you've met everyone"), 600),
@@ -129,22 +133,31 @@ export function VillageApp({ screen, me, inline = false, active = true }: { scre
     return () => window.removeEventListener("keydown", onKey);
   }, [dirOpen]);
 
-  const findNew = () => {
-    if (!village.current?.findNew()) showBanner("you've met everyone");
-    setZoomed(false);
+  const openList = () => {
+    village.current?.closeCard();
+    setDirOpen(true);
   };
   const toggleZoom = () => {
     const z = !zoomed;
     setZoomed(z);
     village.current?.setZoom(z ? 1 : 0);
   };
-  const visit = (id: string) => {
-    setDirOpen(false);
-    setZoomed(false);
-    village.current?.visit(id);
-  };
   const count = villagers?.length ?? 0;
   const empty = villagers !== null && count === 0;
+  // pick someone from the list: walk over and say hi
+  const walkTo = (id: string) => {
+    setDirOpen(false);
+    setZoomed(false);
+    village.current?.walkToId(id);
+    canvasRef.current?.focus({ preventScroll: true });
+  };
+  const listButton = (
+    <button type="button" className={`${CHIP} ${CHIP_ON}`} aria-expanded={dirOpen} aria-label={`everyone in the village, ${count}`} onClick={() => setDirOpen((o) => !o)} disabled={!count}>
+      <FeatherIcon icon={dirOpen ? "x" : "users"} size={14} />
+      everyone
+      <span className="tabular-nums opacity-70">{count}</span>
+    </button>
+  );
 
   return (
     <main className={`relative w-full overflow-hidden select-none ${inline ? "h-full text-left" : "h-dvh"}`} data-mode={screen ? "projector" : inline ? "inline" : "explore"}>
@@ -179,18 +192,15 @@ export function VillageApp({ screen, me, inline = false, active = true }: { scre
               <div className="h-8 inline-flex items-center gap-2 bg-background/90 backdrop-blur-sm border border-foreground/15 px-2.5 text-xs tabular-nums" aria-live="polite" aria-label={`met ${progress.met} of ${progress.total}`}>
                 met {progress.met}/{progress.total}
               </div>
-              {playing && (
-                <button type="button" className={`${CHIP} ${CHIP_ON}`} onClick={findNew} disabled={!count}>
-                  meet someone →
-                </button>
-              )}
+              {playing && listButton}
             </div>
             <Link href="/village" className={`${CHIP} pointer-events-auto shrink-0 whitespace-nowrap`}>
               open village
               <FeatherIcon icon="arrow-up-right" size={13} />
             </Link>
           </div>
-          {card && <Card v={card} mine={card.id === myId} left={progress.total - progress.met} onClose={() => village.current?.closeCard()} onNext={findNew} />}
+          {dirOpen && playing && villagers && <Directory villagers={villagers} met={met} touch={touch} onPick={walkTo} />}
+          {card && <Card v={card} mine={card.id === myId} onClose={() => village.current?.closeCard()} onList={openList} />}
         </>
       ) : (
         <>
@@ -199,19 +209,13 @@ export function VillageApp({ screen, me, inline = false, active = true }: { scre
               <Link href="/" className={ICON_CHIP} aria-label="back to design show & tell">
                 <FeatherIcon icon="arrow-left" size={14} />
               </Link>
-              <button type="button" className={`${CHIP} ${dirOpen ? CHIP_ON : ""}`} aria-expanded={dirOpen} aria-label={`everyone in the village, ${count}`} onClick={() => setDirOpen((o) => !o)}>
-                <FeatherIcon icon="users" size={14} />
-                {count}
-              </button>
+              {listButton}
               <div className="h-8 inline-flex items-center gap-2 bg-background/90 backdrop-blur-sm border border-foreground/15 px-2.5 text-xs tabular-nums" aria-live="polite" aria-label={`met ${progress.met} of ${progress.total}`}>
                 {progress.met}/{progress.total}
                 <span className="w-12 h-1 bg-foreground/15 overflow-hidden" aria-hidden="true">
                   <i className="block h-full bg-foreground origin-left transition-transform duration-500 ease-out" style={{ transform: `scaleX(${progress.total ? progress.met / progress.total : 0})` }} />
                 </span>
               </div>
-              <button type="button" className={`${CHIP} ${CHIP_ON}`} onClick={findNew} disabled={!count}>
-                meet someone →
-              </button>
             </div>
             <div className="flex items-center gap-1.5 pointer-events-auto">
               <button type="button" className={`${ICON_CHIP} ${zoomed ? CHIP_ON : ""}`} aria-pressed={zoomed} aria-label="see the whole village" title="see the whole village" onClick={toggleZoom}>
@@ -223,14 +227,14 @@ export function VillageApp({ screen, me, inline = false, active = true }: { scre
             </div>
           </div>
 
-          {dirOpen && villagers && <Directory villagers={villagers} onPick={visit} />}
+          {dirOpen && villagers && <Directory villagers={villagers} met={met} touch={touch} onPick={walkTo} />}
           <Keys touch={touch} className="absolute right-3 bottom-3 h-9 px-3 hidden sm:flex bg-background/90 backdrop-blur-sm border border-foreground/15" />
 
           <div className="absolute left-3 bottom-3 bg-background/90 backdrop-blur border border-foreground/15 p-1.5">
             <canvas ref={minimapRef} width={336} height={336} className="block size-[112px] sm:size-[152px] cursor-crosshair touch-none" aria-label="map of the village. click to walk there." />
           </div>
 
-          {card && <Card v={card} mine={card.id === myId} left={progress.total - progress.met} onClose={() => village.current?.closeCard()} onNext={findNew} />}
+          {card && <Card v={card} mine={card.id === myId} onClose={() => village.current?.closeCard()} onList={openList} />}
 
           {onboard && <Onboarding count={count} touch={touch} onStart={() => { setOnboard(false); canvasRef.current?.focus({ preventScroll: true }); }} />}
           {empty && !onboard && (
@@ -258,7 +262,7 @@ export function VillageApp({ screen, me, inline = false, active = true }: { scre
   );
 }
 
-function Card({ v, mine, left, onClose, onNext }: { v: Villager; mine: boolean; left: number; onClose: () => void; onNext: () => void }) {
+function Card({ v, mine, onClose, onList }: { v: Villager; mine: boolean; onClose: () => void; onList: () => void }) {
   const portfolio = normLink(v.portfolio, "portfolio");
   const icons = (["linkedin", "twitter"] as const).map((k) => ({ k, link: normLink(v[k], k) })).filter((i) => i.link);
   return (
@@ -300,33 +304,34 @@ function Card({ v, mine, left, onClose, onNext }: { v: Villager; mine: boolean; 
           </a>
         ))}
       </div>
-      {left > 0 && (
-        <button type="button" onClick={onNext} className={`${CHIP} ${CHIP_ON} self-end`}>
-          meet someone →
-        </button>
-      )}
+      <button type="button" onClick={onList} className={`${CHIP} ${CHIP_ON} self-end`}>
+        <FeatherIcon icon="users" size={14} />
+        everyone →
+      </button>
     </aside>
   );
 }
 
-function Directory({ villagers, onPick }: { villagers: Villager[]; onPick: (id: string) => void }) {
+// Everyone who lives here; pick a name and you walk over to them.
+function Directory({ villagers, met, touch, onPick }: { villagers: Villager[]; met: Set<string>; touch: boolean; onPick: (id: string) => void }) {
   const [q, setQ] = useState("");
   const list = villagers.filter((v) => !q || [v.name, ...v.tags].join(" ").toLowerCase().includes(q.trim().toLowerCase()));
   return (
-    <div className="absolute left-3 right-3 sm:right-auto top-14 sm:w-[280px] max-h-[calc(100%-68px)] z-[3] flex flex-col overflow-hidden bg-background/95 backdrop-blur border border-foreground/15">
+    <div className="village-pop absolute left-3 right-3 sm:right-auto top-14 sm:w-[280px] max-h-[calc(100%-68px)] z-[3] flex flex-col overflow-hidden bg-background/95 backdrop-blur border border-foreground/15 select-text">
       <label htmlFor="dir-q" className="sr-only">
         search designers
       </label>
-      <input id="dir-q" type="search" autoFocus value={q} onChange={(e) => setQ(e.target.value)} placeholder="search" className="m-2.5 px-2.5 py-2 text-base sm:text-sm bg-transparent border border-foreground/20 placeholder:text-foreground/40" />
-      <ul className="overflow-y-auto pb-1.5">
+      <input id="dir-q" type="search" autoFocus={!touch} enterKeyHint="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="search" className="m-2.5 px-2.5 py-2 text-base sm:text-sm bg-transparent border border-foreground/20 placeholder:text-foreground/40" />
+      <ul className="overflow-y-auto overscroll-contain pb-1.5" aria-label="everyone in the village">
         {list.map((v) => (
           <li key={v.id}>
-            <button type="button" onClick={() => onPick(v.id)} className="w-full flex items-center gap-2.5 px-3 py-1.5 text-left hover:bg-highlight hover:text-highlight-text">
+            <button type="button" onClick={() => onPick(v.id)} aria-label={`walk to ${v.name}${met.has(v.id) ? ", met" : ""}`} className="w-full min-h-11 flex items-center gap-2.5 px-3 py-1.5 text-left transition-colors duration-150 hover:bg-highlight hover:text-highlight-text active:bg-highlight active:text-highlight-text">
               <Avatar v={v} size={30} />
               <span className="flex flex-col min-w-0 leading-tight">
                 <span className="truncate">{v.name}</span>
                 <small className="text-[11px] opacity-70 truncate">{v.tags.join(" · ")}</small>
               </span>
+              {met.has(v.id) && <FeatherIcon icon="check" size={13} className="ml-auto shrink-0 opacity-60" />}
             </button>
           </li>
         ))}
@@ -351,7 +356,7 @@ function Onboarding({ count, onStart, touch }: { count: number; onStart: () => v
     <div className="absolute inset-0 z-[5] grid place-items-center bg-[#040c2a]/25 p-4">
       <div role="dialog" aria-labelledby="ob-title" className="village-pop bg-background border border-foreground/15 p-6 w-full max-w-[340px] flex flex-col gap-5">
         <div className="flex flex-col gap-1">
-          <h1 id="ob-title" className="text-lg font-medium leading-tight tracking-tight">
+          <h1 id="ob-title" className="village-title text-xl leading-tight">
             slovenian designer village
           </h1>
           <span className="text-xs opacity-60 tabular-nums">{count} designers live here</span>
@@ -384,7 +389,7 @@ function ProjectorOverlay({ count }: { count: number }) {
   return (
     <>
       <div className="absolute left-5 top-5 flex flex-col gap-0.5 pointer-events-none">
-        <b className="font-medium text-[clamp(22px,3vw,40px)] leading-none tracking-tight">slovenian designer village</b>
+        <b className="village-title text-[clamp(24px,3.2vw,44px)] leading-none">slovenian designer village</b>
         <span className="text-sm opacity-60">
           {count} {count === 1 ? "designer" : "designers"}
         </span>

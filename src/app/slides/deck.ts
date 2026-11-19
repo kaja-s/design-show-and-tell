@@ -22,6 +22,8 @@ export type Person = {
   /** hosts: how wide the photo is drawn (default 400). A loosely framed photo runs larger,
       growing up into its own empty top, so both hosts' heads come out the same size */
   photoSize?: number;
+  /** hosts: px to move the photo sideways so its ink starts at the text's left edge */
+  photoShiftX?: number;
   initials: string;
 };
 
@@ -36,6 +38,7 @@ export const HOSTS: Person[] = [
     bio: "making interfaces for ai code generation.",
     photo: "/slides/kaja-tint.png",
     photoSize: 540,
+    photoShiftX: -43, // the shoulder starts 57px into the 720px source
     initials: "ks",
   },
   {
@@ -89,11 +92,5 @@ export const TIMELINE: Slot[] = [
 
 export const VILLAGE = {
   joinUrl: "design-show-and-tell.vercel.app/village/join",
-  steps: ["scan the code", "make your villager", "find someone you haven't met yet"],
-};
-
-/** The last slide, up during the hang out. The qr (public/qr.svg) points at the site, where
-    people can sign up to hear about the next one. */
-export const CLOSING = {
-  siteUrl: "design-show-and-tell.vercel.app",
+  steps: ["skeniraj kodo", "ustvari svojega vaščana", "poišči nekoga, ki ga še ne poznaš"],
 };

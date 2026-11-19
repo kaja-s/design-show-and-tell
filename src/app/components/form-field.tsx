@@ -5,7 +5,7 @@
 // aria-describedby / aria-invalid. Used by the proposal and signup forms.
 // ---------------------------------------------------------------------------
 export const FIELD_CLASS =
-  "w-full px-3.5 py-3 text-sm bg-transparent border border-foreground/20 placeholder:text-foreground/40 disabled:opacity-50 disabled:cursor-not-allowed transition-[border-color] duration-150 aria-[invalid=true]:border-danger";
+  "w-full px-3.5 py-3 text-base pointer-fine:text-sm bg-transparent border border-foreground/20 placeholder:text-foreground/40 disabled:opacity-50 disabled:cursor-not-allowed transition-[border-color] duration-150 aria-[invalid=true]:border-danger";
 
 export function FieldLabel({ htmlFor, children }: { htmlFor: string; children: React.ReactNode }) {
   return (

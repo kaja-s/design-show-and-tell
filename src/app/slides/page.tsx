@@ -5,7 +5,7 @@ import { useTheme } from "../theme-provider";
 import { ShaderCanvas, signalWolfReady } from "../components/shader-canvas";
 import { HalftoneImage } from "./halftone-image";
 import FeatherIcon from "feather-icons-react";
-import { CLOSING, EVENT, HOSTS, SPEAKERS, SPONSOR, TIMELINE, VILLAGE, type Person } from "./deck";
+import { EVENT, HOSTS, SPEAKERS, SPONSOR, TIMELINE, VILLAGE, type Person } from "./deck";
 
 // /slides: the intro deck for the projector. A fixed 1920×1080 stage scaled to
 // fit the window, so the layout is identical on any screen.
@@ -36,7 +36,6 @@ const SLIDES = [TitleSlide, HostsSlide, SponsorSlide, TimelineSlide, VillageSlid
 const PRELOAD = [
   ...[...HOSTS, ...SPEAKERS].flatMap((p) => (p.photo ? [p.photo] : [])),
   "/qr-village.svg",
-  "/qr.svg",
 ];
 const PRELOADED: HTMLImageElement[] = [];
 
@@ -149,7 +148,7 @@ export default function Slides() {
 
           {/* the cover already says all of this */}
           <footer
-            className={`absolute inset-x-[120px] bottom-[48px] flex justify-between text-[22px] text-foreground-muted tabular-nums ${index === 0 ? "invisible" : ""}`}
+            className={`absolute inset-x-[120px] bottom-[48px] flex justify-between text-[22px] text-foreground-muted tabular-nums ${index === 0 || index === SLIDES.length - 1 ? "invisible" : ""}`}
             aria-hidden="true"
           >
             <span>
@@ -197,21 +196,34 @@ function Portrait({ person, size, cells }: { person: Person; size: number; cells
 
 /* ── slides ─────────────────────────────────────────────────────────────── */
 
-function TitleSlide() {
+/** The cover; `qr` adds the village code in the bottom-right corner (the closing slide). */
+function TitleSlide({ qr = false }: { qr?: boolean }) {
   return (
     // the site's centered hero, tightened: wolf, name, date. The small print sits in the corners.
     <div className="h-full relative flex flex-col items-center justify-center text-center">
-      <p className="slide-in absolute -top-[56px] left-0 text-[26px] text-foreground-muted">meetup for designers</p>
-      <p className="slide-in absolute -top-[56px] right-0 text-[26px] text-foreground-muted">
-        no. <span className="normal-case!">{EVENT.edition}</span>
+      <p className="slide-in absolute -top-[56px] left-0 text-[26px] text-foreground-muted">
+        <span className="inline-block">meetup for designers</span>
       </p>
-      <ShaderCanvas className="slide-in relative size-[460px] -mt-[48px] shrink-0" cells={38} />
+      <p className="slide-in absolute -top-[56px] right-0 text-[26px] text-foreground-muted">
+        <span className="inline-block">
+          no. <span className="normal-case!">{EVENT.edition}</span>
+        </span>
+      </p>
+      <ShaderCanvas className="slide-in relative size-[360px] -mt-[48px] shrink-0" cells={38} />
       <h1 className="slide-in [--d:100ms] text-[80px] leading-[1.15] font-bold tracking-[-0.02em] mt-[16px]">
         <Tag>design show &amp; tell</Tag>
       </h1>
       <p className="slide-in [--d:200ms] text-[32px] mt-[24px] tabular-nums">
-        {EVENT.dateLabel}
+        <span className="inline-block">{EVENT.dateLabel}</span>
       </p>
+      {qr && (
+        <figure className="slide-in [--d:300ms] absolute -bottom-[40px] right-0 flex flex-col items-center gap-[16px]">
+          {/* always dark-on-white: scanners need the contrast and the quiet zone in both themes */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/qr-village.svg" alt={`qr code for ${VILLAGE.joinUrl}`} className="size-[260px] bg-white p-[18px] outline outline-black/10 dark:outline-white/10" />
+          <figcaption className="text-[22px] text-foreground-muted whitespace-nowrap">join the village</figcaption>
+        </figure>
+      )}
     </div>
   );
 }
@@ -259,8 +271,8 @@ function HostPhoto({ person }: { person: Person }) {
         <img
           src={person.photo}
           alt=""
-          className="absolute bottom-0 left-0 block max-w-none"
-          style={{ width: person.photoSize ?? 400, height: person.photoSize ?? 400 }}
+          className="absolute bottom-0 block max-w-none"
+          style={{ left: person.photoShiftX ?? 0, width: person.photoSize ?? 400, height: person.photoSize ?? 400 }}
         />
       ) : (
         <Portrait person={person} size={400} cells={60} />
@@ -273,12 +285,12 @@ function HostPhoto({ person }: { person: Person }) {
 function HostCardA({ h }: { h: Person }) {
   return (
     <div className="max-w-[720px]">
-      <p className="text-[48px] font-bold leading-tight">{h.name}</p>
+      <p className="text-[48px] font-bold leading-tight"><Tag>{h.name}</Tag></p>
       <p className="text-[30px] mt-[12px] text-foreground-muted">{h.role}</p>
       <p className="mt-[20px] [--logo-h:34px]">
         <CompanyLogo person={h} className="h-[var(--logo-h)]" />
       </p>
-      <p className="text-[30px] mt-[32px] leading-[1.4] text-pretty">{h.bio}</p>
+      <p className="text-[24px] mt-[32px] leading-[1.45] text-pretty">{h.bio}</p>
     </div>
   );
 }
@@ -290,9 +302,9 @@ function HostCardB({ h }: { h: Person }) {
       <p className="[--logo-h:28px] text-foreground-muted">
         <CompanyLogo person={h} className="h-[var(--logo-h)]" />
       </p>
-      <p className="text-[52px] font-bold leading-tight mt-[20px]">{h.name}</p>
+      <p className="text-[52px] font-bold leading-tight mt-[20px]"><Tag>{h.name}</Tag></p>
       <p className="text-[32px] mt-[6px]">{h.role}</p>
-      <p className="text-[26px] mt-[28px] leading-[1.45] text-foreground-muted text-pretty max-w-[600px]">{h.bio}</p>
+      <p className="text-[22px] mt-[28px] leading-[1.45] text-foreground-muted text-pretty max-w-[600px]">{h.bio}</p>
     </div>
   );
 }
@@ -301,14 +313,14 @@ function HostCardB({ h }: { h: Person }) {
 function HostCardC({ h }: { h: Person }) {
   return (
     <div className="max-w-[720px]">
-      <p className="text-[52px] font-bold leading-tight">{h.name}</p>
+      <p className="text-[52px] font-bold leading-tight"><Tag>{h.name}</Tag></p>
       <p className="text-[30px] mt-[10px] flex items-baseline gap-[14px] flex-wrap [--logo-h:30px]">
-        <span className="text-foreground-muted">{h.role} at</span>
+        <span>{h.role} at</span>
         <span className="self-center translate-y-[2px]">
           <CompanyLogo person={h} className="h-[var(--logo-h)]" />
         </span>
       </p>
-      <p className="text-[28px] mt-[32px] leading-[1.45] text-pretty max-w-[620px]">{h.bio}</p>
+      <p className="text-[24px] mt-[28px] leading-[1.45] text-foreground-muted text-pretty max-w-[620px]">{h.bio}</p>
     </div>
   );
 }
@@ -317,9 +329,9 @@ function HostCardC({ h }: { h: Person }) {
 function HostCardD({ h }: { h: Person }) {
   return (
     <div className="max-w-[640px] flex-1 flex flex-col">
-      <p className="text-[52px] font-bold leading-tight">{h.name}</p>
+      <p className="text-[52px] font-bold leading-tight"><Tag>{h.name}</Tag></p>
       <p className="text-[30px] mt-[8px] text-foreground-muted">{h.role}</p>
-      <p className="text-[28px] mt-[28px] leading-[1.45] text-pretty">{h.bio}</p>
+      <p className="text-[24px] mt-[28px] leading-[1.45] text-pretty">{h.bio}</p>
       <p className="mt-auto pt-[24px] border-t-2 border-foreground/20 [--logo-h:30px]">
         <CompanyLogo person={h} className="h-[var(--logo-h)]" />
       </p>
@@ -346,11 +358,12 @@ function HostsSlide() {
   const Card = { a: HostCardA, b: HostCardB, c: HostCardC, d: HostCardD }[card];
   return (
     <div className="h-full flex flex-col">
-      <h2 className="slide-in text-[56px] font-bold mb-[40px]">
-        <Tag>by designers, for designers</Tag>
+      {/* a caption, not a heading: the names carry the fill on this slide */}
+      <h2 className="slide-in text-[30px] text-foreground-muted">
+        <span className="inline-block">by designers, for designers</span>
       </h2>
       {/* keyed so switching replays the entrance */}
-      <div key={card} className="slide-in [--d:100ms] grid grid-cols-2 gap-[96px] flex-1 pb-[48px]">
+      <div key={card} className="slide-in [--d:100ms] grid grid-cols-2 gap-x-[96px] content-center flex-1 pb-[48px]">
         {HOSTS.map((h) => (
           <div key={h.name} className="flex flex-col">
             <HostPhoto person={h} />
@@ -379,7 +392,7 @@ function TimelineSlide() {
   return (
     <div className="h-full flex flex-col">
       <h2 className="slide-in text-[56px] font-bold mb-[56px]">
-        <Tag>tonight</Tag>
+        <Tag>agenda</Tag>
       </h2>
       <ol className="slide-in [--d:100ms] flex flex-col gap-[20px]">
         {TIMELINE.map((s, i) => {
@@ -405,7 +418,7 @@ function TimelineSlide() {
                   )}
                 </span>
                 {s.sub && (
-                  <span className={`block text-[30px] mt-[6px] ${live ? "opacity-75" : "text-foreground-muted"}`}>{s.sub}</span>
+                  <span className={`block text-[30px] mt-[6px] text-pretty ${live ? "opacity-75" : "text-foreground-muted"}`}>{s.sub}</span>
                 )}
               </span>
             </li>
@@ -424,7 +437,7 @@ function VillageSlide() {
     <div className="h-full grid grid-cols-[1fr_auto] gap-[120px] items-center">
       <div className="slide-in">
         <h2 className="text-[56px] leading-[1.15] font-bold whitespace-nowrap">
-          <Tag>slovenian designer village</Tag>
+          <Tag>slovenska dizajnerska vas</Tag>
         </h2>
         <ol className="mt-[64px] flex flex-col gap-[20px] text-[40px]">
           {VILLAGE.steps.map((step, i) => (
@@ -435,7 +448,7 @@ function VillageSlide() {
           ))}
         </ol>
         <p className="mt-[56px] text-[30px] text-foreground-muted tabular-nums h-[1.4em]">
-          {count === null ? "" : count === 0 ? "nobody's moved in yet. be the first." : `${count} ${count === 1 ? "designer has" : "designers have"} moved in`}
+          {count === null ? "" : count === 0 ? "nihče se še ni vselil. bodi prvi." : movedIn(count)}
         </p>
         {/* the newest arrivals, newest first; keyed by id so only a new name plays the entrance */}
         <p className="slide-in mt-[16px] h-[1.4em] flex items-baseline gap-[28px] text-[30px] whitespace-nowrap overflow-hidden max-w-[980px]">
@@ -455,11 +468,20 @@ function VillageSlide() {
       <figure className="slide-in [--d:200ms] flex flex-col items-center gap-[28px]">
         {/* always dark-on-white: scanners need the contrast and the quiet zone in both themes */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/qr-village.svg" alt={`qr code for ${VILLAGE.joinUrl}`} className="size-[520px] bg-white p-[28px]" />
+        <img src="/qr-village.svg" alt={`qr code for ${VILLAGE.joinUrl}`} className="size-[520px] bg-white p-[28px] outline outline-black/10 dark:outline-white/10" />
         <figcaption className="text-[24px] text-foreground-muted whitespace-nowrap">{VILLAGE.joinUrl}</figcaption>
       </figure>
     </div>
   );
+}
+
+/** "n designers have moved in" in slovenian: singular, dual, 3–4, 5+ (by the last two digits). */
+function movedIn(n: number) {
+  const m = n % 100;
+  if (m === 1) return `${n} dizajner se je vselil`;
+  if (m === 2) return `${n} dizajnerja sta se vselila`;
+  if (m === 3 || m === 4) return `${n} dizajnerji so se vselili`;
+  return `${n} dizajnerjev se je vselilo`;
 }
 
 function SpeakerSlide({ person, label }: { person: Person; label: string }) {
@@ -480,38 +502,9 @@ function SpeakerSlide({ person, label }: { person: Person; label: string }) {
   );
 }
 
-/** After the last talk: thanks, how long we're around, and where to hear about the next one. */
+/** After the last talk, up during the hang out: the cover again, plus the village code. */
 function ClosingSlide() {
-  const speakers = new Intl.ListFormat("en", { type: "conjunction" }).format(SPEAKERS.map((p) => p.name.split(" ")[0]));
-  const count = useVillagers()?.length;
-  return (
-    <div className="h-full grid grid-cols-[1fr_auto] gap-[120px] items-center">
-      <div className="slide-in">
-        <p className="text-[32px] text-foreground-muted">that&apos;s it for the talks</p>
-        <h2 className="text-[56px] leading-[1.15] font-bold mt-[24px]">
-          <Tag>hang out + pizza</Tag>
-        </h2>
-        <p className="text-[40px] mt-[64px] leading-[1.3] text-pretty">thank you {speakers}.</p>
-        <p className="text-[30px] mt-[24px] leading-[1.45] text-foreground-muted">
-          we&apos;re here till {EVENT.ends}.
-          <br />
-          the village is still open.
-          {count ? (
-            <>
-              <br />
-              {count} {count === 1 ? "designer lives" : "designers live"} there now.
-            </>
-          ) : null}
-        </p>
-      </div>
-      <figure className="slide-in [--d:200ms] flex flex-col items-center gap-[28px]">
-        {/* always dark-on-white, like the village code */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/qr.svg" alt={`qr code for ${CLOSING.siteUrl}`} className="size-[400px] bg-white p-[28px]" />
-        <figcaption className="text-[24px] text-foreground-muted whitespace-nowrap">next show &amp; tell: {CLOSING.siteUrl}</figcaption>
-      </figure>
-    </div>
-  );
+  return <TitleSlide qr />;
 }
 
 /* ── live data ──────────────────────────────────────────────────────────── */

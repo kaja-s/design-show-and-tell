@@ -72,6 +72,39 @@ button:not(:disabled) {
   cursor: pointer;
 }
 
+/* Touch: no grey flash on tap (every control has its own :active state), no
+   300ms double-tap wait, and a long press on a control doesn't select its
+   label. Content text stays selectable. */
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+button, a, [role="button"], [role="tab"] {
+  touch-action: manipulation;
+}
+button, [role="button"], [role="tab"] {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* A 44×44 minimum tap area around a small control without growing its
+   layout box (the control needs position: relative). */
+.hit::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: max(100%, 44px);
+  height: max(100%, 44px);
+  translate: -50% -50%;
+}
+
+/* /village/join is a form flow: a pull-to-refresh past the top would throw
+   away what's been filled in. */
+html:has(.join-flow) {
+  overscroll-behavior-y: none;
+}
+
 ::selection {
   background: var(--highlight);
   color: var(--highlight-text);
@@ -384,9 +417,20 @@ body[data-proposal-open="true"] > :where(main, footer, .village-section) {
     radial-gradient(120% 90% at 50% 50%, transparent 60%, rgba(5, 10, 36, 0.35) 100%),
     linear-gradient(125deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0) 32%);
 }
-.tv-line {
-  background: #ffffff;
-  box-shadow: 0 0 12px 3px rgba(147, 197, 253, 0.9), 0 0 2px 1px #ffffff;
+/* "slovenian designer village": a pixel face and the screen's blue glow, so
+   the name looks like it belongs to the tv and the map. */
+.village-title {
+  font-family: var(--font-pixel), var(--font-geist-mono), monospace;
+  font-weight: 600;
+  letter-spacing: 0;
+  -webkit-font-smoothing: none;
+  text-shadow: 0 0 18px rgba(147, 197, 253, 0.45), 0 2px 0 rgba(2, 16, 147, 0.35);
+}
+.tv-crt {
+  background:
+    repeating-linear-gradient(to bottom, rgba(5, 10, 36, 0.28) 0 1px, transparent 1px 3px),
+    linear-gradient(to bottom, transparent 30%, rgba(147, 197, 253, 0.55) 42%, rgba(167, 139, 250, 0.6) 50%, rgba(240, 171, 252, 0.45) 58%, transparent 70%);
+  mix-blend-mode: screen;
 }
 .tv-grille {
   background: repeating-linear-gradient(to right, rgba(147, 197, 253, 0.35) 0 2px, transparent 2px 5px);
@@ -449,6 +493,11 @@ body[data-proposal-open="true"] > :where(main, footer, .village-section) {
 .village-stagger {
   animation: village-rise 260ms var(--ease-out) both;
 }
+/* the look step's option rows, re-entering when you switch tab (40ms stagger
+   set inline); short, since people flick between tabs a lot */
+.look-row {
+  animation: village-rise 180ms var(--ease-out) both;
+}
 @keyframes village-pop {
   from { opacity: 0; scale: 0.95; }
 }
@@ -463,7 +512,7 @@ body[data-proposal-open="true"] > :where(main, footer, .village-section) {
 }
 @media (prefers-reduced-motion: reduce) {
   /* keep the fades, drop the movement */
-  .village-bubble:not([hidden]), .village-pop, .village-card, .village-banner, .village-step, .village-stagger {
+  .village-bubble:not([hidden]), .village-pop, .village-card, .village-banner, .village-step, .village-stagger, .look-row {
     animation-name: village-fade;
   }
 }

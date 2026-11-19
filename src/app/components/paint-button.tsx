@@ -31,8 +31,10 @@ export function PaintButton({
   const [painted, setPainted] = useState<Set<number>>(new Set());
   const btnRef = useRef<HTMLElement>(null);
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLElement>) => {
-    if (!btnRef.current) return;
+  // Mouse only: a tap fires one synthetic move and no leave, which would
+  // leave a painted square stuck on the button.
+  const handleMouseMove = (e: React.PointerEvent<HTMLElement>) => {
+    if (e.pointerType !== "mouse" || !btnRef.current) return;
     const rect = btnRef.current.getBoundingClientRect();
     const col = Math.floor(((e.clientX - rect.left) / rect.width) * PAINT_COLS);
     const row = Math.floor(((e.clientY - rect.top) / rect.height) * PAINT_ROWS);
@@ -82,8 +84,8 @@ export function PaintButton({
         href={href}
         target="_blank"
         rel="noopener noreferrer"
-        onMouseMove={handleMouseMove}
-        onMouseLeave={handleMouseLeave}
+        onPointerMove={handleMouseMove}
+        onPointerLeave={handleMouseLeave}
         className={`${CLASS} ${className}`}
       >
         {content}
@@ -97,8 +99,8 @@ export function PaintButton({
       type={type}
       disabled={disabled}
       onClick={onClick}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
+      onPointerMove={handleMouseMove}
+      onPointerLeave={handleMouseLeave}
       className={`${CLASS} ${className}`}
     >
       {content}
