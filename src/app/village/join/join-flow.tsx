@@ -504,9 +504,11 @@ export function JoinFlow() {
 
       {step === 4 && mine && (
         <section key="s4" className="village-step flex-1 flex flex-col gap-3.5">
-          <PreviewCanvas config={config} emote={emoteTick} loop className="h-[300px] -mx-5" />
-          <h1 className="text-2xl font-medium leading-tight tracking-tight">you&apos;re in, {mine.name}.</h1>
-          <div className="flex-1" />
+          {/* the character and the greeting sit together in the middle of the free space */}
+          <div className="flex-1 flex flex-col justify-center items-center gap-3.5 text-center">
+            <PreviewCanvas config={config} emote={emoteTick} loop className="h-[300px] w-[calc(100%+2.5rem)] -mx-5" />
+            <h1 className="text-2xl font-medium leading-tight tracking-tight text-balance">you&apos;re in, {mine.name}.</h1>
+          </div>
           <PaintButton className="w-full py-3 text-center" onClick={() => window.location.assign(`/village?me=${mine.id}`)}>visit the village</PaintButton>
           <div className="flex justify-center flex-wrap gap-x-6 gap-y-3 text-sm">
             <button type="button" className={TEXT_BUTTON} onClick={() => go(2)}>

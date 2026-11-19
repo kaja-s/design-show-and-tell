@@ -831,15 +831,36 @@ export class Village {
     g.setTransform(1, 0, 0, 1, 0, 0);
     g.clearRect(0, 0, mm.width, mm.height);
     g.imageSmoothingEnabled = true;
+    // the city is faded back so the people on it stand out
+    g.globalAlpha = 0.55;
     g.drawImage(this.staticCanvas, ox, oy, WORLD_W * s, WORLD_H * s);
-    for (const a of this.villagers) {
-      g.fillStyle = a.met ? "#3b5bdb" : "#d9453b";
-      g.fillRect(ox + a.x * s - 3, oy + a.y * s - 3, 6, 6);
-    }
-    g.fillStyle = "#021093";
-    g.fillRect(ox + this.player.x * s - 5, oy + this.player.y * s - 5, 10, 10);
+    g.globalAlpha = 1;
+    // people: a dot with a white ring (the city is all blues, so no blue dots);
+    // the ones you haven't met yet are bigger and coral, the met ones small and dark
+    const dot = (x: number, y: number, r: number, fill: string) => {
+      g.beginPath();
+      g.arc(x, y, r + 4.5, 0, Math.PI * 2);
+      g.fillStyle = "#021093";
+      g.fill();
+      g.beginPath();
+      g.arc(x, y, r + 2.5, 0, Math.PI * 2);
+      g.fillStyle = "#ffffff";
+      g.fill();
+      g.beginPath();
+      g.arc(x, y, r, 0, Math.PI * 2);
+      g.fillStyle = fill;
+      g.fill();
+    };
+    const people = [...this.villagers].sort((a, b) => Number(!a.met) - Number(!b.met)); // unmet on top
+    for (const a of people) dot(ox + a.x * s, oy + a.y * s, a.met ? 5 : 8, a.met ? "#262a40" : "#ff5a4e");
+    // you: a navy square with a white ring and centre
+    const px = ox + this.player.x * s, py = oy + this.player.y * s;
     g.fillStyle = "#ffffff";
-    g.fillRect(ox + this.player.x * s - 2, oy + this.player.y * s - 2, 4, 4);
+    g.fillRect(px - 9, py - 9, 18, 18);
+    g.fillStyle = "#021093";
+    g.fillRect(px - 7, py - 7, 14, 14);
+    g.fillStyle = "#ffffff";
+    g.fillRect(px - 2.5, py - 2.5, 5, 5);
   }
 
   private label(text: string, you = false) {
