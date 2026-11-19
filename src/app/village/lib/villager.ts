@@ -86,6 +86,12 @@ export function mulberry(seed: number) {
 }
 const pick = <T,>(r: () => number, list: readonly T[]) => list[Math.floor(r() * list.length)];
 
+// A fresh face for the join form: random colours and hair, but nothing extra
+// (no hat, accessory, carried thing or pet), so people add those themselves.
+export function defaultConfig(r: () => number = Math.random): Config {
+  return { ...randomConfig(r), hat: "none", extra: "none", carry: "none", pet: "none" };
+}
+
 export function randomConfig(r: () => number = Math.random): Config {
   return {
     skin: pick(r, SKIN), hair: pick(r, OPTIONS.hair.slice(1)), hairColor: pick(r, HAIR_COLORS), top: pick(r, OPTIONS.top),

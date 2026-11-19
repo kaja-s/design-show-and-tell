@@ -11,7 +11,7 @@
 import {
   PALETTES, WORLD_H, WORLD_W, drawCab, drawPigeon, drawStatic, drawTall, inRect, layout, type Layout, type Palette, type TallProp,
 } from "./map";
-import { petSprite, sprite, SPRITE_H, SPRITE_W, type Dir } from "./sprites";
+import { petSprite, spinPose, SPIN_SEC, sprite, SPRITE_H, SPRITE_W, type Dir } from "./sprites";
 import { VISITOR, cleanConfig, type Config, type Villager } from "./villager";
 
 export type Mode = "explore" | "projector" | "inline";
@@ -205,11 +205,23 @@ export class Village {
     return true;
   }
 
-  // Jump next to someone and say hi (from the directory, or ?me= after joining).
+  // Walk over to someone and say hi (picked from the list of everyone).
+  walkToId(id: string) {
+    const a = this.villagers.find((x) => x.data!.id === id);
+    if (!a) return false;
+    this.closeCard();
+    this.zoomed = false;
+    this.resize();
+    if (Math.hypot(a.x - this.player.x, a.y - this.player.y) <= TALK_DIST) this.sayHi(a);
+    else this.walkTo(a);
+    return true;
+  }
+
+  // Jump next to someone and say hi (?me= after joining).
   visit(id: string) {
     const a = this.villagers.find((x) => x.data!.id === id);
     if (!a) return false;
-    const spots = [{ x: 14, y: 2 }, { x: -14, y: 2 }, { x: 0, y: 12 }, { x: 0, y: -10 }];
+    const spots = [{ x: 18, y: 2 }, { x: -18, y: 2 }, { x: 0, y: 14 }, { x: 0, y: -12 }];
     const s = spots.map((o) => ({ x: a.x + o.x, y: a.y + o.y })).find((p) => !this.blocked(p.x, p.y)) ?? { x: a.x, y: a.y + 12 };
     this.player.x = s.x;
     this.player.y = s.y;
@@ -308,8 +320,8 @@ export class Village {
   }
 
   private walkTo(a: Actor) {
-    const side = this.player.x < a.x ? -12 : 12;
-    const goal = [{ x: a.x + side, y: a.y + 2 }, { x: a.x - side, y: a.y + 2 }, { x: a.x, y: a.y + 12 }].find((p) => !this.blocked(p.x, p.y)) ?? { x: a.x, y: a.y + 12 };
+    const side = this.player.x < a.x ? -18 : 18;
+    const goal = [{ x: a.x + side, y: a.y + 2 }, { x: a.x - side, y: a.y + 2 }, { x: a.x, y: a.y + 14 }].find((p) => !this.blocked(p.x, p.y)) ?? { x: a.x, y: a.y + 14 };
     this.player.path = this.route(this.player, goal);
     this.player.onArrive = () => this.sayHi(a);
   }
@@ -488,7 +500,7 @@ export class Village {
   private actorAt(w: Pt): Actor | null {
     let hit: Actor | null = null;
     for (const a of this.villagers) {
-      if (w.x >= a.x - 7 && w.x <= a.x + 7 && w.y >= a.y - SPRITE_H - 1 && w.y <= a.y + 1) if (!hit || a.y > hit.y) hit = a;
+      if (w.x >= a.x - 8 && w.x <= a.x + 8 && w.y >= a.y - SPRITE_H - 1 && w.y <= a.y + 1) if (!hit || a.y > hit.y) hit = a;
     }
     return hit;
   }
@@ -740,17 +752,17 @@ export class Village {
   private drawActor(a: Actor) {
     const { g } = this;
     const e = a.emote;
-    let dir = a.dir, lift = 0, wave: number | undefined;
+    let dir = a.dir, lift = 0, squash = 1, wave: number | undefined;
     if (e && !this.reduced) {
       if (e.kind === "wave") wave = Math.floor(e.t * 6) % 2;
       else if (e.kind === "jump") lift = Math.round(Math.abs(Math.sin((e.t / EMOTE_SEC) * Math.PI * 2)) * 4);
-      else if (e.kind === "spin") dir = (["down", "left", "up", "right"] as Dir[])[Math.floor(e.t * 8) % 4];
+      else if (e.kind === "spin") ({ dir, squash } = spinPose(e.t / SPIN_SEC));
     }
     const frame = a.moving ? Math.floor(a.phase * 8) % 4 : 0;
     const blink = !a.moving && Math.floor(a.phase * 10) % 41 === 0;
     const x = Math.round(a.x), y = Math.round(a.y);
     g.fillStyle = this.pal.shadow;
-    g.fillRect(x - 4, y - 1, 8, 2);
+    g.fillRect(x - 5, y - 1, 10, 2);
     if (a.pet) {
       const img = petSprite(a.cfg.pet, a.moving ? Math.floor(a.phase * 6) : 0, a.pet.facing);
       if (img) {
@@ -758,7 +770,8 @@ export class Village {
         g.drawImage(img, Math.round(a.pet.x) - 5, Math.round(a.pet.y) - img.height);
       }
     }
-    g.drawImage(sprite(a.cfg, { dir, frame, blink, wave }), x - SPRITE_W / 2, y - SPRITE_H - lift);
+    const w = Math.max(2, Math.round(SPRITE_W * squash));
+    g.drawImage(sprite(a.cfg, { dir, frame, blink, wave }), x - Math.round(w / 2), y - SPRITE_H - lift, w, SPRITE_H);
     // a small marker over people you've met
     if (a.met && a.data && !a.talking) {
       g.fillStyle = this.pal.night ? "#93c5fd" : "#3b5bdb";

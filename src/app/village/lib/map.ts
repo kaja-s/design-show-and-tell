@@ -1,14 +1,18 @@
 // ---------------------------------------------------------------------------
-// The village as a little nyc grid: 3x3 blocks with streets between them,
-// seen from above at an angle (buildings show their fronts). Built once from
-// a fixed seed. The city is drawn in the site's blues; people, cabs and a few
-// signs carry the colour. Everything here is in world pixels (1 = one pixel
+// The village as a little san francisco grid: 3x3 blocks with streets
+// between them, seen from above at an angle (buildings show their fronts):
+// rows of painted-lady victorians and edwardian flats with bay windows, corner
+// cafés under scalloped awnings, a transamerica-style pyramid, the ferry
+// building's clock tower, and a park (dolores-style palms + the christmas
+// tree) with a muni/bart entrance. Built once from a fixed seed. The city is
+// drawn in the site's blues; people, cable cars and a few signs carry the
+// colour. Everything here is in world pixels (1 = one pixel
 // of a 12x20 villager); the world scales it up by a whole number.
 //
 // - layout(): blocks, buildings (each home to 3 villagers), solids, props
 // - drawStatic(): ground, streets, buildings → an offscreen canvas (redrawn
 //   when the theme or the number of residents changes)
-// - drawTall(): props people can walk behind (trees, lamps, the street sign),
+// - drawTall(): props people can walk behind (trees, palms, lamps, the sign),
 //   drawn in the same depth-sorted pass as the villagers
 // ---------------------------------------------------------------------------
 import { mulberry } from "./villager";
@@ -54,12 +58,12 @@ const PARK = { i: 1, j: 1 };
 const DINER = { i: 2, j: 2 };
 
 export type Rect = { x: number; y: number; w: number; h: number };
-type Kind = "brown" | "fire" | "shop" | "tower";
+type Kind = "victorian" | "flat" | "shop" | "tower";
 export type Building = {
   kind: Kind; x: number; w: number; rear: number; top: number; base: number;
   wall: "A" | "B" | "C"; door: number; home: { x: number; y: number }; windows: { x: number; y: number }[];
 };
-export type TallProp = { kind: "tree" | "pine" | "lamp" | "sign"; x: number; y: number };
+export type TallProp = { kind: "tree" | "pine" | "palm" | "lamp" | "sign"; x: number; y: number };
 type SmallProp = { kind: "bench" | "planter" | "bin" | "hydrant" | "news" | "rack" | "flowers"; x: number; y: number; c?: string };
 export type Layout = {
   buildings: Building[];
@@ -75,8 +79,8 @@ export type Layout = {
   towers: { x: number; rear: number; base: number }[];
 };
 
-const WIDTH: Record<Kind, number> = { brown: 46, fire: 52, shop: 56, tower: 30 };
-const ROOF: Record<Kind, number> = { brown: 14, fire: 4, shop: 10, tower: 0 };
+const WIDTH: Record<Kind, number> = { victorian: 46, flat: 52, shop: 56, tower: 30 };
+const ROOF: Record<Kind, number> = { victorian: 14, flat: 4, shop: 10, tower: 0 };
 
 let cached: Layout | null = null;
 export function layout(): Layout {
@@ -94,8 +98,8 @@ export function layout(): Layout {
     const rear = y0 + 8, base = y0 + 92;
     // a row of buildings along the top of the block, fronts facing the street below
     const isDiner = i === DINER.i && j === DINER.j;
-    const order: Kind[] = isDiner ? ["brown"] : i === 2 && j === 0 ? ["brown", "fire", "shop", "tower"] : (["brown", "fire", "brown", "shop"] as Kind[]).sort(() => r() - 0.5);
-    let x = isDiner ? x0 + BX - 4 - WIDTH.brown : x0 + 4;
+    const order: Kind[] = isDiner ? ["victorian"] : i === 2 && j === 0 ? ["victorian", "flat", "shop", "tower"] : (["victorian", "flat", "victorian", "shop"] as Kind[]).sort(() => r() - 0.5);
+    let x = isDiner ? x0 + BX - 4 - WIDTH.victorian : x0 + 4;
     // fit as many as the block takes, then share the leftover width out so the row is full
     const fitted: Kind[] = [];
     let used = 0;
@@ -144,7 +148,7 @@ export function layout(): Layout {
     tall.push({ kind: "lamp", x: x0 + 6, y: y0 + BY - 4 });
   }
 
-  // the park: lawn, gravel, the christmas tree, benches, lamps, subway on the corner
+  // the park: lawn, gravel, the christmas tree, palms, benches, lamps, muni on the corner
   const px0 = blockX(PARK.i), py0 = blockY(PARK.j);
   const park = { x: px0 + 10, y: py0 + 10, w: BX - 20, h: BY - 20 };
   const parkTree = { x: px0 + BX / 2, y: py0 + BY / 2 + 8 };
@@ -156,6 +160,10 @@ export function layout(): Layout {
   }
   tall.push({ kind: "lamp", x: px0 + 60, y: py0 + 50 }, { kind: "lamp", x: px0 + BX - 60, y: py0 + 50 }, { kind: "lamp", x: px0 + 60, y: py0 + BY - 30 }, { kind: "lamp", x: px0 + BX - 60, y: py0 + BY - 30 });
   small.push({ kind: "bin", x: px0 + 52, y: py0 + 34 });
+  for (const palmX of [px0 + 20, px0 + BX - 20]) {
+    tall.push({ kind: "palm", x: palmX, y: py0 + 62 });
+    solids.push({ x: palmX - 2, y: py0 + 60, w: 4, h: 4 });
+  }
   const subway = { x: px0 + BX - 40, y: py0 + BY - 22, spawn: { x: px0 + BX - 27, y: py0 + BY + 4 } };
   solids.push({ x: subway.x, y: subway.y - 3, w: 26, h: 15 });
   tall.push({ kind: "sign", x: px0 + 4, y: py0 + 4 });
@@ -206,33 +214,69 @@ function building(g: G, p: Palette, b: Building, occupied: number) {
   R(g, x, rear, w, top - rear, p.roof);
   R(g, x, top - 2, w, 2, p.roofDark);
   for (let i = 4; i < w - 6 && top - rear > 8; i += 14) R(g, x + i, rear + 3, 5, 4, p.roofDark);
-  // facade
+  // facade: wooden clapboard siding on the houses, plaster on the shops
   R(g, x, top, w, base - top, wall);
-  for (let yy = top + 6; yy < base - 2; yy += 5) for (let xx = x + ((yy / 5) % 2 ? 1 : 4); xx < x + w - 2; xx += 7) R(g, xx, yy, 3, 1, wallDark);
+  if (b.kind === "shop") {
+    for (let yy = top + 6; yy < base - 2; yy += 5) for (let xx = x + ((yy / 5) % 2 ? 1 : 4); xx < x + w - 2; xx += 7) R(g, xx, yy, 3, 1, wallDark);
+  } else {
+    for (let yy = top + 5; yy < base - 2; yy += 3) R(g, x + 1, yy, w - 2, 1, wallDark);
+    // corner boards
+    R(g, x, top, 2, base - top, p.trimDark);
+    R(g, x + w - 2, top, 2, base - top, p.trimDark);
+  }
+
+  if (b.kind === "victorian") {
+    // a gable rising off the front of the roof, with a little round window
+    const gw = w - 6, gx = x + 3, gh = Math.floor(gw / 2) > 12 ? 12 : Math.floor(gw / 2);
+    for (let k = 0; k < gh; k++) {
+      const half = Math.round(((k + 1) / gh) * (gw / 2));
+      const cx = gx + gw / 2;
+      R(g, cx - half, top - gh + k, half * 2, 1, p.trim);
+      if (half > 2) R(g, cx - half + 2, top - gh + k, half * 2 - 4, 1, wall);
+    }
+    R(g, gx + gw / 2 - 2, top - 6, 4, 3, p.night ? p.lit : p.glass);
+    R(g, gx + gw / 2 - 2, top - 7, 4, 1, p.trim);
+  }
+  // cornice with dentils
   R(g, x - 1, top, w + 2, 3, p.trim);
   R(g, x - 1, top + 3, w + 2, 1, p.trimDark);
   for (let i = 1; i < w; i += 3) R(g, x + i, top + 4, 1, 1, p.trimDark);
+
+  // bay windows: the san francisco tell. a victorian has one angled bay per
+  // floor over the windows left of the door; edwardian flats stack a bay on
+  // each side, running the full height.
+  const colsN = Math.max(1, Math.floor((w - 4) / 12));
+  if (b.kind === "victorian" || b.kind === "flat") {
+    const floors = Math.round(b.windows.length / colsN);
+    const groups: [number, number][] = b.kind === "victorian" ? [[0, Math.max(0, colsN - 2)]] : colsN >= 3 ? [[0, 0], [colsN - 1, colsN - 1]] : [[0, 0]];
+    for (const [c0, c1] of groups) {
+      const first = b.windows[c0], last = b.windows[c1];
+      if (!first || !last) continue;
+      const bx0 = first.x - 3, bx1 = last.x + 10;
+      for (let f = 0; f < floors; f++) {
+        if (b.kind === "flat" && f > 0) continue;
+        const by0 = first.y - 4 + f * 15, by1 = b.kind === "flat" ? first.y + (floors - 1) * 15 + 13 : by0 + 17;
+        R(g, bx0, by0, bx1 - bx0, by1 - by0, p.trim);
+        R(g, bx0 + 1, by0 + 1, bx1 - bx0 - 2, by1 - by0 - 2, wall);
+        // the angled sides catch less light
+        R(g, bx0 + 1, by0 + 1, 2, by1 - by0 - 2, wallDark);
+        R(g, bx1 - 3, by0 + 1, 2, by1 - by0 - 2, wallDark);
+        R(g, bx0 - 1, by0 - 1, bx1 - bx0 + 2, 2, p.trim);
+        R(g, bx0, by1, bx1 - bx0, 2, p.shadow);
+      }
+    }
+  }
+
   // windows: the first ones light up as people move in
   const litCount = Math.min(b.windows.length, occupied * 2);
   b.windows.forEach((win, k) => windowAt(g, p, win.x, win.y, k < litCount));
-
-  if (b.kind === "fire") {
-    const floors = Math.round(b.windows.length / Math.max(1, Math.floor((w - 4) / 12)));
-    const fx = b.windows[0]?.x - 2, fw = 23;
-    for (let f = 0; f < floors; f++) {
-      const py = top + 20 + f * 15;
-      R(g, fx, py, fw, 1, p.ink);
-      R(g, fx, py - 4, fw, 1, p.ink);
-      for (let i = 0; i < fw; i += 2) R(g, fx + i, py - 4, 1, 4, p.ink);
-      if (f < floors - 1) for (let s = 0; s < 13; s++) R(g, fx + 4 + s, py + 1 + s, 2, 1, p.ink);
-    }
-  }
 
   if (b.kind === "shop") {
     const sb = base - 24;
     R(g, x, sb, w, 24, wall);
     for (let i = 0; i < w; i += 6) { R(g, x + i, sb - 1, 3, 7, p.white); R(g, x + i + 3, sb - 1, 3, 7, p.wallA); }
-    for (let i = 0; i < w; i += 3) R(g, x + i, sb + 6, 2, 1, i % 6 ? p.wallA : p.white);
+    // scalloped valance
+    for (let i = 0; i < w; i += 3) { R(g, x + i, sb + 6, 3, 1, i % 6 ? p.wallA : p.white); R(g, x + i + 1, sb + 7, 1, 1, i % 6 ? p.wallA : p.white); }
     R(g, x + 3, sb + 9, w - 6, 15, p.ink);
     R(g, x + 16, sb + 10, 16, 13, p.glass);
     R(g, x + 17, sb + 11, 3, 2, p.white);
@@ -268,58 +312,76 @@ function building(g: G, p: Palette, b: Building, occupied: number) {
   R(g, x, base, w, 1, p.ink);
 }
 
+// A transamerica-style pyramid: tapering to a spire, with the two "wings"
+// (lift and stair shafts) standing proud near the top.
 function tower(g: G, p: Palette, x: number, rear: number, base: number) {
-  const c = p.trim, d = p.trimDark;
-  R(g, x + 12, rear, 6, base - rear, c);
-  R(g, x + 8, rear + 16, 14, base - rear - 16, c);
-  R(g, x + 4, rear + 34, 22, base - rear - 34, c);
-  R(g, x, rear + 50, 30, base - rear - 50, c);
-  R(g, x + 14, rear - 6, 2, 8, d);
-  for (let i = x + 1; i < x + 30; i += 2) R(g, i, rear + 52, 1, base - rear - 54, d);
-  for (let i = x + 5; i < x + 25; i += 2) R(g, i, rear + 36, 1, 12, d);
-  for (let i = x + 9; i < x + 21; i += 2) R(g, i, rear + 18, 1, 14, d);
+  const c = p.trim, d = p.trimDark, cx = x + 15;
+  const tip = rear - 18, H = base - tip;
+  for (let y = tip; y < base; y++) {
+    const half = Math.max(1, Math.round(15 * ((y - tip) / H)));
+    R(g, cx - half, y, half * 2, 1, c);
+    // window grid: columns every 2px, a darker floor line every 4 rows
+    if (y > tip + 6 && y < base - 10) {
+      if ((y - tip) % 4 === 0) R(g, cx - half + 1, y, half * 2 - 2, 1, d);
+      else for (let xx = cx - half + 2; xx < cx + half - 1; xx += 2) R(g, xx, y, 1, 1, d);
+    }
+  }
+  const wy = tip + Math.round(H * 0.2), wh = 14;
+  const wHalf = Math.round(15 * ((wy - tip) / H));
+  R(g, cx - wHalf - 3, wy, 3, wh, c); R(g, cx - wHalf - 3, wy, 1, wh, d);
+  R(g, cx + wHalf, wy, 3, wh, c); R(g, cx + wHalf + 2, wy, 1, wh, d);
+  R(g, cx - 1, tip - 8, 2, 8, d);
+  R(g, cx - 1, tip - 9, 2, 1, p.night ? p.bulb : d);
+  // arcade at the base
+  for (let i = 0; i < 4; i++) R(g, x + 3 + i * 7, base - 9, 4, 9, p.ink);
   R(g, x + 11, base - 10, 8, 10, p.ink);
   R(g, x, base, 30, 1, p.ink);
 }
 
+// The ferry building: a long arcaded hall with the clock tower in the middle.
+// (Still called "diner" in the layout: same footprint, same block.)
 function diner(g: G, p: Palette, d: Rect) {
   const { x, y, w } = d;
-  R(g, x + 3, y, w - 6, 30, p.wallB);
-  R(g, x, y + 3, w, 24, p.wallB);
-  R(g, x + 6, y + 4, w - 12, 20, p.wallBDark);
-  R(g, x + 12, y + 7, 14, 9, p.trim);
-  R(g, x + 12, y + 15, 14, 1, p.trimDark);
-  // water tower on the roof
-  const tx = x + w - 26, ty = y - 14;
-  R(g, tx + 1, ty + 14, 1, 10, p.ink); R(g, tx + 12, ty + 14, 1, 10, p.ink); R(g, tx + 6, ty + 14, 1, 10, p.ink); R(g, tx, ty + 19, 14, 1, p.ink);
-  R(g, tx, ty + 4, 14, 11, p.roof);
-  for (let i = 0; i < 3; i++) R(g, tx, ty + 7 + i * 3, 14, 1, p.roofDark);
-  R(g, tx + 1, ty + 1, 12, 3, p.roofDark); R(g, tx + 4, ty - 1, 6, 2, p.roofDark); R(g, tx + 6, ty - 2, 2, 1, p.ink);
-  // sign
-  const sx = x + w / 2 - 20;
-  R(g, sx, y + 15, 40, 13, "#ffffff");
-  R(g, sx + 1, y + 16, 38, 11, "#d9453b");
-  g.fillStyle = "#ffffff";
-  g.font = "700 8px ui-monospace, Menlo, monospace";
+  const cx = x + w / 2;
+  // roof seen from above
+  R(g, x + 3, y, w - 6, 26, p.roof);
+  R(g, x, y + 3, w, 22, p.roof);
+  for (let i = 6; i < w - 6; i += 8) R(g, x + i, y + 6, 4, 14, p.roofDark);
+  // clock tower: three stages and a cap
+  R(g, cx - 8, y - 6, 16, 40, p.trim);
+  R(g, cx - 6, y - 18, 12, 14, p.trim);
+  R(g, cx - 4, y - 26, 8, 9, p.trim);
+  R(g, cx - 2, y - 31, 4, 6, p.trimDark);
+  R(g, cx, y - 35, 1, 4, p.ink);
+  for (let i = 0; i < 3; i++) R(g, cx - 7 + i * 5, y + 18, 3, 12, p.trimDark);
+  for (let i = 0; i < 2; i++) R(g, cx - 4 + i * 6, y - 15, 2, 9, p.trimDark);
+  // clock face
+  R(g, cx - 5, y - 2, 10, 10, p.ink);
+  R(g, cx - 4, y - 1, 8, 8, p.night ? p.lit : p.white);
+  R(g, cx, y + 1, 1, 3, p.ink); R(g, cx, y + 3, 3, 1, p.ink);
+  // facade: frieze with the name, then the arcade
+  R(g, x, y + 26, w, 4, p.trim);
+  R(g, x, y + 30, w, 1, p.trimDark);
+  g.fillStyle = p.ink;
+  g.font = "600 5px ui-monospace, Menlo, monospace";
   g.textBaseline = "alphabetic";
-  g.fillText("DINER", sx + 7, y + 25);
-  // facade
-  R(g, x, y + 30, w, 4, p.trim);
-  R(g, x, y + 34, w, 2, "#d9453b");
-  R(g, x, y + 37, w, 1, "#d9453b");
-  R(g, x, y + 38, w, 28, p.wallA);
-  for (let i = 0; i < 6; i++) {
-    const wx = x + 4 + i * 20;
-    if (Math.abs(wx + 6 - (x + w / 2)) < 12) continue;
-    R(g, wx, y + 41, 14, 12, p.ink);
-    R(g, wx + 1, y + 42, 12, 10, p.night ? p.lit : p.glass);
-    if (!p.night) R(g, wx + 2, y + 43, 2, 2, p.white);
+  g.fillText("FERRY", x + 10, y + 30);
+  g.fillText("BUILDING", x + w - 34, y + 30);
+  R(g, x, y + 31, w, 35, p.wallB);
+  for (let i = 0; i < 10; i++) {
+    const ax = x + 4 + i * 12;
+    if (Math.abs(ax + 4 - cx) < 8) continue;
+    R(g, ax + 1, y + 36, 6, 1, p.ink);
+    R(g, ax, y + 37, 8, 13, p.ink);
+    R(g, ax + 1, y + 38, 6, 12, p.night ? p.lit : p.glass);
+    if (!p.night) R(g, ax + 2, y + 39, 1, 3, p.white);
+    R(g, ax, y + 53, 8, 10, p.wallBDark);
   }
-  for (let i = 0; i < w; i += 4) R(g, x + i, y + 56, 2, 8, "#d9453b");
-  R(g, x + w / 2 - 6, y + 40, 12, 26, p.trim);
-  R(g, x + w / 2 - 3, y + 44, 6, 6, p.glass);
+  R(g, cx - 6, y + 40, 12, 26, p.trim);
+  R(g, cx - 4, y + 44, 8, 22, p.ink);
+  R(g, cx - 3, y + 45, 6, 6, p.glass);
   R(g, x, y + 66, w, 1, p.ink);
-  for (let i = 0; i < 3; i++) R(g, x + w / 2 - 8 - i, y + 67 + i * 2, 16 + i * 2, 2, p.step);
+  for (let i = 0; i < 3; i++) R(g, cx - 8 - i, y + 67 + i * 2, 16 + i * 2, 2, p.step);
 }
 
 function smallProp(g: G, p: Palette, s: SmallProp) {
@@ -413,14 +475,19 @@ export function drawStatic(g: G, p: Palette, occupancy: number[]) {
     const x = pk.x + Math.floor(pr() * pk.w), y = pk.y + Math.floor(pr() * pk.h);
     if (Math.abs(y - (pk.y + pk.h / 2)) < 8 || Math.abs(x - (pk.x + pk.w / 2)) < 8) R(g, x, y, 2, 1, p.dirtDark);
   }
-  // subway entrance
+  // muni / bart entrance: stairs down, a railing, the two signs on posts
   const sw = L.subway;
   R(g, sw.x, sw.y, 26, 12, p.ink); R(g, sw.x + 2, sw.y + 2, 22, 8, p.asphalt);
   for (let k = 0; k < 4; k++) R(g, sw.x + 3, sw.y + 3 + k * 2, 20, 1, p.asphaltLine);
   R(g, sw.x, sw.y - 3, 26, 1, p.ink);
   for (let k = 0; k < 26; k += 3) R(g, sw.x + k, sw.y - 3, 1, 3, p.ink);
-  R(g, sw.x - 1, sw.y - 8, 3, 3, "#3f9b6e"); R(g, sw.x + 24, sw.y - 8, 3, 3, "#3f9b6e");
-  R(g, sw.x, sw.y - 5, 1, 3, p.ink); R(g, sw.x + 25, sw.y - 5, 1, 3, p.ink);
+  R(g, sw.x, sw.y - 7, 1, 5, p.ink); R(g, sw.x + 25, sw.y - 7, 1, 5, p.ink);
+  g.font = "700 5px ui-monospace, Menlo, monospace";
+  g.textBaseline = "alphabetic";
+  R(g, sw.x - 3, sw.y - 13, 7, 7, "#d9453b");
+  g.fillStyle = "#ffffff"; g.fillText("M", sw.x - 2, sw.y - 8);
+  R(g, sw.x + 22, sw.y - 13, 7, 7, "#3b5bdb");
+  R(g, sw.x + 23, sw.y - 11, 5, 1, "#ffffff"); R(g, sw.x + 23, sw.y - 9, 5, 1, "#ffffff");
 
   // buildings, back to front
   L.buildings.forEach((b, k) => building(g, p, b, occupancy[k] ?? 0));
@@ -441,6 +508,18 @@ export function drawTall(g: G, p: Palette, t: TallProp, time: number) {
       g.fillRect(x - 5, y - 3, 11, 6);
       g.fillRect(x - 3, y - 4, 7, 8);
     }
+  } else if (t.kind === "palm") {
+    // a tall, slightly leaning canary palm (dolores park)
+    for (let k = 0; k < 30; k++) R(g, x + Math.round(Math.sin(k / 12) * 2), y - k, 2, 1, k % 3 ? p.trimDark : p.roofDark);
+    const hx = x + 2, hy = y - 31;
+    const fronds: [number, number][] = [[-1, 0], [1, 0], [-1, 1], [1, 1], [0, -1], [-1, -1], [1, -1]];
+    fronds.forEach(([dx, dy], k) => {
+      for (let i = 1; i < 9; i++) {
+        const droop = dy === -1 ? -Math.max(0, 4 - i) : Math.floor((i * i) / 14) + dy * 2;
+        R(g, hx + dx * i, hy + droop + (dx === 0 ? -i + 1 : 0), 2, i < 6 ? 2 : 1, k % 2 ? p.leaf : p.leafDark);
+      }
+    });
+    R(g, hx - 1, hy - 1, 3, 3, p.leafDark);
   } else if (t.kind === "pine") {
     R(g, x - 1, y - 6, 2, 6, p.ink);
     const rows: [number, number][] = [[0, 1], [-1, 3], [-2, 5], [-1, 3], [-3, 7], [-4, 9], [-3, 7], [-5, 11]];
@@ -464,23 +543,31 @@ export function drawTall(g: G, p: Palette, t: TallProp, time: number) {
     g.fillStyle = "#021093";
     g.fillText("← lj", x - 24, y - 25);
     g.fillStyle = "#ffffff";
-    g.fillText("nyc →", x + 3, y - 16);
+    g.fillText("sf →", x + 3, y - 16);
   }
 }
 
-// A yellow cab, side on.
+// A cable car, side on (kept as drawCab: the world calls it for each lane).
 export function drawCab(g: G, p: Palette, x: number, y: number, dir: 1 | -1, t: number) {
+  const red = "#b8322b", cream = "#f1e3c2", wood = "#8a5a3b";
   R(g, x + 1, y + 10, 20, 2, p.shadow);
-  R(g, x, y + 3, 22, 7, "#f2c14e");
-  R(g, x + 4, y, 13, 4, "#f2c14e");
-  R(g, x + 5, y + 1, 5, 3, p.glass);
-  R(g, x + 11, y + 1, 5, 3, p.glass);
-  R(g, x + 8, y - 1, 5, 1, p.ink);
-  for (let i = 0; i < 7; i++) R(g, x + 1 + i * 3, y + 6, 1, 1, (i + t) % 2 ? p.ink : "#f2c14e");
+  // roof with the clerestory
+  R(g, x, y - 1, 22, 2, wood);
+  R(g, x + 4, y - 2, 14, 1, wood);
+  // open bench ends, closed middle cabin
+  R(g, x, y + 1, 22, 3, cream);
+  R(g, x + 6, y + 1, 10, 3, p.glass);
+  for (const px of [x + 1, x + 5, x + 16, x + 20]) R(g, px, y + 1, 1, 5, wood);
+  R(g, x + 6, y + 1, 1, 3, cream); R(g, x + 11, y + 1, 1, 3, cream); R(g, x + 15, y + 1, 1, 3, cream);
+  // riders on the running boards
+  R(g, x + 2, y + 1, 2, 2, (t % 4 < 2) ? "#f2a7a0" : "#8a5a3b");
+  R(g, x + 17, y + 2, 2, 2, "#c79a5b");
+  R(g, x, y + 4, 22, 5, red);
+  R(g, x, y + 5, 22, 1, cream);
+  R(g, x + 2, y + 7, 18, 1, "#8f2620");
   R(g, x + 3, y + 9, 4, 2, p.ink);
   R(g, x + 15, y + 9, 4, 2, p.ink);
-  R(g, dir > 0 ? x + 21 : x, y + 4, 1, 2, p.white);
-  R(g, dir > 0 ? x : x + 21, y + 4, 1, 2, "#d9453b");
+  R(g, dir > 0 ? x + 21 : x, y + 3, 1, 2, p.bulb);
 }
 
 export function drawPigeon(g: G, p: Palette, x: number, y: number, hop: boolean, flying: boolean) {

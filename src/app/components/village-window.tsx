@@ -3,13 +3,14 @@
 // ---------------------------------------------------------------------------
 // The village at the end of the homepage, inside an old tv (about 70% of the
 // viewport). It switches on as you scroll: the moment the tv appears, the
-// screen is a thin bright line; it opens vertically until the tv is centred,
-// then the village is playable. The opening is a clip-path on a fixed-size
-// screen, so the canvas never resizes. The engine only loads once the tv is
+// whole set (bezel and all) is a wide, thin slit with rounded ends and a
+// glowing band of scanlines across it; it opens vertically until the tv is
+// centred, the glow fades, and the village is playable. The opening is a
+// clip-path on a fixed-size tv, so the canvas never resizes. The engine only loads once the tv is
 // near, so the hero and the page loader never wait for it.
 // ---------------------------------------------------------------------------
 import dynamic from "next/dynamic";
-import Link from "next/link";
+// import Link from "next/link"; // for the hidden "move in" link
 import { useEffect, useRef, useState } from "react";
 import { Keys, useCoarsePointer } from "../village/keys";
 
@@ -24,7 +25,10 @@ const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
 export function VillageWindow() {
   const tv = useRef<HTMLDivElement>(null);
   const picture = useRef<HTMLDivElement>(null);
-  const line = useRef<HTMLDivElement>(null);
+  const body = useRef<HTMLDivElement>(null);
+  const screen = useRef<HTMLDivElement>(null);
+  const crt = useRef<HTMLDivElement>(null);
+  const feet = useRef<HTMLDivElement>(null);
   const [near, setNear] = useState(false);
   const [open, setOpen] = useState(false);
   const touch = useCoarsePointer();
@@ -42,19 +46,40 @@ export function VillageWindow() {
     let wasOpen = false;
     const update = () => {
       raf = 0;
-      const el = tv.current, pic = picture.current, ln = line.current;
-      if (!el || !pic || !ln) return;
+      const el = tv.current, pic = picture.current, bd = body.current, scr = screen.current, glow = crt.current, ft = feet.current;
+      if (!el || !pic || !bd || !scr || !glow || !ft) return;
       const vh = window.innerHeight;
       const r = el.getBoundingClientRect();
-      // 0 when the tv's top enters at the bottom of the screen, 1 when it's centred
-      const start = vh, end = Math.min(vh * 0.5 - r.height / 2, vh - r.height);
-      const p = clamp((start - r.top) / Math.max(1, start - end));
+      // 0 when the tv's middle (where the slit is) comes up past the bottom
+      // edge, 1 when the tv is centred: the whole opening happens in view
+      const mid = r.top + r.height / 2;
+      const start = vh * 0.94, end = Math.min(vh * 0.5, vh - r.height / 2);
+      const p = clamp((start - mid) / Math.max(1, start - end));
       const e = easeOut(clamp((p - 0.08) / 0.92));
-      const inset = (1 - e) * 50;
-      pic.style.clipPath = `inset(calc(${inset}% - 1px) 0 calc(${inset}% - 1px) 0)`;
+      if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        // no slit: the set fades in, already open
+        bd.style.clipPath = "";
+        bd.style.opacity = ft.style.opacity = String(e);
+        glow.style.opacity = "0";
+      } else if (e >= 1) {
+        bd.style.clipPath = "";
+        ft.style.opacity = "1";
+        glow.style.opacity = "0";
+      } else {
+        // the slit is centred on the screen (not the body, which has a chin),
+        // starts a little narrower than the set and widens as it opens
+        const b = bd.getBoundingClientRect(), s = scr.getBoundingClientRect();
+        const cy = s.top + s.height / 2 - b.top;
+        const half = 7 + e * 30; // the slit's minimum half-height, px
+        const top = Math.max(0, cy * (1 - e) - half), bottom = Math.max(0, (b.height - cy) * (1 - e) - half);
+        const side = (1 - clamp(p * 5)) * 18;
+        const round = Math.round(14 + e * 24);
+        bd.style.clipPath = p < 0.02 ? "inset(50% 50%)" : `inset(${top}px ${side}% ${bottom}px ${side}% round 9% / ${round}px)`;
+        bd.style.opacity = "";
+        ft.style.opacity = String(clamp((e - 0.85) / 0.15));
+        glow.style.opacity = String(1 - clamp(e * 1.4));
+      }
       pic.style.filter = e < 1 ? `brightness(${1 + (1 - e) * 0.8})` : "";
-      ln.style.opacity = String(p < 0.02 ? 0 : 1 - clamp(e * 3));
-      ln.style.transform = `translateY(-50%) scaleX(${0.2 + clamp(p * 6) * 0.8})`;
       const isOpen = e > 0.98;
       if (isOpen !== wasOpen) {
         wasOpen = isOpen;
@@ -78,27 +103,30 @@ export function VillageWindow() {
     // always night-blue, in both themes: the tv glows on a dark wall
     <section aria-labelledby="village-title" className="village-section relative z-10 bg-[#040c2a] text-[#93c5fd] min-h-svh px-4 py-6 flex flex-col items-center justify-center gap-4 sm:gap-5">
       <header className="flex flex-col items-center gap-2.5 sm:gap-3 text-center">
-        <h2 id="village-title" className="text-[26px] leading-[1.05] sm:text-[40px] font-medium tracking-[-0.03em] text-white text-balance">
+        <h2 id="village-title" className="village-title text-[28px] leading-[1.05] sm:text-[44px] text-white text-balance">
           slovenian designer village
         </h2>
+        {/* hidden for now; bring back to let people move in from the homepage
         <Link
           href="/village/join"
           className="mt-0.5 inline-flex items-center gap-1.5 border border-[#93c5fd]/40 px-3 py-1.5 text-xs text-[#93c5fd] transition-[background-color,color,border-color,scale] duration-150 ease-out hover:bg-[#93c5fd] hover:text-[#040c2a] hover:border-[#93c5fd] active:scale-[0.97]"
         >
           move in →
         </Link>
+        */}
       </header>
 
       <div ref={tv} className="relative">
 
-        <div className="tv-body relative rounded-[30px] sm:rounded-[38px] p-3 sm:p-5 pb-12 sm:pb-14">
-          <div className="tv-screen relative overflow-hidden rounded-[18px] sm:rounded-[26px] w-[min(86vw,calc((100svh-330px)*3/4))] aspect-[3/4] sm:w-[min(64vw,calc((100svh-330px)*4/3))] sm:aspect-[4/3]">
-            <div ref={picture} className="absolute inset-0 text-foreground bg-[#f1f4fc] dark:bg-[#16275e]" style={{ clipPath: "inset(50% 0 50% 0)" }}>
+        <div ref={body} className="tv-body relative rounded-[30px] sm:rounded-[38px] p-3 sm:p-5 pb-12 sm:pb-14" style={{ clipPath: "inset(50% 50%)" }}>
+          <div ref={screen} className="tv-screen relative overflow-hidden rounded-[18px] sm:rounded-[26px] w-[min(86vw,calc((100svh-330px)*3/4))] aspect-[3/4] sm:w-[min(64vw,calc((100svh-330px)*4/3))] sm:aspect-[4/3]">
+            <div ref={picture} className="absolute inset-0 text-foreground bg-[#f1f4fc] dark:bg-[#16275e]">
               <div className={`absolute inset-0 ${open ? "" : "pointer-events-none"}`} inert={!open}>
                 {near && <VillageApp screen={false} me={null} inline active={open} />}
               </div>
             </div>
-            <div ref={line} aria-hidden="true" className="tv-line absolute inset-x-[6%] top-1/2 h-[3px] opacity-0 pointer-events-none" />
+            {/* the warm-up glow: a soft colour band and heavy scanlines while it opens */}
+            <div ref={crt} aria-hidden="true" className="tv-crt absolute inset-0 pointer-events-none" />
             <div aria-hidden="true" className="tv-glass absolute inset-0 pointer-events-none" />
           </div>
           {/* chin: name plate, speaker, knobs */}
@@ -112,7 +140,7 @@ export function VillageWindow() {
           </div>
         </div>
         {/* feet */}
-        <div aria-hidden="true" className="flex justify-between px-[14%]">
+        <div ref={feet} aria-hidden="true" className="flex justify-between px-[14%]" style={{ opacity: 0 }}>
           <span className="block w-8 h-2.5 rounded-b-md bg-[#0b1238]" />
           <span className="block w-8 h-2.5 rounded-b-md bg-[#0b1238]" />
         </div>
