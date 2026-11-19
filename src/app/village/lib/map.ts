@@ -3,8 +3,8 @@
 // between them, seen from above at an angle (buildings show their fronts):
 // rows of painted-lady victorians and edwardian flats with bay windows, corner
 // cafés under scalloped awnings, a transamerica-style pyramid, the ferry
-// building's clock tower, and a park (dolores-style palms + the christmas
-// tree) with a muni/bart entrance. Built once from a fixed seed. The city is
+// building's clock tower, and a park (the christmas tree) with a muni/bart
+// entrance. Built once from a fixed seed. The city is
 // drawn in the site's blues; people, cable cars and a few signs carry the
 // colour. Everything here is in world pixels (1 = one pixel
 // of a 12x20 villager); the world scales it up by a whole number.
@@ -12,7 +12,7 @@
 // - layout(): blocks, buildings (each home to 3 villagers), solids, props
 // - drawStatic(): ground, streets, buildings → an offscreen canvas (redrawn
 //   when the theme or the number of residents changes)
-// - drawTall(): props people can walk behind (trees, palms, lamps, the sign),
+// - drawTall(): props people can walk behind (trees, lamps, the sign),
 //   drawn in the same depth-sorted pass as the villagers
 // ---------------------------------------------------------------------------
 import { mulberry } from "./villager";
@@ -64,7 +64,7 @@ export type Building = {
   wall: "A" | "B" | "C"; door: number; home: { x: number; y: number }; windows: { x: number; y: number }[];
   nudge?: boolean; // drawn a pixel low: the 8px-grid easter egg (eggs.ts)
 };
-export type TallProp = { kind: "tree" | "pine" | "palm" | "lamp" | "sign"; x: number; y: number };
+export type TallProp = { kind: "tree" | "pine" | "lamp" | "sign"; x: number; y: number };
 export type SmallProp = { kind: "bench" | "planter" | "bin" | "hydrant" | "news" | "rack" | "flowers"; x: number; y: number; c?: string };
 export type Layout = {
   buildings: Building[];
@@ -149,7 +149,7 @@ export function layout(): Layout {
     tall.push({ kind: "lamp", x: x0 + 6, y: y0 + BY - 4 });
   }
 
-  // the park: lawn, gravel, the christmas tree, palms, benches, lamps, muni on the corner
+  // the park: lawn, gravel, the christmas tree, benches, lamps, muni on the corner
   const px0 = blockX(PARK.i), py0 = blockY(PARK.j);
   const park = { x: px0 + 10, y: py0 + 10, w: BX - 20, h: BY - 20 };
   const parkTree = { x: px0 + BX / 2, y: py0 + BY / 2 + 8 };
@@ -161,10 +161,6 @@ export function layout(): Layout {
   }
   tall.push({ kind: "lamp", x: px0 + 60, y: py0 + 50 }, { kind: "lamp", x: px0 + BX - 60, y: py0 + 50 }, { kind: "lamp", x: px0 + 60, y: py0 + BY - 30 }, { kind: "lamp", x: px0 + BX - 60, y: py0 + BY - 30 });
   small.push({ kind: "bin", x: px0 + 52, y: py0 + 34 });
-  for (const palmX of [px0 + 20, px0 + BX - 20]) {
-    tall.push({ kind: "palm", x: palmX, y: py0 + 62 });
-    solids.push({ x: palmX - 2, y: py0 + 60, w: 4, h: 4 });
-  }
   const subway = { x: px0 + BX - 40, y: py0 + BY - 22, spawn: { x: px0 + BX - 27, y: py0 + BY + 4 } };
   solids.push({ x: subway.x, y: subway.y - 3, w: 26, h: 15 });
   tall.push({ kind: "sign", x: px0 + 4, y: py0 + 4 });
@@ -516,18 +512,6 @@ export function drawTall(g: G, p: Palette, t: TallProp, time: number) {
       g.fillRect(x - 5, y - 3, 11, 6);
       g.fillRect(x - 3, y - 4, 7, 8);
     }
-  } else if (t.kind === "palm") {
-    // a tall, slightly leaning canary palm (dolores park)
-    for (let k = 0; k < 30; k++) R(g, x + Math.round(Math.sin(k / 12) * 2), y - k, 2, 1, k % 3 ? p.trimDark : p.roofDark);
-    const hx = x + 2, hy = y - 31;
-    const fronds: [number, number][] = [[-1, 0], [1, 0], [-1, 1], [1, 1], [0, -1], [-1, -1], [1, -1]];
-    fronds.forEach(([dx, dy], k) => {
-      for (let i = 1; i < 9; i++) {
-        const droop = dy === -1 ? -Math.max(0, 4 - i) : Math.floor((i * i) / 14) + dy * 2;
-        R(g, hx + dx * i, hy + droop + (dx === 0 ? -i + 1 : 0), 2, i < 6 ? 2 : 1, k % 2 ? p.leaf : p.leafDark);
-      }
-    });
-    R(g, hx - 1, hy - 1, 3, 3, p.leafDark);
   } else if (t.kind === "pine") {
     R(g, x - 1, y - 6, 2, 6, p.ink);
     const rows: [number, number][] = [[0, 1], [-1, 3], [-2, 5], [-1, 3], [-3, 7], [-4, 9], [-3, 7], [-5, 11]];

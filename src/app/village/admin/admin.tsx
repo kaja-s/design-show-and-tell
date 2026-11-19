@@ -123,7 +123,7 @@ export function Admin() {
               <li key={l.id} className="border border-foreground/15 p-3.5 flex flex-col gap-2 select-text">
                 <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{l.text}</p>
                 <div className="text-xs opacity-60 flex flex-wrap gap-x-2">
-                  <span>{l.name || "anonymous"}</span>
+                  <span>{l.name || "no name"}</span>
                   {l.email && (
                     <a className="underline" href={`mailto:${l.email}`}>
                       {l.email}

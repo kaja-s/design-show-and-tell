@@ -54,17 +54,20 @@ export function LetterPanel({ onClose, touch }: { onClose: () => void; touch: bo
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [text, setText] = useState("");
-  const [errors, setErrors] = useState<{ email?: string; text?: string; form?: string }>({});
+  const [errors, setErrors] = useState<{ name?: string; email?: string; text?: string; form?: string }>({});
   const [state, setState] = useState<"idle" | "sending" | "sent">("idle");
 
   const send = async (e: React.FormEvent) => {
     e.preventDefault();
     const next: typeof errors = {};
     if (!text.trim()) next.text = "write something first.";
-    if (email.trim() && !VILLAGE_EMAIL_RE.test(email.trim())) next.email = "that doesn't look like an email.";
+    if (!name.trim()) next.name = "add your name.";
+    if (!email.trim()) next.email = "add your email, so kaja can write back.";
+    else if (!VILLAGE_EMAIL_RE.test(email.trim())) next.email = "that doesn't look like an email.";
     setErrors(next);
-    if (Object.keys(next).length) {
-      document.getElementById(next.text ? "letter-text" : "letter-email")?.focus();
+    const first = (["text", "name", "email"] as const).find((k) => next[k]);
+    if (first) {
+      document.getElementById(`letter-${first}`)?.focus();
       return;
     }
     setState("sending");
@@ -90,7 +93,7 @@ export function LetterPanel({ onClose, touch }: { onClose: () => void; touch: bo
         <h2 id="letter-title" className="text-lg font-medium leading-tight pr-10">
           posted ✉
         </h2>
-        <p className="text-sm leading-relaxed">thank you. kaja reads every letter{email.trim() ? ", and she can write back now" : ""}.</p>
+        <p className="text-sm leading-relaxed">thank you. kaja reads every letter, and she&apos;ll write back.</p>
         <button type="button" className={`${CHIP} ${CHIP_ON} self-start`} onClick={onClose}>
           back to the village
         </button>
@@ -125,11 +128,23 @@ export function LetterPanel({ onClose, touch }: { onClose: () => void; touch: bo
           <FieldError id="letter-text-error">{errors.text}</FieldError>
         </div>
         <div>
-          <FieldLabel htmlFor="letter-name">from (optional)</FieldLabel>
-          <input id="letter-name" autoComplete="name" maxLength={60} value={name} onChange={(e) => setName(e.target.value)} placeholder="your name" className={FIELD_CLASS} />
+          <FieldLabel htmlFor="letter-name">your name</FieldLabel>
+          <input
+            id="letter-name"
+            autoComplete="name"
+            enterKeyHint="next"
+            maxLength={60}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            aria-invalid={!!errors.name}
+            aria-describedby="letter-name-error"
+            placeholder="ana novak"
+            className={FIELD_CLASS}
+          />
+          <FieldError id="letter-name-error">{errors.name}</FieldError>
         </div>
         <div>
-          <FieldLabel htmlFor="letter-email">email, if you&apos;d like a reply (optional)</FieldLabel>
+          <FieldLabel htmlFor="letter-email">your email</FieldLabel>
           <input
             id="letter-email"
             type="email"
