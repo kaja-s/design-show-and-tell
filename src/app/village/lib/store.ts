@@ -13,6 +13,9 @@ import type { Villager } from "./villager";
 // and the private email (absent on villagers from before emails were asked).
 export type StoredVillager = Villager & { tokenHash: string; email?: string };
 
+// A letter dropped in the village mailbox, for the organiser (read in /village/admin).
+export type Letter = { id: string; name: string; email: string; text: string; at: number };
+
 export type Store = {
   kind: "redis" | "file";
   list(): Promise<StoredVillager[]>;
@@ -24,6 +27,9 @@ export type Store = {
   // email -> villager id, so one email can't move in twice
   idForEmail(email: string): Promise<string | null>;
   setEmail(email: string, id: string | null): Promise<void>;
+  addLetter(l: Letter): Promise<void>;
+  // newest first
+  letters(): Promise<Letter[]>;
   // true if this caller is under the limit (count per window)
   allow(key: string, limit: number, windowSec: number): Promise<boolean>;
 };
@@ -31,6 +37,7 @@ export type Store = {
 const VILLAGERS = "village:villagers";
 const PHOTO = (id: string) => `village:photo:${id}`;
 const EMAIL = (email: string) => `village:email:${email}`;
+const LETTERS = "village:letters";
 
 const parse = (raw: unknown): StoredVillager | null => {
   if (!raw) return null;
@@ -77,6 +84,13 @@ function redisStore(redis: Redis): Store {
       if (dataUrl) await redis.set(PHOTO(id), dataUrl);
       else await redis.del(PHOTO(id));
     },
+    async addLetter(l) {
+      await redis.lpush(LETTERS, JSON.stringify(l));
+    },
+    async letters() {
+      const raw = await redis.lrange<unknown>(LETTERS, 0, 499);
+      return raw.map((r) => (typeof r === "string" ? (JSON.parse(r) as Letter) : (r as Letter)));
+    },
     async allow(key, limit, windowSec) {
       const k = `village:rl:${key}`;
       const n = await redis.incr(k);
@@ -86,7 +100,7 @@ function redisStore(redis: Redis): Store {
   };
 }
 
-type FileData = { villagers: Record<string, StoredVillager>; photos: Record<string, string>; emails?: Record<string, string> };
+type FileData = { villagers: Record<string, StoredVillager>; photos: Record<string, string>; emails?: Record<string, string>; letters?: Letter[] };
 const FILE = path.join(process.cwd(), ".village.json");
 
 function fileStore(): Store {
@@ -137,6 +151,10 @@ function fileStore(): Store {
       return (await read()).photos[id] ?? null;
     },
     putPhoto: (id, dataUrl) => update((d) => { if (dataUrl) d.photos[id] = dataUrl; else delete d.photos[id]; }),
+    addLetter: (l) => update((d) => void (d.letters = [l, ...(d.letters ?? [])])),
+    async letters() {
+      return (await read()).letters ?? [];
+    },
     async allow() {
       return true;
     },

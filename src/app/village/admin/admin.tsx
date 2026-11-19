@@ -8,6 +8,7 @@ import { FIELD_CLASS, FieldLabel } from "../../components/form-field";
 import { signalWolfReady } from "../../components/shader-canvas";
 import { Avatar } from "../village-app";
 import type { Villager } from "../lib/villager";
+import type { Letter } from "../lib/store";
 
 const KEY = "village:admin-key";
 
@@ -23,6 +24,7 @@ export function Admin() {
   const [emails, setEmails] = useState<Record<string, string>>({});
   const [confirm, setConfirm] = useState<string | null>(null);
   const [message, setMessage] = useState("");
+  const [letters, setLetters] = useState<Letter[] | null>(null);
 
   useEffect(() => signalWolfReady(), []);
   // reload when the key changes: a matching key also returns everyone's email
@@ -36,7 +38,18 @@ export function Admin() {
         })
         .catch(() => setMessage("couldn't load the villagers."));
     }, key ? 400 : 0);
-    return () => window.clearTimeout(t);
+    // letters from the village mailbox: only with the right key
+    const tl = window.setTimeout(() => {
+      if (!key) return setLetters(null);
+      fetch("/api/letters", { cache: "no-store", headers: { "x-admin-key": key } })
+        .then((res) => (res.ok ? res.json() : Promise.reject()))
+        .then((d: { letters: Letter[] }) => setLetters(d.letters))
+        .catch(() => setLetters(null));
+    }, 400);
+    return () => {
+      window.clearTimeout(t);
+      window.clearTimeout(tl);
+    };
   }, [key]);
   const remove = async (v: Villager) => {
     const res = await fetch(`/api/villagers/${v.id}`, { method: "DELETE", headers: { "x-admin-key": key } });
@@ -99,6 +112,30 @@ export function Admin() {
         ))}
         {villagers?.length === 0 && <li className="py-2.5 text-sm opacity-60">nobody lives in the village yet.</li>}
       </ul>
+      {letters && (
+        <section aria-labelledby="letters-title" className="flex flex-col gap-3 pt-4 border-t border-foreground/10">
+          <h2 id="letters-title" className="text-lg font-medium">
+            letters <span className="opacity-50 tabular-nums">{letters.length}</span>
+          </h2>
+          {letters.length === 0 && <p className="text-sm opacity-60">the mailbox is empty.</p>}
+          <ul className="flex flex-col gap-3">
+            {letters.map((l) => (
+              <li key={l.id} className="border border-foreground/15 p-3.5 flex flex-col gap-2 select-text">
+                <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{l.text}</p>
+                <div className="text-xs opacity-60 flex flex-wrap gap-x-2">
+                  <span>{l.name || "anonymous"}</span>
+                  {l.email && (
+                    <a className="underline" href={`mailto:${l.email}`}>
+                      {l.email}
+                    </a>
+                  )}
+                  <span>{new Date(l.at).toLocaleString("sl-SI")}</span>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </main>
   );
 }

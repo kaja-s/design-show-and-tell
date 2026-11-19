@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// The village, 2d. A canvas2d engine drawing the nyc grid from map.ts with
+// The village, 2d. A canvas2d engine drawing the san francisco grid from map.ts with
 // the pixel villagers from sprites.ts, scaled by a whole number so pixels
 // stay crisp. Same public api as the old three.js world, so village-app.tsx
 // only owns the html around it.
@@ -13,10 +13,15 @@ import {
 } from "./map";
 import { petSprite, spinPose, SPIN_SEC, sprite, SPRITE_H, SPRITE_W, type Dir } from "./sprites";
 import { VISITOR, cleanConfig, type Config, type Villager } from "./villager";
+import { BARISTA, BARISTA_LINE, CLIENT, CLIENT_LINE, Eggs, MENU, SWATCHES, type Spot } from "./eggs";
 
 export type Mode = "explore" | "projector" | "inline";
+// easter eggs the ui shows something for (see eggs.ts)
+export type EggEvent = "files" | "letter" | "grid-on" | "grid-off" | "figma-on" | "figma-off" | "kerned";
 export type VillageEvents = {
-  onBubble: (v: Villager | null, met: boolean) => void;
+  /** what the "talk to …" button says, or null to hide it */
+  onBubble: (text: string | null, met: boolean) => void;
+  onEgg: (e: EggEvent) => void;
   onCard: (v: Villager | null) => void;
   onProgress: (met: number, total: number) => void;
   onArrival: (v: Villager) => void;
@@ -62,6 +67,12 @@ const KEYS: Record<string, Pt> = {
 export class Village {
   private g: CanvasRenderingContext2D;
   private L: Layout = layout();
+  // placed before the walk grid is built: the eggs add their footprints to the layout
+  private eggs = new Eggs();
+  private npcs: { id: "barista" | "client"; a: Actor }[] = [];
+  private sayEl!: HTMLElement;
+  private sayAt: { x: number; y: number; until: number } | null = null;
+  private lastDt = 0;
   private pal: Palette;
   private night: boolean;
   private mode: Mode;
@@ -74,7 +85,7 @@ export class Village {
   private player: Actor;
   private villagers: Actor[] = [];
   private card: Actor | null = null;
-  private bubbleFor: Actor | null = null;
+  private near: { a: Actor } | { s: Spot } | null = null;
   private hover: Actor | null = null;
   private keys = new Set<string>();
   private cam: Pt = { x: WORLD_W / 2, y: WORLD_H / 2 };
@@ -115,6 +126,13 @@ export class Village {
     this.player.dir = "down";
     this.cam = { x: this.player.x, y: this.player.y };
     this.playerLabel = this.label("you", true);
+    const E = this.eggs.L;
+    this.npcs = [
+      { id: "barista", a: this.makeActor(null, BARISTA, E.barista) },
+      { id: "client", a: this.makeActor(null, CLIENT, E.client) },
+    ];
+    this.sayEl = this.label("");
+    this.sayEl.classList.add("village-say");
     this.pigeons = this.L.pigeons.map((p, i) => ({ x: p.x, y: p.y, hx: p.x, hy: p.y, fly: 0, gone: 0, seed: i * 1.7 }));
     this.cabs = [1, 2, 5, 6].map((lane, i) => ({ lane, x: (i * 211) % WORLD_W, speed: 34 + i * 5 }));
 
@@ -135,6 +153,7 @@ export class Village {
     this.cleanup.forEach((f) => f());
     this.labels.forEach((l) => l.remove());
     this.playerLabel.remove();
+    this.sayEl.remove();
   }
 
   setVillagers(list: Villager[], announce: boolean) {
@@ -234,7 +253,56 @@ export class Village {
   }
 
   talkToBubble() {
-    if (this.bubbleFor) this.talkOrWalk(this.bubbleFor);
+    const n = this.near;
+    if (!n) return;
+    if ("a" in n) this.talkOrWalk(n.a);
+    else this.useSpot(n.s);
+  }
+
+  /* ---------------- easter eggs ---------------- */
+  private useSpot(s: Spot) {
+    this.closeCard();
+    if (Math.hypot(s.x - this.player.x, s.y - this.player.y) <= TALK_DIST + 4) return this.act(s);
+    // stand beside it (on your side), so you don't cover it up
+    const side = this.player.x < s.x ? -16 : 16;
+    const goal = [{ x: s.x + side, y: s.y + 2 }, { x: s.x - side, y: s.y + 2 }, { x: s.x, y: s.y + 16 }].find((q) => !this.blocked(q.x, q.y)) ?? { x: s.x, y: s.y + 16 };
+    this.player.path = this.route(this.player, goal);
+    this.player.onArrive = () => this.act(s);
+  }
+
+  private act(s: Spot) {
+    this.player.path = [];
+    this.player.dir = this.facing(this.player, s);
+    const npc = this.npcs.find((n) => n.id === s.id)?.a;
+    if (npc) {
+      npc.dir = this.facing(npc, this.player);
+      npc.emote = { kind: npc.cfg.emote, t: 0 };
+    }
+    switch (s.id) {
+      case "barista":
+        return this.say(s.x, s.y - SPRITE_H - 2, BARISTA_LINE);
+      case "client": {
+        this.eggs.logo = Math.min(3, this.eggs.logo + 0.25);
+        const b = this.eggs.L.billboard;
+        this.puff(b.x + b.w / 2, b.y + b.h / 2, 12);
+        return this.say(s.x, s.y - SPRITE_H - 2, CLIENT_LINE);
+      }
+      case "menu":
+        return this.say(s.x, s.y - 15, MENU);
+      case "hydrant":
+        this.eggs.swatch = (this.eggs.swatch + 1) % SWATCHES.length;
+        return this.say(s.x, s.y - 12, SWATCHES[this.eggs.swatch][0]);
+      case "files":
+      case "letter":
+        this.sayAt = null;
+        return this.ev.onEgg(s.id);
+    }
+  }
+
+  // a line of speech over a spot, as html (crisp at any scale)
+  private say(x: number, y: number, text: string) {
+    this.sayEl.textContent = text;
+    this.sayAt = { x, y, until: this.time + Math.max(3.6, text.length * 0.08) };
   }
 
   /* ---------------- villagers ---------------- */
@@ -414,6 +482,11 @@ export class Village {
     const onDown = (e: KeyboardEvent) => {
       if (!this.inputEnabled || this.mode === "projector" || isField(e)) return;
       const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+      if (k.length === 1 && /[a-z]/.test(k) && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        const fired = this.eggs.key(k);
+        if (fired === "grid") this.ev.onEgg(this.eggs.grid ? "grid-on" : "grid-off");
+        else if (fired === "figma") this.ev.onEgg(this.eggs.figma ? "figma-on" : "figma-off");
+      }
       if (KEYS[k]) {
         if (e.metaKey || e.ctrlKey || e.altKey) return;
         e.preventDefault();
@@ -422,7 +495,7 @@ export class Village {
         this.player.onArrive = null;
         if (this.card && Math.hypot(this.card.x - this.player.x, this.card.y - this.player.y) > 4) this.closeCard();
       } else if ((k === "Enter" || k === " ") && !onButton(e)) {
-        if (this.bubbleFor) {
+        if (this.near) {
           e.preventDefault();
           this.talkToBubble();
         }
@@ -453,7 +526,7 @@ export class Village {
       if (e.pointerType !== "mouse" || this.mode === "projector") return;
       const w = this.toWorld(e.clientX, e.clientY);
       this.hover = this.actorAt(w);
-      c.style.cursor = this.hover ? "pointer" : "";
+      c.style.cursor = this.hover || this.eggs.spotAt(w) ? "pointer" : "";
     };
     const onLeave = () => {
       this.hover = null;
@@ -511,6 +584,8 @@ export class Village {
     }
     const a = this.actorAt(w);
     if (a) return this.talkOrWalk(a);
+    const spot = this.eggs.spotAt(w);
+    if (spot) return this.useSpot(spot);
     if (this.card) this.closeCard();
     this.player.path = this.route(this.player, w);
     this.player.onArrive = null;
@@ -570,6 +645,7 @@ export class Village {
 
   private update(dt: number) {
     const p = this.player;
+    this.lastDt = dt;
     // keys
     let kx = 0, ky = 0;
     this.keys.forEach((k) => { kx += KEYS[k]?.x ?? 0; ky += KEYS[k]?.y ?? 0; });
@@ -611,22 +687,44 @@ export class Village {
       this.followPet(a, dt);
     }
 
+    // the barista and the client stay put, and look at you when you're close
+    for (const { a } of this.npcs) {
+      a.phase += dt;
+      if (a.emote && (a.emote.t += dt) > EMOTE_SEC) a.emote = null;
+      a.dir = Math.hypot(a.x - p.x, a.y - p.y) < 44 ? this.facing(a, p) : "down";
+    }
+    if (this.eggs.update(dt, p)) {
+      const k = this.eggs.L.kerning;
+      this.puff(k.x + k.w / 2, k.base - 22, 24);
+      this.ev.onEgg("kerned");
+    }
+    if (this.sayAt && Math.hypot(this.sayAt.x - p.x, this.sayAt.y - p.y) > 80) this.sayAt = null;
+
     // talking ends when you walk away
     if (this.card && Math.hypot(this.card.x - p.x, this.card.y - p.y) > TALK_DIST * 2.2) this.closeCard();
 
-    // who gets the bubble: the hovered person, else the nearest one close by
-    let near: Actor | null = this.hover;
+    // who gets the bubble: the hovered person, else the nearest one close by,
+    // else the nearest easter egg
+    let near: Actor | null = this.hover, spot: Spot | null = null;
     if (!near && this.mode !== "projector") {
       let bd = BUBBLE_DIST;
       for (const a of this.villagers) {
         const d = Math.hypot(a.x - p.x, a.y - p.y);
         if (d < bd) { bd = d; near = a; }
       }
+      if (!near) {
+        bd = BUBBLE_DIST;
+        for (const s of this.eggs.L.spots) {
+          const d = Math.hypot(s.x - p.x, s.y - p.y);
+          if (d < bd) { bd = d; spot = s; }
+        }
+      }
     }
-    if (this.card) near = null;
-    if (near !== this.bubbleFor) {
-      this.bubbleFor = near;
-      this.ev.onBubble(near?.data ?? null, !!near?.met);
+    if (this.card) near = spot = null;
+    const was = this.near && ("a" in this.near ? this.near.a : this.near.s);
+    if ((near ?? spot) !== was) {
+      this.near = near ? { a: near } : spot ? { s: spot } : null;
+      this.ev.onBubble(near ? `talk to ${near.data!.name}` : spot?.text ?? null, !!near?.met);
     }
 
     // traffic, pigeons, particles
@@ -709,6 +807,7 @@ export class Village {
     g.fillRect(0, 0, c.width, c.height);
     g.setTransform(Z, 0, 0, Z, this.ox, this.oy);
     g.drawImage(this.staticCanvas, 0, 0);
+    this.eggs.drawBehind(g, p, this.time, this.player, this.zoomed);
 
     // where you tapped: a little target that shrinks away
     if (this.marker) {
@@ -737,13 +836,26 @@ export class Village {
       list.push({ y: lane.y + 10, draw: () => drawCab(g, p, Math.round(cab.x), lane.y, lane.dir, Math.floor(this.time * 4)) });
     }
     for (const a of this.villagers) list.push({ y: a.y, draw: () => this.drawActor(a) });
+    for (const { a } of this.npcs) list.push({ y: a.y, draw: () => this.drawActor(a) });
+    list.push(...this.eggs.depthItems(g, p, this.time));
     if (this.mode !== "projector") list.push({ y: this.player.y, draw: () => this.drawActor(this.player) });
     list.sort((a, b) => a.y - b.y).forEach((d) => d.draw());
-    if (this.bubbleFor && !this.card && this.mode !== "projector") this.drawSpeech(this.bubbleFor);
+    if (this.near && !this.card && this.inputEnabled && this.mode !== "projector") {
+      if ("a" in this.near) this.drawSpeech(this.near.a.x, this.near.a.y - SPRITE_H);
+      else this.drawSpeech(this.near.s.x, this.near.s.hit.y);
+    }
 
     for (const b of this.pigeons) if (b.gone <= 0 && b.fly > 0) drawPigeon(g, p, Math.round(b.x), Math.round(b.y), false, true);
     g.fillStyle = p.night ? "#ffffff" : "#93c5fd";
     for (const q of this.particles) g.fillRect(Math.round(q.x), Math.round(q.y), 1, 1);
+
+    if (this.eggs.figma) {
+      const people = this.villagers.map((a) => ({ key: a.data!.id, name: a.data!.name, x: a.x, y: a.y }));
+      for (const n of this.npcs) people.push({ key: n.id, name: n.id, x: n.a.x, y: n.a.y });
+      if (this.mode !== "projector") people.push({ key: "you", name: "you", x: this.player.x, y: this.player.y });
+      this.eggs.drawCursors(g, people, this.lastDt);
+    }
+    this.eggs.drawGrid(g, Z, this.ox, this.oy, c.width, c.height, this.time);
 
     this.placeHtml();
     if (Math.floor(this.time * 10) % 3 === 0) this.drawMinimap();
@@ -797,16 +909,24 @@ export class Village {
       el.style.transform = `translate(${s.x}px, ${s.y}px) translate(-50%, -100%)`;
     }
     const pl = this.screen(this.player.x, this.player.y - SPRITE_H - 1);
-    const showYou = this.mode !== "projector" && pl.ok && !this.card;
+    const showYou = this.mode !== "projector" && pl.ok && !this.card && !this.sayAt && this.eggs.graffitiAlpha < 0.3;
     this.playerLabel.style.display = showYou ? "" : "none";
     if (showYou) this.playerLabel.style.transform = `translate(${pl.x}px, ${pl.y}px) translate(-50%, -100%)`;
+    if (this.sayAt && this.time < this.sayAt.until) {
+      const s = this.screen(this.sayAt.x, this.sayAt.y);
+      this.sayEl.style.display = s.ok ? "" : "none";
+      this.sayEl.style.transform = `translate(${s.x}px, ${s.y}px) translate(-50%, -100%)`;
+    } else {
+      this.sayAt = null;
+      this.sayEl.style.display = "none";
+    }
   }
 
   // the "…" speech bubble over whoever you can talk to
-  private drawSpeech(a: Actor) {
+  private drawSpeech(ax: number, top: number) {
     const { g } = this;
     const bob = this.reduced ? 0 : Math.round(Math.sin(this.time * 4) * 0.6);
-    const x = Math.round(a.x) - 1, y = Math.round(a.y) - SPRITE_H - 12 + bob;
+    const x = Math.round(ax) - 1, y = Math.round(top) - 12 + bob;
     const ink = "#1b1d33";
     g.fillStyle = ink;
     g.fillRect(x, y, 13, 9);
@@ -831,15 +951,36 @@ export class Village {
     g.setTransform(1, 0, 0, 1, 0, 0);
     g.clearRect(0, 0, mm.width, mm.height);
     g.imageSmoothingEnabled = true;
+    // the city is faded back so the people on it stand out
+    g.globalAlpha = 0.55;
     g.drawImage(this.staticCanvas, ox, oy, WORLD_W * s, WORLD_H * s);
-    for (const a of this.villagers) {
-      g.fillStyle = a.met ? "#3b5bdb" : "#d9453b";
-      g.fillRect(ox + a.x * s - 3, oy + a.y * s - 3, 6, 6);
-    }
-    g.fillStyle = "#021093";
-    g.fillRect(ox + this.player.x * s - 5, oy + this.player.y * s - 5, 10, 10);
+    g.globalAlpha = 1;
+    // people: a dot with a white ring (the city is all blues, so no blue dots);
+    // the ones you haven't met yet are bigger and coral, the met ones small and dark
+    const dot = (x: number, y: number, r: number, fill: string) => {
+      g.beginPath();
+      g.arc(x, y, r + 4.5, 0, Math.PI * 2);
+      g.fillStyle = "#021093";
+      g.fill();
+      g.beginPath();
+      g.arc(x, y, r + 2.5, 0, Math.PI * 2);
+      g.fillStyle = "#ffffff";
+      g.fill();
+      g.beginPath();
+      g.arc(x, y, r, 0, Math.PI * 2);
+      g.fillStyle = fill;
+      g.fill();
+    };
+    const people = [...this.villagers].sort((a, b) => Number(!a.met) - Number(!b.met)); // unmet on top
+    for (const a of people) dot(ox + a.x * s, oy + a.y * s, a.met ? 5 : 8, a.met ? "#262a40" : "#ff5a4e");
+    // you: a navy square with a white ring and centre
+    const px = ox + this.player.x * s, py = oy + this.player.y * s;
     g.fillStyle = "#ffffff";
-    g.fillRect(ox + this.player.x * s - 2, oy + this.player.y * s - 2, 4, 4);
+    g.fillRect(px - 9, py - 9, 18, 18);
+    g.fillStyle = "#021093";
+    g.fillRect(px - 7, py - 7, 14, 14);
+    g.fillStyle = "#ffffff";
+    g.fillRect(px - 2.5, py - 2.5, 5, 5);
   }
 
   private label(text: string, you = false) {

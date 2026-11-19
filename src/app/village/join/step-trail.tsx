@@ -1,16 +1,15 @@
 "use client";
 
 // ---------------------------------------------------------------------------
-// The "trail" variant of the join steps (/village/join?__variant=trail): the
-// you · look · role bar is a strip of pixel sidewalk with a signpost per step,
+// The join steps: the you · look · role bar is a strip of pixel sidewalk with a signpost per step,
 // and your own character (in whatever you've picked so far) walks to the next
 // sign when you go forward, back when you go back, and hops on arrival.
 // Walking is constant speed with walk frames (it's a walk, not an ease);
 // reduced motion puts it straight at the sign.
 // ---------------------------------------------------------------------------
 import { useEffect, useRef } from "react";
-import { sprite, SPRITE_H, SPRITE_W, type Dir } from "../../lib/sprites";
-import type { Config } from "../../lib/villager";
+import { sprite, SPRITE_H, SPRITE_W, type Dir } from "../lib/sprites";
+import type { Config } from "../lib/villager";
 
 const STOPS = ["you", "look", "role"];
 const SPEED = 150; // css px per second

@@ -16,14 +16,20 @@ import { portrait } from "./lib/sprites";
 import { normLink, photoUrl, type Villager } from "./lib/villager";
 import { readMe } from "./lib/me";
 import { Keys, useCoarsePointer } from "./keys";
+import { CHIP, CHIP_ON, ICON_CHIP } from "./chips";
+import { FilesPanel, LetterPanel } from "./egg-panels";
+import type { EggEvent } from "./lib/world";
 
 const POLL_SCREEN_MS = 3000;
+const EGG_BANNERS: Record<Exclude<EggEvent, "files" | "letter">, string> = {
+  "grid-on": "8px grid on · press g to hide it",
+  "grid-off": "8px grid off",
+  "figma-on": "multiplayer on · type figma again to leave",
+  "figma-off": "multiplayer off",
+  kerned: "perfectly kerned ✓",
+};
 const POLL_EXPLORE_MS = 15000;
 
-const CHIP =
-  "h-8 inline-flex items-center gap-1.5 bg-background/90 backdrop-blur-sm border border-foreground/15 px-2.5 text-xs transition-[scale,background-color,color,border-color] duration-150 ease-out active:scale-[0.97] hover:bg-highlight hover:text-highlight-text hover:border-highlight";
-const ICON_CHIP = `${CHIP} w-8 justify-center px-0`;
-const CHIP_ON = "bg-highlight text-highlight-text border-highlight";
 
 export function Avatar({ v, size }: { v: Villager; size: number }) {
   const src = useMemo(() => (v.hasPhoto ? photoUrl(v) : portrait(v.config)), [v]);
@@ -44,7 +50,8 @@ export function VillageApp({ screen, me, inline = false, active = true }: { scre
 
   const [villagers, setVillagers] = useState<Villager[] | null>(null);
   const [loadError, setLoadError] = useState(false);
-  const [bubble, setBubble] = useState<{ v: Villager; met: boolean } | null>(null);
+  const [bubble, setBubble] = useState<{ text: string; met: boolean } | null>(null);
+  const [egg, setEgg] = useState<"files" | "letter" | null>(null);
   const [card, setCard] = useState<Villager | null>(null);
   const [progress, setProgress] = useState({ met: 0, total: 0 });
   const [met, setMet] = useState<Set<string>>(() => new Set());
@@ -70,9 +77,14 @@ export function VillageApp({ screen, me, inline = false, active = true }: { scre
     const v = new Village(
       { canvas, minimap: minimapRef.current, bubble: bubbleEl, labels },
       {
-        onBubble: (b, met) => setBubble(b ? { v: b, met } : null),
+        onBubble: (text, met) => setBubble(text ? { text, met } : null),
+        onEgg: (e: EggEvent) => {
+          if (e === "files" || e === "letter") setEgg(e);
+          else showBanner(EGG_BANNERS[e]);
+        },
         onCard: (v) => {
           setCard(v);
+          if (v) setEgg(null);
           if (v) setMet((m) => (m.has(v.id) ? m : new Set(m).add(v.id)));
         },
         onProgress: (met, total) => setProgress({ met, total }),
@@ -86,6 +98,7 @@ export function VillageApp({ screen, me, inline = false, active = true }: { scre
     return () => {
       v.dispose();
       village.current = null;
+      setBubble(null);
     };
   }, [screen, inline, showBanner]);
 
@@ -94,8 +107,8 @@ export function VillageApp({ screen, me, inline = false, active = true }: { scre
   }, [theme]);
 
   useEffect(() => {
-    if (village.current) village.current.inputEnabled = !onboard && !dirOpen && playing;
-  }, [onboard, dirOpen, playing]);
+    if (village.current) village.current.inputEnabled = !onboard && !dirOpen && !egg && playing;
+  }, [onboard, dirOpen, egg, playing]);
 
   // the villagers: the first load arrives quietly, later ones move in with a puff
   useEffect(() => {
@@ -126,13 +139,18 @@ export function VillageApp({ screen, me, inline = false, active = true }: { scre
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
-      if (dirOpen) setDirOpen(false);
+      if (egg) setEgg(null);
+      else if (dirOpen) setDirOpen(false);
       else village.current?.closeCard();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [dirOpen]);
+  }, [dirOpen, egg]);
 
+  const closeEgg = () => {
+    setEgg(null);
+    canvasRef.current?.focus({ preventScroll: true });
+  };
   const openList = () => {
     village.current?.closeCard();
     setDirOpen(true);
@@ -173,14 +191,14 @@ export function VillageApp({ screen, me, inline = false, active = true }: { scre
       <button
         ref={bubbleRef}
         type="button"
-        hidden={!bubble || screen || !!card || (inline && !playing)}
+        hidden={!bubble || screen || !!card || !!egg || (inline && !playing)}
         onClick={() => village.current?.talkToBubble()}
         className={`village-bubble absolute left-1/2 -translate-x-1/2 ${inline ? "bottom-4" : "bottom-6"} z-[3] flex items-center gap-3 min-w-[240px] max-w-[calc(100%-24px)] bg-background text-foreground border-2 border-foreground px-2.5 py-2 text-sm text-left shadow-[0_14px_30px_-14px_rgba(2,16,147,.55)] transition-[scale] duration-150 ease-out active:scale-[0.98]`}
       >
         <span aria-hidden="true" className="shrink-0 size-7 grid place-items-center border-2 border-foreground">
           <FeatherIcon icon="corner-down-right" size={14} />
         </span>
-        {bubble && <span className="truncate">{touch ? "tap to talk to" : "talk to"} {bubble.v.name}{bubble.met ? " ✓" : ""}</span>}
+        {bubble && <span className="truncate">{touch ? "tap to " : ""}{bubble.text}{bubble.met ? " ✓" : ""}</span>}
       </button>
 
       {screen ? (
@@ -201,6 +219,8 @@ export function VillageApp({ screen, me, inline = false, active = true }: { scre
           </div>
           {dirOpen && playing && villagers && <Directory villagers={villagers} met={met} touch={touch} onPick={walkTo} />}
           {card && <Card v={card} mine={card.id === myId} onClose={() => village.current?.closeCard()} onList={openList} />}
+          {egg === "files" && <FilesPanel onClose={closeEgg} />}
+          {egg === "letter" && <LetterPanel onClose={closeEgg} touch={touch} />}
         </>
       ) : (
         <>
@@ -235,6 +255,8 @@ export function VillageApp({ screen, me, inline = false, active = true }: { scre
           </div>
 
           {card && <Card v={card} mine={card.id === myId} onClose={() => village.current?.closeCard()} onList={openList} />}
+          {egg === "files" && <FilesPanel onClose={closeEgg} />}
+          {egg === "letter" && <LetterPanel onClose={closeEgg} touch={touch} />}
 
           {onboard && <Onboarding count={count} touch={touch} onStart={() => { setOnboard(false); canvasRef.current?.focus({ preventScroll: true }); }} />}
           {empty && !onboard && (
