@@ -17,11 +17,11 @@ import { normLink, photoUrl, type Villager } from "./lib/villager";
 import { readMe } from "./lib/me";
 import { Keys, useCoarsePointer } from "./keys";
 import { CHIP, CHIP_ON, ICON_CHIP } from "./chips";
-import { FilesPanel, LetterPanel } from "./egg-panels";
+import { FilesPanel, LetterPanel, LostPanel } from "./egg-panels";
 import type { EggEvent } from "./lib/world";
 
 const POLL_SCREEN_MS = 3000;
-const EGG_BANNERS: Record<Exclude<EggEvent, "files" | "letter">, string> = {
+const EGG_BANNERS: Record<Exclude<EggEvent, "files" | "letter" | "lost">, string> = {
   "grid-on": "8px grid on · press g to hide it",
   "grid-off": "8px grid off",
   "figma-on": "multiplayer on · type figma again to leave",
@@ -40,7 +40,8 @@ export function Avatar({ v, size }: { v: Villager; size: number }) {
 // inline: the homepage footer. Same village, fewer controls, and it only
 // takes the keyboard once you click into it.
 // active: inline only, true once the tv has opened; the village takes the keys then.
-export function VillageApp({ screen, me, inline = false, active = true }: { screen: boolean; me: string | null; inline?: boolean; active?: boolean }) {
+// night: overrides the site theme (the homepage tv's day/night knob).
+export function VillageApp({ screen, me, inline = false, active = true, night }: { screen: boolean; me: string | null; inline?: boolean; active?: boolean; night?: boolean }) {
   const { theme, toggle } = useTheme();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const minimapRef = useRef<HTMLCanvasElement>(null);
@@ -51,7 +52,7 @@ export function VillageApp({ screen, me, inline = false, active = true }: { scre
   const [villagers, setVillagers] = useState<Villager[] | null>(null);
   const [loadError, setLoadError] = useState(false);
   const [bubble, setBubble] = useState<{ text: string; met: boolean } | null>(null);
-  const [egg, setEgg] = useState<"files" | "letter" | null>(null);
+  const [egg, setEgg] = useState<"files" | "letter" | "lost" | null>(null);
   const [card, setCard] = useState<Villager | null>(null);
   const [progress, setProgress] = useState({ met: 0, total: 0 });
   const [met, setMet] = useState<Set<string>>(() => new Set());
@@ -79,7 +80,7 @@ export function VillageApp({ screen, me, inline = false, active = true }: { scre
       {
         onBubble: (text, met) => setBubble(text ? { text, met } : null),
         onEgg: (e: EggEvent) => {
-          if (e === "files" || e === "letter") setEgg(e);
+          if (e === "files" || e === "letter" || e === "lost") setEgg(e);
           else showBanner(EGG_BANNERS[e]);
         },
         onCard: (v) => {
@@ -102,9 +103,10 @@ export function VillageApp({ screen, me, inline = false, active = true }: { scre
     };
   }, [screen, inline, showBanner]);
 
+  // also after the scene is rebuilt (the tv switching to the big-screen channel)
   useEffect(() => {
-    village.current?.setNight(theme === "dark");
-  }, [theme]);
+    village.current?.setNight(night ?? theme === "dark");
+  }, [theme, night, screen, inline]);
 
   useEffect(() => {
     if (village.current) village.current.inputEnabled = !onboard && !dirOpen && !egg && playing;
@@ -220,6 +222,7 @@ export function VillageApp({ screen, me, inline = false, active = true }: { scre
           {dirOpen && playing && villagers && <Directory villagers={villagers} met={met} touch={touch} onPick={walkTo} />}
           {card && <Card v={card} mine={card.id === myId} onClose={() => village.current?.closeCard()} onList={openList} />}
           {egg === "files" && <FilesPanel onClose={closeEgg} />}
+          {egg === "lost" && <LostPanel onClose={closeEgg} />}
           {egg === "letter" && <LetterPanel onClose={closeEgg} touch={touch} />}
         </>
       ) : (
@@ -256,6 +259,7 @@ export function VillageApp({ screen, me, inline = false, active = true }: { scre
 
           {card && <Card v={card} mine={card.id === myId} onClose={() => village.current?.closeCard()} onList={openList} />}
           {egg === "files" && <FilesPanel onClose={closeEgg} />}
+          {egg === "lost" && <LostPanel onClose={closeEgg} />}
           {egg === "letter" && <LetterPanel onClose={closeEgg} touch={touch} />}
 
           {onboard && <Onboarding count={count} touch={touch} onStart={() => { setOnboard(false); canvasRef.current?.focus({ preventScroll: true }); }} />}

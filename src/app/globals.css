@@ -440,6 +440,26 @@ body[data-proposal-open="true"] > :where(main, footer, .village-section) {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25), 0 2px 3px rgba(0, 0, 0, 0.4);
   position: relative;
 }
+/* the knobs are buttons (village-window.tsx): they turn, and the press is felt */
+.tv-knob-button {
+  cursor: pointer;
+}
+.tv-knob-button .tv-knob {
+  transition: rotate 220ms var(--ease-out), scale 120ms var(--ease-out);
+}
+.tv-knob-button:active .tv-knob {
+  scale: 0.92;
+}
+/* the picture dips when the day/night knob turns, so the swap isn't a jump */
+.tv-dip {
+  animation: tv-dip 360ms var(--ease-out);
+}
+@keyframes tv-dip {
+  from { filter: brightness(0.45); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tv-knob-button .tv-knob { transition: none; }
+}
 .tv-knob::after {
   content: "";
   position: absolute;

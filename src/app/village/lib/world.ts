@@ -13,11 +13,11 @@ import {
 } from "./map";
 import { petSprite, spinPose, SPIN_SEC, sprite, SPRITE_H, SPRITE_W, type Dir } from "./sprites";
 import { VISITOR, cleanConfig, type Config, type Villager } from "./villager";
-import { BARISTA, BARISTA_LINE, CLIENT, CLIENT_LINE, Eggs, MENU, SWATCHES, type Spot } from "./eggs";
+import { BARBER, BARISTA, BARISTA_LINE, CLIENT, CLIENT_LINE, CLIENT_SMALLER, Eggs, LINES, LOGO_MAX, MENU, SWATCHES, type Spot } from "./eggs";
 
 export type Mode = "explore" | "projector" | "inline";
 // easter eggs the ui shows something for (see eggs.ts)
-export type EggEvent = "files" | "letter" | "grid-on" | "grid-off" | "figma-on" | "figma-off" | "kerned";
+export type EggEvent = "files" | "letter" | "lost" | "grid-on" | "grid-off" | "figma-on" | "figma-off" | "kerned";
 export type VillageEvents = {
   /** what the "talk to …" button says, or null to hide it */
   onBubble: (text: string | null, met: boolean) => void;
@@ -282,18 +282,42 @@ export class Village {
       case "barista":
         return this.say(s.x, s.y - SPRITE_H - 2, BARISTA_LINE);
       case "client": {
-        this.eggs.logo = Math.min(3, this.eggs.logo + 0.25);
+        // bigger, bigger, bigger… then he changes his mind
+        const smaller = this.eggs.logo >= LOGO_MAX;
+        this.eggs.logo = smaller ? 1 : Math.min(LOGO_MAX, this.eggs.logo + 0.25);
         const b = this.eggs.L.billboard;
         this.puff(b.x + b.w / 2, b.y + b.h / 2, 12);
-        return this.say(s.x, s.y - SPRITE_H - 2, CLIENT_LINE);
+        return this.say(s.x, s.y - SPRITE_H - 2, smaller ? CLIENT_SMALLER : CLIENT_LINE);
       }
       case "menu":
         return this.say(s.x, s.y - 15, MENU);
       case "hydrant":
         this.eggs.swatch = (this.eggs.swatch + 1) % SWATCHES.length;
         return this.say(s.x, s.y - 12, SWATCHES[this.eggs.swatch][0]);
+      case "foundry":
+      case "stock":
+      case "john":
+      case "system":
+        return this.say(s.x, s.id === "john" ? s.hit.y - 2 : s.y - 26, LINES[s.id]);
+      case "tower":
+        return this.say(s.x, s.y - 50, LINES.tower);
+      case "icon": {
+        const e = this.eggs;
+        e.shutterTo = e.shutterTo > 0.5 ? 0 : 1;
+        if (e.shutterTo === 0) return this.say(s.x, s.y - 26, LINES.icon);
+        this.sayAt = null;
+        return;
+      }
+      case "barber": {
+        const e = this.eggs;
+        e.barberStep = (e.barberStep + 1) % BARBER.length;
+        return this.say(s.x, s.y - 26, BARBER[e.barberStep][1]);
+      }
+      case "ramp":
+        return this.say(s.x, s.y - 14, this.eggs.contrastLine(this.pal));
       case "files":
       case "letter":
+      case "lost":
         this.sayAt = null;
         return this.ev.onEgg(s.id);
     }
