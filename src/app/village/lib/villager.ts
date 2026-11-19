@@ -18,13 +18,13 @@ export const OPTIONS = {
   top: ["tee", "stripes", "hoodie", "jacket", "puffer"],
   hat: ["none", "beanie", "cap"],
   extra: ["none", "glasses", "headphones", "clip", "scarf"],
-  carry: ["none", "coffee", "tote", "basket", "sketchbook"],
+  carry: ["none", "coffee", "tote", "laptop", "sketchbook"],
   pet: ["none", "dog", "cat"],
   emote: ["wave", "jump", "spin"],
 } as const;
 
 // A short list to pick from; anything else can be typed in on the join form.
-export const TAGS = ["product design", "ui/ux design", "brand design", "illustration", "motion", "student"];
+export const TAGS = ["product design", "ui/ux design", "brand design", "illustration", "motion", "design leadership", "own a studio", "student"];
 export const MAX_TAGS = 3;
 export const MAX_INTRO = 140;
 
