@@ -20,6 +20,8 @@ import {
   type Config, type FieldErrors, type Villager,
 } from "../lib/villager";
 
+const LINKEDIN_PREFIX = "linkedin.com/in/";
+
 type Step = 0 | 1 | 2 | 3 | 4;
 type Row = { type: "chips" | "swatches"; key: keyof Config; list: readonly string[]; label: string; hideWhen?: (c: Config) => boolean };
 const needsAccent = (c: Config) => c.hat !== "none" || ["headphones", "clip", "scarf"].includes(c.extra);
@@ -87,7 +89,9 @@ export function JoinFlow() {
   const [customTag, setCustomTag] = useState("");
   const [intro, setIntro] = useState("");
   const [portfolio, setPortfolio] = useState("");
-  const [linkedin, setLinkedin] = useState("");
+  // starts with the profile prefix so people only type their handle; left as just the
+  // prefix, it's sent as empty
+  const [linkedin, setLinkedin] = useState(LINKEDIN_PREFIX);
   const [errors, setErrors] = useState<FieldErrors & { form?: string }>({});
   const [sending, setSending] = useState(false);
   const [mine, setMine] = useState<Villager | null>(null);
@@ -133,7 +137,7 @@ export function JoinFlow() {
         setTags(v.tags);
         setIntro(v.intro);
         setPortfolio(v.portfolio);
-        setLinkedin(v.linkedin);
+        setLinkedin(v.linkedin || LINKEDIN_PREFIX);
         setStep(0);
       })
       .catch((status) => {
@@ -208,7 +212,7 @@ export function JoinFlow() {
       setCustomTag("");
     }
     // twitter isn't asked anymore; keep whatever an older card had
-    const body = { name, email: email.trim(), tags: roles, intro, portfolio, linkedin, twitter: mine?.twitter ?? "", config };
+    const body = { name, email: email.trim(), tags: roles, intro, portfolio, linkedin: linkedin.trim() === LINKEDIN_PREFIX ? "" : linkedin, twitter: mine?.twitter ?? "", config };
     try {
       const me = readMe();
       let res = me && mine
@@ -294,11 +298,11 @@ export function JoinFlow() {
             <FieldLabel htmlFor="f-name">name</FieldLabel>
             <input
               id="f-name"
-              autoComplete="given-name"
+              autoComplete="name"
               enterKeyHint="next"
               onKeyDown={(e) => e.key === "Enter" && document.getElementById("f-email")?.focus()}
               maxLength={40}
-              placeholder="kaja"
+              placeholder="name and last name"
               value={name}
               onChange={(e) => setName(e.target.value)}
               aria-invalid={!!errors.name}

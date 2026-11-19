@@ -107,6 +107,8 @@ export class Village {
   private firstFrame = false;
   private allMetSent = false;
   private down: { x: number; y: number; t: number; id: number } | null = null;
+  /** drag-to-walk: the stroke's direction from where the finger went down, like a joystick */
+  private steer: Pt | null = null;
   private cleanup: (() => void)[] = [];
   private reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
   inputEnabled = true;
@@ -530,14 +532,37 @@ export class Village {
     const target: Window = window;
     target.addEventListener("keydown", onDown as unknown as EventListener);
     target.addEventListener("keyup", onUp as unknown as EventListener);
-    const onBlur = () => this.keys.clear();
+    const onBlur = () => {
+      this.keys.clear();
+      this.steer = null;
+    };
     window.addEventListener("blur", onBlur);
     if (this.mode === "inline") c.addEventListener("blur", onBlur);
 
     const onPointerDown = (e: PointerEvent) => {
       this.down = { x: e.clientX, y: e.clientY, t: performance.now(), id: e.pointerId };
     };
+    // a stroke walks the player in its direction for as long as the finger stays down
+    // (a short, still press is still a tap). In the homepage tv the canvas is
+    // touch-pan-y, so vertical strokes there keep scrolling the page instead.
+    const onSteer = (e: PointerEvent) => {
+      const d = this.down;
+      if (!d || d.id !== e.pointerId || !this.inputEnabled || this.mode === "projector") return;
+      const dx = e.clientX - d.x, dy = e.clientY - d.y;
+      if (!this.steer && Math.hypot(dx, dy) < 12) return;
+      if (!this.steer) {
+        c.setPointerCapture?.(e.pointerId);
+        this.player.path = [];
+        this.player.onArrive = null;
+        if (this.card) this.closeCard();
+      }
+      this.steer = Math.hypot(dx, dy) < 6 ? { x: 0, y: 0 } : { x: dx, y: dy };
+    };
+    const endSteer = (e: PointerEvent) => {
+      if (this.down?.id === e.pointerId || e.type === "pointercancel") this.steer = null;
+    };
     const onPointerUp = (e: PointerEvent) => {
+      endSteer(e);
       const d = this.down;
       this.down = null;
       if (!d || d.id !== e.pointerId || !this.inputEnabled || this.mode === "projector") return;
@@ -556,7 +581,11 @@ export class Village {
     };
     c.addEventListener("pointerdown", onPointerDown);
     c.addEventListener("pointerup", onPointerUp);
-    c.addEventListener("pointercancel", () => (this.down = null));
+    c.addEventListener("pointercancel", (e) => {
+      endSteer(e);
+      this.down = null;
+    });
+    c.addEventListener("pointermove", onSteer);
     c.addEventListener("pointermove", onMove);
     c.addEventListener("pointerleave", onLeave);
 
@@ -671,6 +700,10 @@ export class Village {
     // keys
     let kx = 0, ky = 0;
     this.keys.forEach((k) => { kx += KEYS[k]?.x ?? 0; ky += KEYS[k]?.y ?? 0; });
+    if (this.steer) {
+      kx += this.steer.x;
+      ky += this.steer.y;
+    }
     if (kx || ky) {
       const len = Math.hypot(kx, ky), s = SPEED_PLAYER * dt;
       const nx = p.x + (kx / len) * s, ny = p.y + (ky / len) * s;
