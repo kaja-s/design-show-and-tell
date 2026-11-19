@@ -204,7 +204,7 @@ export function VillageApp({ screen, me, inline = false, active = true, night }:
       </button>
 
       {screen ? (
-        <ProjectorOverlay count={count} />
+        <ProjectorOverlay count={count} compact={inline} />
       ) : inline ? (
         <>
           <div className="absolute inset-x-2.5 top-2.5 flex justify-between gap-2 pointer-events-none">
@@ -411,7 +411,17 @@ function Onboarding({ count, onStart, touch }: { count: number; onStart: () => v
   );
 }
 
-function ProjectorOverlay({ count }: { count: number }) {
+// compact: the homepage tv's big-screen channel. The section above already
+// has the title, and you're on your phone already, so no QR: just a live chip.
+function ProjectorOverlay({ count, compact = false }: { count: number; compact?: boolean }) {
+  if (compact) {
+    return (
+      <div className="absolute left-2.5 top-2.5 h-8 inline-flex items-center gap-2 bg-background/90 backdrop-blur-sm border border-foreground/15 px-2.5 text-xs tabular-nums pointer-events-none">
+        <span aria-hidden="true" className="size-1.5 rounded-full bg-[#ff5a4e] motion-safe:animate-pulse" />
+        live · {count} {count === 1 ? "designer" : "designers"}
+      </div>
+    );
+  }
   return (
     <>
       <div className="absolute left-5 top-5 flex flex-col gap-0.5 pointer-events-none">

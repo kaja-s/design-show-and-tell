@@ -299,8 +299,6 @@ export class Village {
       case "john":
       case "system":
         return this.say(s.x, s.id === "john" ? s.hit.y - 2 : s.y - 26, LINES[s.id]);
-      case "tower":
-        return this.say(s.x, s.y - 50, LINES.tower);
       case "icon": {
         const e = this.eggs;
         e.shutterTo = e.shutterTo > 0.5 ? 0 : 1;

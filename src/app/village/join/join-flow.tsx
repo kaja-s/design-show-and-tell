@@ -273,9 +273,11 @@ export function JoinFlow() {
 
       {step === 0 && mine && (
         <section key="s0" className="village-step flex-1 flex flex-col gap-5">
-          <PreviewCanvas config={config} loop className="h-[300px] -mx-5" />
-          <h1 className="text-2xl font-medium leading-tight tracking-tight">hi again, {mine.name}</h1>
-          <div className="flex-1" />
+          {/* like the "you're in" screen: the character and the greeting centred in the free space */}
+          <div className="flex-1 flex flex-col justify-center items-center gap-3.5 text-center">
+            <PreviewCanvas config={config} loop className="h-[300px] w-[calc(100%+2.5rem)] -mx-5" />
+            <h1 className="text-2xl font-medium leading-tight tracking-tight text-balance">hi again, {mine.name}</h1>
+          </div>
           <div className="flex flex-col items-center gap-4">
             <PaintButton className="w-full py-3 text-center" onClick={() => go(2)}>edit me</PaintButton>
             <Link href={`/village?me=${mine.id}`} className="hit relative text-sm underline underline-offset-2 hover:bg-highlight hover:text-highlight-text hover:no-underline active:opacity-50">

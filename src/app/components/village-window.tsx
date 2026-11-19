@@ -141,7 +141,9 @@ export function VillageWindow() {
 
   return (
     // always night-blue, in both themes: the tv glows on a dark wall
-    <section aria-labelledby="village-title" className="village-section relative z-10 bg-[#040c2a] text-[#93c5fd] min-h-svh px-2 py-4 sm:px-4 sm:py-6 flex flex-col items-center justify-center gap-3 sm:gap-5">
+    // at least one viewport tall, tracking the visible height (dvh) as mobile
+    // safari's toolbars come and go
+    <section aria-labelledby="village-title" className="village-section relative z-10 bg-[#040c2a] text-[#93c5fd] min-h-dvh px-3 py-4 sm:px-4 sm:py-6 flex flex-col items-center justify-center gap-3 sm:gap-5">
       <header className="flex flex-col items-center gap-2.5 sm:gap-3 text-center">
         <h2 id="village-title" className="village-title text-[22px] leading-[1.05] sm:text-[32px] text-white text-balance">
           slovenian designer village
@@ -160,7 +162,7 @@ export function VillageWindow() {
 
         {/* phones: the set fills the screen (178px = padding, title, chin, feet and the key legend) */}
         <div ref={body} className="tv-body relative rounded-[24px] sm:rounded-[38px] p-2 pb-11 sm:p-5 sm:pb-14" style={{ clipPath: "inset(50% 50%)" }}>
-          <div ref={screen} className="tv-screen relative overflow-hidden rounded-[16px] sm:rounded-[26px] w-[calc(100vw-32px)] h-[max(360px,calc(100svh-178px))] sm:h-auto sm:w-[min(64vw,calc((100svh-330px)*4/3))] sm:aspect-[4/3]">
+          <div ref={screen} className="tv-screen relative overflow-hidden rounded-[16px] sm:rounded-[26px] w-[calc(100vw-40px)] h-[max(360px,calc(100svh-178px))] sm:h-auto sm:w-[min(64vw,calc((100svh-330px)*4/3))] sm:aspect-[4/3]">
             <div ref={picture} className={`absolute inset-0 text-foreground ${night ? "bg-[#16275e]" : "bg-[#f1f4fc]"}`}>
               <div key={dip} className={`absolute inset-0 ${dip && !reduced ? "tv-dip" : ""} ${open ? "" : "pointer-events-none"}`} inert={!open}>
                 {near && channel < 2 && <VillageApp screen={channel === 1} me={null} inline active={open && channel === 0} night={night} />}

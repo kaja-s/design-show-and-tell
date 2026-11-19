@@ -24,9 +24,9 @@
 // - john doe, the placeholder resident, waving from his window
 // - an accessibility ramp that reports the house's real contrast ratio
 // - the design system flats: every window is a button in a different state
-// - the hierarchy tower: h1 at the bottom, captions at the top
+// - the hierarchy tower: h1 at the bottom, captions at the top (just to look at)
 // - lost & found by the ferry building (the ui lists what's in it)
-// - lorem ipsum street names on the corner signs
+// - typography and spacing street names on the corner signs
 // ---------------------------------------------------------------------------
 import { BX, BY, COLS, ROWS, ST, blockX, blockY, layout, type Building, type Palette, type Rect } from "./map";
 import { VISITOR, type Config } from "./villager";
@@ -58,7 +58,7 @@ const contrast = (a: string, b: string) => {
 
 export type SpotId =
   | "barista" | "client" | "menu" | "hydrant" | "files" | "letter"
-  | "foundry" | "icon" | "barber" | "stock" | "john" | "ramp" | "system" | "tower" | "lost";
+  | "foundry" | "icon" | "barber" | "stock" | "john" | "ramp" | "system" | "lost";
 // Something you can walk up to and use: x/y is where it touches the ground.
 export type Spot = { id: SpotId; x: number; y: number; hit: Rect; text: string };
 
@@ -81,7 +81,6 @@ export const LINES = {
   stock: "woman laughing alone with salad. that'll be 299 € for web use.",
   john: "hi, i'm john doe. i live in every mockup.",
   system: "button: default · hover · pressed · focus · disabled · loading",
-  tower: "type scale, bottom to top: h1 · h2 · h3 · body · caption. the tallest building has the smallest type.",
 };
 // radius (world px on the 8px-tall sign: 4 is a pill) and what the barber says
 export const BARBER: [number, string][] = [
@@ -99,9 +98,11 @@ const FONTS = [
   '400 7px "Snell Roundhand", "Brush Script MT", cursive',
   '900 6px Impact, "Arial Black", sans-serif',
 ];
-// corner signs: horizontal streets top to bottom, avenues left to right
-const STREETS = ["lorem st", "ipsum st", "dolor st", "amet st"];
-const AVENUES = ["sit ave", "consectetur ave", "adipiscing ave", "elit ave"];
+// corner signs: horizontal streets top to bottom, avenues left to right (each
+// block's sign names the street and avenue at its bottom-right corner, so the
+// first of each list only names the edges, which have no sign)
+const STREETS = ["grid st", "baseline st", "gutter st", "margin st"];
+const AVENUES = ["x-height ave", "kerning ave", "leading ave", "tracking ave"];
 
 export type EggLayout = {
   kerning: Building;
@@ -207,14 +208,13 @@ export function eggLayout(): EggLayout {
     thing("ramp", { x: ramp.door - 19, y: ramp.base + 10 }, 16, 12, "check the contrast"),
     thing("lost", lost, 14, 18, "check lost & found"),
   ];
-  // shops: the whole shopfront; the flats and the tower: their facade, used from the sidewalk
+  // shops: the whole shopfront; the flats: their facade, used from the sidewalk
   const front = (id: SpotId, b: Building | undefined, text: string) => b && spots.push({ id, x: b.x + b.w / 2, y: b.base, hit: { x: b.x, y: b.top, w: b.w, h: b.base - b.top + 2 }, text });
   front("foundry", foundry, "look in the foundry");
   front("icon", icon, "tap the menu");
   front("barber", barber, "step into the barber");
   front("stock", stock, "look at the window");
   front("system", system, "look at the windows");
-  if (tower) spots.push({ id: "tower", x: tower.x + 15, y: tower.base, hit: { x: tower.x, y: tower.rear - 26, w: 30, h: tower.base - tower.rear + 28 }, text: "read the tower" });
   cached = {
     kerning, cafe, nudged, graffiti, hydrant: { x: hydrant.x, y: hydrant.y }, letterBox, filesBox, menu, billboard, barista, client, cinema,
     foundry, icon, barber, stock, john, ramp, system, tower, lost, corners, spots,
