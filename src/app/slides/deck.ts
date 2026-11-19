@@ -19,11 +19,6 @@ export type Person = {
   talk?: string;
   /** square, grayscale on white (white is dropped by the halftone). null = no photo yet */
   photo: string | null;
-  /** hosts: how wide the photo is drawn (default 400). A loosely framed photo runs larger,
-      growing up into its own empty top, so both hosts' heads come out the same size */
-  photoSize?: number;
-  /** hosts: px to move the photo sideways so its ink starts at the text's left edge */
-  photoShiftX?: number;
   initials: string;
 };
 
@@ -37,8 +32,6 @@ export const HOSTS: Person[] = [
     company: "codeplain",
     bio: "making interfaces for ai code generation.",
     photo: "/slides/kaja-tint.png",
-    photoSize: 540,
-    photoShiftX: -43, // the shoulder starts 57px into the 720px source
     initials: "ks",
   },
   {
@@ -92,5 +85,5 @@ export const TIMELINE: Slot[] = [
 
 export const VILLAGE = {
   joinUrl: "design-show-and-tell.vercel.app/village/join",
-  steps: ["skeniraj kodo", "ustvari svojega vaščana", "poišči nekoga, ki ga še ne poznaš"],
+  steps: ["skeniraj kodo", "ustvari svojo figurico", "poišči nekoga, ki ga še ne poznaš"],
 };

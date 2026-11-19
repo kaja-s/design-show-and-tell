@@ -691,3 +691,24 @@ body[data-proposal-open="true"] > :where(main, footer, .village-section) {
 @keyframes slide-fade {
   from { opacity: 0; }
 }
+
+/* /slides: the village slide flips to the other theme, so the activity reads as
+   its own part of the evening. The tokens are redefined on <main>, so everything
+   on the slide (and the footer) follows. */
+.slide-invert {
+  --background: #040c2a;
+  --foreground: #93c5fd;
+  --foreground-muted: rgba(147, 197, 253, 0.5);
+  --highlight: #93c5fd;
+  --highlight-text: #040c2a;
+  color: var(--foreground);
+  background: linear-gradient(180deg, #040c2a 0%, #060e35 100%);
+}
+:root.dark .slide-invert {
+  --background: #ffffff;
+  --foreground: #021093;
+  --foreground-muted: rgba(2, 16, 147, 0.5);
+  --highlight: #021093;
+  --highlight-text: #ffffff;
+  background: linear-gradient(180deg, #f4f4f4 0%, #eafcff 100%);
+}

@@ -134,7 +134,7 @@ export default function Slides() {
         style={{ backgroundImage: "url(/noise.svg)", backgroundRepeat: "repeat", zIndex: 9999 }}
       />
       <main
-        className={`fixed inset-0 overflow-hidden select-none ${idle ? "cursor-none" : ""}`}
+        className={`fixed inset-0 overflow-hidden select-none ${idle ? "cursor-none" : ""} ${Slide === VillageSlide ? "slide-invert" : ""}`}
         onClick={(e) => go(e.clientX > window.innerWidth / 2 ? index + 1 : index - 1)}
       >
         <div
@@ -142,13 +142,13 @@ export default function Slides() {
           style={{ width: W, height: H, transform: `translate(-50%, -50%) scale(${scale})`, visibility: scale ? "visible" : "hidden" }}
         >
           {/* keyed so each slide's entrance replays when you land on it */}
-          <section key={index} aria-roledescription="slide" aria-label={`${index + 1} of ${SLIDES.length}`} className="absolute inset-0 px-[120px] py-[104px]">
+          <section key={index} aria-roledescription="slide" aria-label={`${index + 1} of ${SLIDES.length}`} className="absolute inset-0 px-[80px] py-[60px]">
             <Slide />
           </section>
 
           {/* the cover already says all of this */}
           <footer
-            className={`absolute inset-x-[120px] bottom-[48px] flex justify-between text-[22px] text-foreground-muted tabular-nums ${index === 0 || index === SLIDES.length - 1 ? "invisible" : ""}`}
+            className={`absolute inset-x-[80px] bottom-[60px] flex justify-between text-[22px] leading-[28px] text-foreground-muted tabular-nums ${index === 0 || index === SLIDES.length - 1 ? "invisible" : ""}`}
             aria-hidden="true"
           >
             <span>
@@ -201,10 +201,10 @@ function TitleSlide({ qr = false }: { qr?: boolean }) {
   return (
     // the site's centered hero, tightened: wolf, name, date. The small print sits in the corners.
     <div className="h-full relative flex flex-col items-center justify-center text-center">
-      <p className="slide-in absolute -top-[56px] left-0 text-[26px] text-foreground-muted">
+      <p className="slide-in absolute top-0 left-0 text-[26px] leading-[32px] text-foreground-muted">
         <span className="inline-block">meetup for designers</span>
       </p>
-      <p className="slide-in absolute -top-[56px] right-0 text-[26px] text-foreground-muted">
+      <p className="slide-in absolute top-0 right-0 text-[26px] leading-[32px] text-foreground-muted">
         <span className="inline-block">
           no. <span className="normal-case!">{EVENT.edition}</span>
         </span>
@@ -217,7 +217,7 @@ function TitleSlide({ qr = false }: { qr?: boolean }) {
         <span className="inline-block">{EVENT.dateLabel}</span>
       </p>
       {qr && (
-        <figure className="slide-in [--d:300ms] absolute -bottom-[40px] right-0 flex flex-col items-center gap-[16px]">
+        <figure className="slide-in [--d:300ms] absolute bottom-0 right-0 flex flex-col items-center gap-[16px]">
           {/* always dark-on-white: scanners need the contrast and the quiet zone in both themes */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/qr-village.svg" alt={`qr code for ${VILLAGE.joinUrl}`} className="size-[260px] bg-white p-[18px] outline outline-black/10 dark:outline-white/10" />
@@ -226,25 +226,6 @@ function TitleSlide({ qr = false }: { qr?: boolean }) {
       )}
     </div>
   );
-}
-
-/* Host card variants, to pick one before the event: /slides?hosts=a…d#2, or press `v`
-   on slide 2 to cycle. c is the default; a is the earlier card. */
-const HOST_CARDS = ["a", "b", "c", "d"] as const;
-type HostCard = (typeof HOST_CARDS)[number];
-const HOSTS_EVENT = "hosts:change";
-
-function readHostCard(): HostCard {
-  const v = new URLSearchParams(window.location.search).get("hosts");
-  return (HOST_CARDS as readonly string[]).includes(v ?? "") ? (v as HostCard) : "c";
-}
-function subscribeHostCard(cb: () => void) {
-  window.addEventListener(HOSTS_EVENT, cb);
-  window.addEventListener("popstate", cb);
-  return () => {
-    window.removeEventListener(HOSTS_EVENT, cb);
-    window.removeEventListener("popstate", cb);
-  };
 }
 
 function CompanyLogo({ person, className }: { person: Person; className: string }) {
@@ -261,113 +242,39 @@ function CompanyLogo({ person, className }: { person: Person; className: string 
   );
 }
 
+/** Square photo tile: the blue-toned cut-out (graphics/hosts/prepare.py) on navy. The tile is
+    the tint's darkest ink, so it stays #021093 in both themes and the photo's shadows melt into it. */
 function HostPhoto({ person }: { person: Person }) {
   return (
-    <div className="relative size-[400px] mb-[32px]">
+    <div className="size-[440px] bg-[#021093] overflow-hidden">
       {person.photo ? (
-        // a plain photo toned blue (graphics/hosts/prepare.py), not the halftone; anchored
-        // bottom-left so a larger one grows upward and still sits on the name
         // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={person.photo}
-          alt=""
-          className="absolute bottom-0 block max-w-none"
-          style={{ left: person.photoShiftX ?? 0, width: person.photoSize ?? 400, height: person.photoSize ?? 400 }}
-        />
+        <img src={person.photo} alt="" className="block size-full" />
       ) : (
-        <Portrait person={person} size={400} cells={60} />
+        <Portrait person={person} size={440} cells={60} />
       )}
     </div>
   );
 }
 
-/** a: name, muted role, logo, bio at body size (the current card). */
-function HostCardA({ h }: { h: Person }) {
-  return (
-    <div className="max-w-[720px]">
-      <p className="text-[48px] font-bold leading-tight"><Tag>{h.name}</Tag></p>
-      <p className="text-[30px] mt-[12px] text-foreground-muted">{h.role}</p>
-      <p className="mt-[20px] [--logo-h:34px]">
-        <CompanyLogo person={h} className="h-[var(--logo-h)]" />
-      </p>
-      <p className="text-[24px] mt-[32px] leading-[1.45] text-pretty">{h.bio}</p>
-    </div>
-  );
-}
-
-/** b: the company is a small label above the name; role sits tight under it; bio steps down. */
-function HostCardB({ h }: { h: Person }) {
-  return (
-    <div className="max-w-[720px]">
-      <p className="[--logo-h:28px] text-foreground-muted">
-        <CompanyLogo person={h} className="h-[var(--logo-h)]" />
-      </p>
-      <p className="text-[52px] font-bold leading-tight mt-[20px]"><Tag>{h.name}</Tag></p>
-      <p className="text-[32px] mt-[6px]">{h.role}</p>
-      <p className="text-[22px] mt-[28px] leading-[1.45] text-foreground-muted text-pretty max-w-[600px]">{h.bio}</p>
-    </div>
-  );
-}
-
-/** c: name, then one line "role at <logo>", then the bio. */
-function HostCardC({ h }: { h: Person }) {
-  return (
-    <div className="max-w-[720px]">
-      <p className="text-[52px] font-bold leading-tight"><Tag>{h.name}</Tag></p>
-      <p className="text-[30px] mt-[10px] flex items-baseline gap-[14px] flex-wrap [--logo-h:30px]">
-        <span>{h.role} at</span>
-        <span className="self-center translate-y-[2px]">
-          <CompanyLogo person={h} className="h-[var(--logo-h)]" />
-        </span>
-      </p>
-      <p className="text-[24px] mt-[28px] leading-[1.45] text-foreground-muted text-pretty max-w-[620px]">{h.bio}</p>
-    </div>
-  );
-}
-
-/** d: name, role, bio; the logo signs off under a rule, level across both cards. */
-function HostCardD({ h }: { h: Person }) {
-  return (
-    <div className="max-w-[640px] flex-1 flex flex-col">
-      <p className="text-[52px] font-bold leading-tight"><Tag>{h.name}</Tag></p>
-      <p className="text-[30px] mt-[8px] text-foreground-muted">{h.role}</p>
-      <p className="text-[24px] mt-[28px] leading-[1.45] text-pretty">{h.bio}</p>
-      <p className="mt-auto pt-[24px] border-t-2 border-foreground/20 [--logo-h:30px]">
-        <CompanyLogo person={h} className="h-[var(--logo-h)]" />
-      </p>
-    </div>
-  );
-}
-
 function HostsSlide() {
-  const card = useSyncExternalStore(subscribeHostCard, readHostCard, () => "c" as HostCard);
-
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== "v" || e.metaKey || e.ctrlKey || e.altKey) return;
-      const next = HOST_CARDS[(HOST_CARDS.indexOf(readHostCard()) + 1) % HOST_CARDS.length];
-      const url = new URL(window.location.href);
-      url.searchParams.set("hosts", next);
-      window.history.replaceState(null, "", url);
-      window.dispatchEvent(new Event(HOSTS_EVENT));
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, []);
-
-  const Card = { a: HostCardA, b: HostCardB, c: HostCardC, d: HostCardD }[card];
   return (
     <div className="h-full flex flex-col">
-      {/* a caption, not a heading: the names carry the fill on this slide */}
-      <h2 className="slide-in text-[30px] text-foreground-muted">
+      <h2 className="slide-in text-[30px] leading-[40px] text-foreground-muted">
         <span className="inline-block">by designers, for designers</span>
       </h2>
-      {/* keyed so switching replays the entrance */}
-      <div key={card} className="slide-in [--d:100ms] grid grid-cols-2 gap-x-[96px] content-center flex-1 pb-[48px]">
+      <div className="slide-in [--d:100ms] flex-1 flex items-center justify-center gap-[236px]">
         {HOSTS.map((h) => (
-          <div key={h.name} className="flex flex-col">
+          <div key={h.name} className="w-[440px] flex flex-col">
             <HostPhoto person={h} />
-            <Card h={h} />
+            <p className="mt-[32px] bg-highlight text-highlight-text px-[16px] py-[2px] text-[48px] leading-[64px] font-bold">
+              <span aria-hidden="true">&gt; </span>
+              {h.name}
+            </p>
+            <p className="mt-[14px] text-[28px] leading-[34px]">{h.role}</p>
+            <p className="mt-[14px]">
+              <CompanyLogo person={h} className={h.company === "visionect" ? "h-[28px]" : "h-[30px]"} />
+            </p>
           </div>
         ))}
       </div>
@@ -390,8 +297,9 @@ function SponsorSlide() {
 function TimelineSlide() {
   const now = useNowSlot();
   return (
-    <div className="h-full flex flex-col">
-      <h2 className="slide-in text-[56px] font-bold mb-[56px]">
+    // the title sits lower than the 60px frame (paper: design show&tell, 04 agenda)
+    <div className="h-full flex flex-col pt-[44px]">
+      <h2 className="slide-in text-[56px] leading-[64px] font-bold mb-[56px]">
         <Tag>agenda</Tag>
       </h2>
       <ol className="slide-in [--d:100ms] flex flex-col gap-[20px]">
@@ -402,13 +310,13 @@ function TimelineSlide() {
           return (
             <li
               key={s.at}
-              className={`grid grid-cols-[160px_1fr] items-center gap-x-[40px] px-[24px] py-[18px] -mx-[24px] ${
+              className={`grid grid-cols-[160px_1fr] items-start gap-x-[40px] px-[24px] py-[18px] -mx-[24px] ${
                 live ? "bg-highlight text-highlight-text" : ""
               }`}
             >
-              <span className="text-[40px] tabular-nums">{s.at}</span>
+              <span className="text-[40px] leading-[50px] tabular-nums">{s.at}</span>
               <span>
-                <span className="flex items-center gap-[20px] text-[40px] font-bold leading-tight">
+                <span className="flex items-center gap-[20px] text-[40px] font-bold leading-[50px]">
                   {s.title}
                   {here && (
                     <>
@@ -418,7 +326,7 @@ function TimelineSlide() {
                   )}
                 </span>
                 {s.sub && (
-                  <span className={`block text-[30px] mt-[6px] text-pretty ${live ? "opacity-75" : "text-foreground-muted"}`}>{s.sub}</span>
+                  <span className={`block text-[30px] leading-[40px] mt-[6px] text-pretty ${live ? "opacity-75" : "text-foreground-muted"}`}>{s.sub}</span>
                 )}
               </span>
             </li>
@@ -429,17 +337,15 @@ function TimelineSlide() {
   );
 }
 
+/** The activity, in the other theme (.slide-invert on <main>) so it reads as its own part. */
 function VillageSlide() {
-  const villagers = useVillagers();
-  const count = villagers ? villagers.length : null;
-  const newest = villagers ? villagers.slice(-4).reverse() : [];
   return (
     <div className="h-full grid grid-cols-[1fr_auto] gap-[120px] items-center">
       <div className="slide-in">
-        <h2 className="text-[56px] leading-[1.15] font-bold whitespace-nowrap">
+        <h2 className="text-[56px] leading-[64px] font-bold whitespace-nowrap">
           <Tag>slovenska dizajnerska vas</Tag>
         </h2>
-        <ol className="mt-[64px] flex flex-col gap-[20px] text-[40px]">
+        <ol className="mt-[64px] flex flex-col gap-[20px] text-[40px] leading-[50px]">
           {VILLAGE.steps.map((step, i) => (
             <li key={step} className="flex gap-[28px]">
               <span className="text-foreground-muted tabular-nums">{String(i + 1).padStart(2, "0")}</span>
@@ -447,41 +353,15 @@ function VillageSlide() {
             </li>
           ))}
         </ol>
-        <p className="mt-[56px] text-[30px] text-foreground-muted tabular-nums h-[1.4em]">
-          {count === null ? "" : count === 0 ? "nihče se še ni vselil. bodi prvi." : movedIn(count)}
-        </p>
-        {/* the newest arrivals, newest first; keyed by id so only a new name plays the entrance */}
-        <p className="slide-in mt-[16px] h-[1.4em] flex items-baseline gap-[28px] text-[30px] whitespace-nowrap overflow-hidden max-w-[980px]">
-          {newest.map((v, i) =>
-            i === 0 ? (
-              <span key={v.id} className="font-bold">
-                <Tag>{v.name}</Tag>
-              </span>
-            ) : (
-              <span key={v.id} className="text-foreground-muted">
-                {v.name}
-              </span>
-            ),
-          )}
-        </p>
       </div>
       <figure className="slide-in [--d:200ms] flex flex-col items-center gap-[28px]">
         {/* always dark-on-white: scanners need the contrast and the quiet zone in both themes */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/qr-village.svg" alt={`qr code for ${VILLAGE.joinUrl}`} className="size-[520px] bg-white p-[28px] outline outline-black/10 dark:outline-white/10" />
-        <figcaption className="text-[24px] text-foreground-muted whitespace-nowrap">{VILLAGE.joinUrl}</figcaption>
+        <img src="/qr-village.svg" alt={`qr code for ${VILLAGE.joinUrl}`} className="size-[600px] bg-white p-[28px] outline outline-foreground/10" />
+        <figcaption className="text-[24px] leading-[30px] text-foreground-muted whitespace-nowrap">{VILLAGE.joinUrl}</figcaption>
       </figure>
     </div>
   );
-}
-
-/** "n designers have moved in" in slovenian: singular, dual, 3–4, 5+ (by the last two digits). */
-function movedIn(n: number) {
-  const m = n % 100;
-  if (m === 1) return `${n} dizajner se je vselil`;
-  if (m === 2) return `${n} dizajnerja sta se vselila`;
-  if (m === 3 || m === 4) return `${n} dizajnerji so se vselili`;
-  return `${n} dizajnerjev se je vselilo`;
 }
 
 function SpeakerSlide({ person, label }: { person: Person; label: string }) {
@@ -495,7 +375,7 @@ function SpeakerSlide({ person, label }: { person: Person; label: string }) {
         <p className="text-[36px] mt-[28px] text-foreground-muted">{person.role}</p>
         <p className="text-[44px] mt-[64px] leading-[1.3] max-w-[900px] text-pretty">“{person.talk}”</p>
       </div>
-      <div className="slide-in [--d:200ms] size-[720px] -mr-[60px] [&>canvas]:size-full">
+      <div className="slide-in [--d:200ms] size-[720px] -mr-[20px] [&>canvas]:size-full">
         <Portrait person={person} size={720} cells={70} />
       </div>
     </div>
@@ -524,28 +404,6 @@ function useNowSlot() {
     return () => window.clearInterval(t);
   }, []);
   return slot;
-}
-
-type Arrival = { id: string; name: string };
-
-/** Everyone who has moved in, oldest first; polls while the slide is up. null until the first answer. */
-function useVillagers() {
-  const [villagers, setVillagers] = useState<Arrival[] | null>(null);
-  useEffect(() => {
-    let alive = true;
-    const load = () =>
-      fetch("/api/villagers", { cache: "no-store" })
-        .then((r) => (r.ok ? r.json() : null))
-        .then((d) => alive && d && setVillagers(d.villagers.map(({ id, name }: Arrival) => ({ id, name }))))
-        .catch(() => {});
-    load();
-    const t = window.setInterval(load, 5000);
-    return () => {
-      alive = false;
-      window.clearInterval(t);
-    };
-  }, []);
-  return villagers;
 }
 
 /* ── sponsor logo ───────────────────────────────────────────────────────── */

@@ -21,7 +21,8 @@ HOSTS = {
     # the white square (white is dropped by the shader, so the slide shows just the crop)
     # kaja: sunlit skin has little range in luma; green+blue keep the shading, a wide
     # unsharp mask brings out the features, gamma < 1 keeps the face light
-    "kaja": dict(crop=(0, 226, 1433, 1130), channels=(0, 0.6, 0.4), unsharp=24, gamma=0.85),
+    # crops for the square photo tiles on the hosts slide, framed in paper (design show&tell, 02 hosts)
+    "kaja": dict(crop=(195, 283, 987), channels=(0, 0.6, 0.4), unsharp=24, gamma=0.85),
     "anuska": dict(crop=(0, 0, 800), channels=None, unsharp=0, gamma=1.3),
 }
 
