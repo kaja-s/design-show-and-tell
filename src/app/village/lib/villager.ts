@@ -24,7 +24,7 @@ export const OPTIONS = {
 } as const;
 
 // A short list to pick from; anything else can be typed in on the join form.
-export const TAGS = ["product design", "ui/ux design", "brand design", "illustration", "motion", "design leadership", "own a studio", "student"];
+export const TAGS = ["product design", "ui/ux design", "brand design", "illustration", "motion", "design leadership", "student"];
 export const MAX_TAGS = 3;
 export const MAX_INTRO = 140;
 

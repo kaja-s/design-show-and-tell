@@ -141,7 +141,9 @@ export function VillageWindow() {
 
   return (
     // always night-blue, in both themes: the tv glows on a dark wall
-    <section aria-labelledby="village-title" className="village-section relative z-10 bg-[#040c2a] text-[#93c5fd] min-h-svh px-2 py-4 sm:px-4 sm:py-6 flex flex-col items-center justify-center gap-3 sm:gap-5">
+    // at least one viewport tall, tracking the visible height (dvh) as mobile
+    // safari's toolbars come and go
+    <section aria-labelledby="village-title" className="village-section relative z-10 bg-[#040c2a] text-[#93c5fd] min-h-dvh px-2 py-4 sm:px-4 sm:py-6 flex flex-col items-center justify-center gap-3 sm:gap-5">
       <header className="flex flex-col items-center gap-2.5 sm:gap-3 text-center">
         <h2 id="village-title" className="village-title text-[22px] leading-[1.05] sm:text-[32px] text-white text-balance">
           slovenian designer village
