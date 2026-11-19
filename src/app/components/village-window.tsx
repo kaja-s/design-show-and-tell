@@ -101,7 +101,7 @@ export function VillageWindow() {
 
   return (
     // always night-blue, in both themes: the tv glows on a dark wall
-    <section aria-labelledby="village-title" className="village-section relative z-10 bg-[#040c2a] text-[#93c5fd] min-h-svh px-4 py-6 flex flex-col items-center justify-center gap-4 sm:gap-5">
+    <section aria-labelledby="village-title" className="village-section relative z-10 bg-[#040c2a] text-[#93c5fd] min-h-svh px-2 py-4 sm:px-4 sm:py-6 flex flex-col items-center justify-center gap-3 sm:gap-5">
       <header className="flex flex-col items-center gap-2.5 sm:gap-3 text-center">
         <h2 id="village-title" className="village-title text-[28px] leading-[1.05] sm:text-[44px] text-white text-balance">
           slovenian designer village
@@ -118,8 +118,9 @@ export function VillageWindow() {
 
       <div ref={tv} className="relative">
 
-        <div ref={body} className="tv-body relative rounded-[30px] sm:rounded-[38px] p-3 sm:p-5 pb-12 sm:pb-14" style={{ clipPath: "inset(50% 50%)" }}>
-          <div ref={screen} className="tv-screen relative overflow-hidden rounded-[18px] sm:rounded-[26px] w-[min(86vw,calc((100svh-330px)*3/4))] aspect-[3/4] sm:w-[min(64vw,calc((100svh-330px)*4/3))] sm:aspect-[4/3]">
+        {/* phones: the set fills the screen (184px = padding, title, chin, feet and the key legend) */}
+        <div ref={body} className="tv-body relative rounded-[24px] sm:rounded-[38px] p-2 pb-11 sm:p-5 sm:pb-14" style={{ clipPath: "inset(50% 50%)" }}>
+          <div ref={screen} className="tv-screen relative overflow-hidden rounded-[16px] sm:rounded-[26px] w-[calc(100vw-32px)] h-[max(360px,calc(100svh-184px))] sm:h-auto sm:w-[min(64vw,calc((100svh-330px)*4/3))] sm:aspect-[4/3]">
             <div ref={picture} className="absolute inset-0 text-foreground bg-[#f1f4fc] dark:bg-[#16275e]">
               <div className={`absolute inset-0 ${open ? "" : "pointer-events-none"}`} inert={!open}>
                 {near && <VillageApp screen={false} me={null} inline active={open} />}
@@ -130,7 +131,7 @@ export function VillageWindow() {
             <div aria-hidden="true" className="tv-glass absolute inset-0 pointer-events-none" />
           </div>
           {/* chin: name plate, speaker, knobs */}
-          <div aria-hidden="true" className="absolute inset-x-5 sm:inset-x-7 bottom-3 sm:bottom-4 h-7 flex items-center justify-between gap-4">
+          <div aria-hidden="true" className="absolute inset-x-4 sm:inset-x-7 bottom-2 sm:bottom-4 h-7 flex items-center justify-between gap-4">
             <span className="text-[10px] tracking-[0.2em] text-[#93c5fd]/80">dst·tv</span>
             <span className="tv-grille flex-1 h-3 max-w-40" />
             <span className="flex gap-2">
