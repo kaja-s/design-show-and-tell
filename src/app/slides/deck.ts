@@ -44,6 +44,17 @@ export const HOSTS: Person[] = [
   },
 ];
 
+/** The slide after the cover: photos from the last show & tell (public/last-event/, the
+    same ones the homepage used). The first is the big one, the other two stack beside it. */
+export const LAST_EVENT = {
+  caption: "last time",
+  photos: [
+    { src: "/last-event/photo-1.jpg", alt: "a speaker presenting to a full room" },
+    { src: "/last-event/photo-3.jpg", alt: "a talk in progress, the show and tell title card on screen" },
+    { src: "/last-event/photo-2.jpg", alt: "everyone together for a group photo after the talks" },
+  ],
+};
+
 export const SPONSOR = {
   name: "visionect",
 };
