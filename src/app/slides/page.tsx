@@ -368,10 +368,11 @@ function SpeakerSlide({ person, label }: { person: Person; label: string }) {
   return (
     <div className="h-full grid grid-cols-[1fr_auto] items-center gap-[80px]">
       <div className="slide-in">
-        <p className="text-[40px] mb-[32px]">
-          <Tag>{label}</Tag>
-        </p>
-        <h2 className="text-[80px] leading-[1.15] font-bold tracking-[-0.03em] text-balance">{person.name}</h2>
+        {/* the name carries the fill, like the hosts' names; the label is a quiet caption */}
+        <p className="text-[36px] leading-[48px] mb-[24px] text-foreground-muted">{label}</p>
+        <h2 className="text-[80px] leading-[1.15] font-bold tracking-[-0.03em] text-balance">
+          <Tag>{person.name}</Tag>
+        </h2>
         <p className="text-[36px] mt-[28px] text-foreground-muted">{person.role}</p>
         <p className="text-[36px] mt-[64px] leading-[1.58] max-w-[820px] text-pretty">“{person.talk}”</p>
       </div>
