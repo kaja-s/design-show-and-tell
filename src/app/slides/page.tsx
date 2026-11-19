@@ -285,7 +285,7 @@ function HostsSlide() {
 function SponsorSlide() {
   return (
     <div className="slide-in h-full flex flex-col justify-center">
-      <p className="text-[40px] text-foreground-muted mb-[24px]">thank you</p>
+      <p className="text-[40px] text-foreground-muted mb-[24px]">hvala</p>
       <h2>
         <VisionectLogo className="block h-[150px] w-auto" />
         <span className="sr-only">{SPONSOR.name}</span>
@@ -371,9 +371,9 @@ function SpeakerSlide({ person, label }: { person: Person; label: string }) {
         <p className="text-[40px] mb-[32px]">
           <Tag>{label}</Tag>
         </p>
-        <h2 className="text-[112px] leading-[1.02] font-bold tracking-[-0.03em] text-balance">{person.name}</h2>
+        <h2 className="text-[80px] leading-[1.15] font-bold tracking-[-0.03em] text-balance">{person.name}</h2>
         <p className="text-[36px] mt-[28px] text-foreground-muted">{person.role}</p>
-        <p className="text-[44px] mt-[64px] leading-[1.3] max-w-[900px] text-pretty">“{person.talk}”</p>
+        <p className="text-[36px] mt-[64px] leading-[1.58] max-w-[820px] text-pretty">“{person.talk}”</p>
       </div>
       <div className="slide-in [--d:200ms] size-[720px] -mr-[20px] [&>canvas]:size-full">
         <Portrait person={person} size={720} cells={70} />
