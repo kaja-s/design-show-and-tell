@@ -16,7 +16,7 @@ import { Preview } from "../lib/preview";
 import { TrailSteps } from "./step-trail";
 import { clearMe, readMe, writeMe } from "../lib/me";
 import {
-  COLORS, HAIR_COLORS, MAX_INTRO, MAX_TAGS, OPTIONS, PANTS, SKIN, TAGS, defaultConfig, looksLikeUrl, randomConfig,
+  COLORS, HAIR_COLORS, LINK_LABEL, MAX_INTRO, MAX_TAGS, OPTIONS, PANTS, SKIN, TAGS, defaultConfig, linkKind, randomConfig,
   type Config, type FieldErrors, type Villager,
 } from "../lib/villager";
 
@@ -86,8 +86,10 @@ export function JoinFlow() {
   const [tags, setTags] = useState<string[]>([]);
   const [customTag, setCustomTag] = useState("");
   const [intro, setIntro] = useState("");
-  const [portfolio, setPortfolio] = useState("");
-  const [linkedin, setLinkedin] = useState("");
+  // one "links" field: people paste whatever they have and linkKind() sorts it
+  // into portfolio / linkedin / x when saving (up to one of each)
+  const [links, setLinks] = useState<string[]>([""]);
+  const [linkErrors, setLinkErrors] = useState<(string | undefined)[]>([]);
   const [errors, setErrors] = useState<FieldErrors & { form?: string }>({});
   const [sending, setSending] = useState(false);
   const [mine, setMine] = useState<Villager | null>(null);
@@ -132,8 +134,8 @@ export function JoinFlow() {
         setName(v.name);
         setTags(v.tags);
         setIntro(v.intro);
-        setPortfolio(v.portfolio);
-        setLinkedin(v.linkedin);
+        const had = [v.portfolio, v.linkedin, v.twitter].filter((l) => l?.trim());
+        setLinks(had.length ? had : [""]);
         setStep(0);
       })
       .catch((status) => {
@@ -195,20 +197,28 @@ export function JoinFlow() {
     const typed = customTag.trim().toLowerCase();
     const roles = typed && !tags.includes(typed) && tags.length < MAX_TAGS ? [...tags, typed] : tags;
     if (!roles.length) errs.tags = "pick or write at least one.";
-    if (portfolio.trim() && !looksLikeUrl(portfolio)) errs.portfolio = "that doesn't look like a link.";
-    if (linkedin.trim().length > 200) errs.linkedin = "that link is too long.";
+    // sort the links; one of each kind
+    const sorted: Record<string, string> = { portfolio: "", linkedin: "", twitter: "" };
+    const linkErrs = links.map((l) => {
+      if (!l.trim()) return undefined;
+      const kind = linkKind(l);
+      if (!kind) return "that doesn't look like a link. paste the whole address.";
+      if (sorted[kind]) return `you've already added a ${LINK_LABEL[kind]} link.`;
+      sorted[kind] = l.trim();
+      return undefined;
+    });
     setErrors(errs);
+    setLinkErrors(linkErrs);
     if (errs.tags) return document.getElementById("tag-0")?.focus();
-    if (errs.portfolio) return document.getElementById("f-portfolio")?.focus();
-    if (errs.linkedin) return document.getElementById("f-linkedin")?.focus();
+    const bad = linkErrs.findIndex(Boolean);
+    if (bad >= 0) return document.getElementById(`f-link-${bad}`)?.focus();
 
     setSending(true);
     if (typed) {
       setTags(roles);
       setCustomTag("");
     }
-    // twitter isn't asked anymore; keep whatever an older card had
-    const body = { name, email: email.trim(), tags: roles, intro, portfolio, linkedin, twitter: mine?.twitter ?? "", config };
+    const body = { name, email: email.trim(), tags: roles, intro, portfolio: sorted.portfolio, linkedin: sorted.linkedin, twitter: sorted.twitter, config };
     try {
       const me = readMe();
       let res = me && mine
@@ -225,7 +235,13 @@ export function JoinFlow() {
           go(1);
           return;
         }
-        setErrors({ ...(data.errors ?? {}), form: data.error ?? "something went wrong. try again." });
+        // a link the server didn't accept goes back on the row it came from
+        const fromServer = data.errors ?? {};
+        setLinkErrors(links.map((l) => {
+          const kind = linkKind(l);
+          return kind ? fromServer[kind] : undefined;
+        }));
+        setErrors({ ...fromServer, form: data.error ?? "something went wrong. try again." });
         return;
       }
       if (data.token) writeMe({ id: data.villager.id, token: data.token });
@@ -253,8 +269,8 @@ export function JoinFlow() {
       setEmail("");
       setTags([]);
       setIntro("");
-      setPortfolio("");
-      setLinkedin("");
+      setLinks([""]);
+      setLinkErrors([]);
       setCustomTag("");
       setConfig(defaultConfig());
       go(1);
@@ -466,17 +482,81 @@ export function JoinFlow() {
             <FieldError id="e-intro">{errors.intro}</FieldError>
           </div>
 
-          <div>
-            <FieldLabel htmlFor="f-portfolio">portfolio · optional</FieldLabel>
-            <input id="f-portfolio" inputMode="url" autoComplete="url" autoCapitalize="none" autoCorrect="off" enterKeyHint="next" onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); document.getElementById("f-linkedin")?.focus(); } }} value={portfolio} onChange={(e) => setPortfolio(e.target.value)} placeholder="yourname.com" aria-invalid={!!errors.portfolio} aria-describedby="e-portfolio" className={`${FIELD_CLASS}`} />
-            <FieldError id="e-portfolio">{errors.portfolio}</FieldError>
-          </div>
-
-          <div>
-            <FieldLabel htmlFor="f-linkedin">linkedin · optional</FieldLabel>
-            <input id="f-linkedin" inputMode="url" autoCapitalize="none" autoCorrect="off" enterKeyHint="go" value={linkedin} onChange={(e) => setLinkedin(e.target.value)} placeholder="linkedin.com/in/yourname" aria-invalid={!!errors.linkedin} aria-describedby="e-linkedin" className={`${FIELD_CLASS}`} />
-            <FieldError id="e-linkedin">{errors.linkedin}</FieldError>
-          </div>
+          <fieldset className="flex flex-col gap-2">
+            <legend className="block text-xs tracking-wider opacity-70 mb-1.5">links · optional</legend>
+            <p id="h-links" className="-mt-1 mb-0.5 text-xs opacity-60">paste your portfolio, linkedin or x. we&apos;ll sort them out.</p>
+            {links.map((l, i) => {
+              const kind = linkKind(l);
+              const last = i === links.length - 1;
+              return (
+                <div key={i}>
+                  <div className="relative">
+                    <label htmlFor={`f-link-${i}`} className="sr-only">
+                      link {i + 1}
+                    </label>
+                    <input
+                      id={`f-link-${i}`}
+                      inputMode="url"
+                      autoComplete={i === 0 ? "url" : "off"}
+                      autoCapitalize="none"
+                      autoCorrect="off"
+                      spellCheck={false}
+                      enterKeyHint={last ? "go" : "next"}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !last) {
+                          e.preventDefault();
+                          document.getElementById(`f-link-${i + 1}`)?.focus();
+                        }
+                      }}
+                      value={l}
+                      onChange={(e) => {
+                        const next = [...links];
+                        next[i] = e.target.value;
+                        setLinks(next);
+                        if (linkErrors[i]) setLinkErrors((errs) => errs.map((x, k) => (k === i ? undefined : x)));
+                      }}
+                      placeholder={i === 0 ? "yourname.com" : "linkedin.com/in/yourname"}
+                      aria-invalid={!!linkErrors[i]}
+                      aria-describedby={`h-links k-link-${i} e-link-${i}`}
+                      className={`${FIELD_CLASS} ${kind ? (links.length > 1 ? "pr-[7.75rem]" : "pr-[6.5rem]") : links.length > 1 ? "pr-10" : ""}`}
+                    />
+                    {/* what we think it is, live; or a way to drop an extra row */}
+                    <span className="absolute right-2 inset-y-0 flex items-center gap-1.5">
+                      <span id={`k-link-${i}`} className="text-[11px] opacity-60" aria-live="polite">
+                        {kind ? `✓ ${LINK_LABEL[kind]}` : ""}
+                      </span>
+                      {links.length > 1 && (
+                        <button
+                          type="button"
+                          aria-label={`remove link ${i + 1}`}
+                          className="hit relative size-6 grid place-items-center opacity-50 hover:opacity-100"
+                          onClick={() => {
+                            setLinks(links.filter((_, k) => k !== i));
+                            setLinkErrors(linkErrors.filter((_, k) => k !== i));
+                          }}
+                        >
+                          ×
+                        </button>
+                      )}
+                    </span>
+                  </div>
+                  <FieldError id={`e-link-${i}`}>{linkErrors[i]}</FieldError>
+                </div>
+              );
+            })}
+            {links.length < 3 && links[links.length - 1].trim() && (
+              <button
+                type="button"
+                className={`${TEXT_BUTTON} self-start`}
+                onClick={() => {
+                  setLinks([...links, ""]);
+                  requestAnimationFrame(() => document.getElementById(`f-link-${links.length}`)?.focus());
+                }}
+              >
+                + another link
+              </button>
+            )}
+          </fieldset>
 
           {errors.form && (
             <p role="alert" className="text-xs text-danger">

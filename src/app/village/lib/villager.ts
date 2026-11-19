@@ -106,6 +106,23 @@ export function randomConfig(r: () => number = Math.random): Config {
 // ---------------------------------------------------------------------------
 export const looksLikeUrl = (v: string) => /^(https?:\/\/)?[^\s./]+(\.[^\s./]+)+(\/\S*)?$/i.test(v.trim());
 
+export type LinkKind = "portfolio" | "linkedin" | "twitter";
+export const LINK_LABEL: Record<LinkKind, string> = { portfolio: "portfolio", linkedin: "linkedin", twitter: "x / twitter" };
+
+// What a pasted link is, for the join form's one "links" field: linkedin and
+// x/twitter by their domain (or an @handle), anything else that looks like a
+// url is a portfolio. null when it doesn't look like a link yet.
+export function linkKind(value: string): LinkKind | null {
+  const v = value.trim();
+  if (!v) return null;
+  if (/^@\w{1,30}$/.test(v)) return "twitter";
+  if (!looksLikeUrl(v) || v.length > 200) return null;
+  const host = v.replace(/^https?:\/\//i, "").replace(/^www\./i, "").split("/")[0].toLowerCase();
+  if (host === "linkedin.com" || host.endsWith(".linkedin.com") || host === "lnkd.in") return "linkedin";
+  if (host === "x.com" || host === "twitter.com" || host.endsWith(".twitter.com")) return "twitter";
+  return "portfolio";
+}
+
 export function normLink(value: string, kind: "portfolio" | "linkedin" | "twitter") {
   let v = value.trim();
   if (!v) return null;
