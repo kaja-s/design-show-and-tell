@@ -202,8 +202,8 @@ export function validateInput(body: unknown): { value: VillagerInput; errors: Fi
 
 export const photoUrl = (v: Pick<Villager, "id" | "updatedAt">) => `/api/villagers/${v.id}/photo?v=${v.updatedAt}`;
 
-// A letter for the organiser, from the mailbox in the village. Name and email
-// are optional (the email is only so she can write back).
+// A letter for the organiser, from the mailbox in the village. All three are
+// required: the name and email are so she can write back.
 export const MAX_LETTER = 2000;
 export function validateLetter(body: unknown): { value: { name: string; email: string; text: string }; errors: FieldErrors } {
   const b = (body ?? {}) as Record<string, unknown>;
@@ -212,6 +212,8 @@ export function validateLetter(body: unknown): { value: { name: string; email: s
   const errors: FieldErrors = {};
   if (!text) errors.text = "write something first.";
   else if (text.length > MAX_LETTER) errors.text = `keep it under ${MAX_LETTER} characters.`;
-  if (email && (!VILLAGE_EMAIL_RE.test(email) || email.length > 200)) errors.email = "that doesn't look like an email.";
+  if (!name) errors.name = "add your name.";
+  if (!email) errors.email = "add your email, so kaja can write back.";
+  else if (!VILLAGE_EMAIL_RE.test(email) || email.length > 200) errors.email = "that doesn't look like an email.";
   return { value: { name, email, text }, errors };
 }
