@@ -310,11 +310,11 @@ export function JoinFlow() {
             <FieldLabel htmlFor="f-name">name</FieldLabel>
             <input
               id="f-name"
-              autoComplete="given-name"
+              autoComplete="name"
               enterKeyHint="next"
               onKeyDown={(e) => e.key === "Enter" && document.getElementById("f-email")?.focus()}
               maxLength={40}
-              placeholder="kaja"
+              placeholder="name and last name"
               value={name}
               onChange={(e) => setName(e.target.value)}
               aria-invalid={!!errors.name}

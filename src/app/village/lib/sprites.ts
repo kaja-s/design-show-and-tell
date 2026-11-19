@@ -85,11 +85,15 @@ const TOPS: Record<Config["top"], Rows> = {
 const HAIR_TOP: Rows = [row(2, "....oooooooo...."), row(3, "...oHHHHHHHHo..."), row(4, "..oHHHHHHHHHHo.."), ...rows(5, 6, ".oHHHHHHHHHHHHo.")];
 const HAIR: Record<Config["hair"], Rows> = {
   none: [],
+  // close crop: just the top of the head, with a stubbly hairline
+  buzz: [row(2, "....oooooooo...."), row(3, "...oHHHHHHHHo..."), row(4, "..oHHHHHHHHHHo.."), row(5, ".oHHHHHHHHHHHHo."), row(6, ".osHsHsHsHsHsHo.")],
   short: [...HAIR_TOP, row(7, ".oHHHHssssHHHHo."), row(8, ".oHHssssssssHHo."), row(9, ".oH")],
   messy: [row(1, "...o.oo..oo.o..."), row(2, "...oHoHooHoHo..."), ...HAIR_TOP.slice(1), row(7, ".oHsHHssHHssHHo."), row(8, ".oHssssssssssHo.")],
   bun: [row(0, ".....oooooo....."), row(1, "....oHHHHHHo...."), ...HAIR_TOP, row(7, ".oHHHssssssHHHo."), row(8, ".oHssssssssssHo.")],
   ponytail: [row(2, "....oooooooo...."), row(3, "...oHHHHHHHHoo.."), row(4, "..oHHHHHHHHHHHo."), ...rows(5, 6, ".oHHHHHHHHHHHHHo"),
     row(7, ".oHHHssssssHHHHo"), row(8, ".oHssssssssssHHo"), ...rows(9, 11, "..............Ho"), row(12, "...............o")],
+  // chin length with a straight fringe
+  bob: [...HAIR_TOP, row(7, "oHHHHHHHHHHHHHHo"), row(8, "oHHssssssssssHHo"), ...rows(9, 11, "oHH..........HHo"), row(12, "oHHo........oHHo"), row(13, ".oo..........oo.")],
   long: [...HAIR_TOP.slice(0, 3), ...rows(5, 6, "oHHHHHHHHHHHHHHo"), row(7, "oHHHHssssssHHHHo"),
     ...rows(8, 12, "oHH..........HHo"), ...rows(13, 15, "oHHo........oHHo"), row(16, ".oo..........oo.")],
   curly: [row(1, "...oHoHoHoHoHo.."), row(2, "..oHHHHHHHHHHo.."), row(3, ".oHHHHHHHHHHHHo."), ...rows(4, 6, "oHHHHHHHHHHHHHHo"),
@@ -99,6 +103,7 @@ const HAIR: Record<Config["hair"], Rows> = {
 const HAIR_SIDE: Rows = [...rows(7, 8, ".oHHHHHH"), row(9, ".oHHHHH"), row(10, ".oHHHH"), row(11, ".oHHH"), row(12, "..oH")];
 const HAIR_BACK_FILL: Rows = [row(3, "...oHHHHHHHHo..."), row(4, "..oHHHHHHHHHHo.."), ...rows(5, 11, ".oHHHHHHHHHHHHo."), row(12, "..oHHHHHHHHHHo..")];
 const HAIR_BACK_EXTRA: Partial<Record<Config["hair"], Rows>> = {
+  bob: [row(12, "oHHHHHHHHHHHHHHo"), row(13, ".oHHHHHHHHHHHHo.")],
   long: [...rows(12, 15, "oHHHHHHHHHHHHHHo"), row(16, ".oHHHHHHHHHHHHo.")],
   ponytail: [...rows(12, 14, "......oHHo......"), row(15, ".......oo.......")],
   curly: [...rows(4, 9, "oHHHHHHHHHHHHHHo"), row(10, ".oHHHHHHHHHHHHo.")],
@@ -218,7 +223,8 @@ export function sprite(raw: Config | unknown, pose: Pose): HTMLCanvasElement {
   if (back) {
     paint(g, HEAD_BACK, pal, bob);
     if (c.hair !== "none") {
-      paint(g, HAIR_BACK_FILL, pal, bob);
+      // a buzz cut only covers the top of the head from behind
+      paint(g, c.hair === "buzz" ? HAIR_BACK_FILL.filter(([r]) => r <= 6) : HAIR_BACK_FILL, pal, bob);
       paint(g, HAIR[c.hair].filter(([r]) => r <= 2), pal, bob);
       const extra = HAIR_BACK_EXTRA[c.hair];
       if (extra) paint(g, extra, pal, bob);
@@ -231,7 +237,7 @@ export function sprite(raw: Config | unknown, pose: Pose): HTMLCanvasElement {
   } else {
     paint(g, side ? HEAD_SIDE : HEAD, pal, bob, mirror);
     paint(g, HAIR[c.hair], pal, bob, mirror);
-    if (side && c.hair !== "none") paint(g, HAIR_SIDE, pal, bob, mirror);
+    if (side && c.hair !== "none" && c.hair !== "buzz") paint(g, HAIR_SIDE, pal, bob, mirror);
     paint(g, HATS[c.hat], pal, bob, mirror);
     if (c.extra === "glasses") paint(g, side ? GLASSES_SIDE : EXTRAS.glasses, pal, bob, mirror);
     else if (c.extra !== "scarf" && c.extra !== "none") paint(g, EXTRAS[c.extra], pal, bob, mirror);

@@ -54,7 +54,6 @@ export function VillageApp({ screen, me, inline = false, active = true, night }:
   const [bubble, setBubble] = useState<{ text: string; met: boolean } | null>(null);
   const [egg, setEgg] = useState<"files" | "letter" | "lost" | null>(null);
   const [card, setCard] = useState<Villager | null>(null);
-  const [progress, setProgress] = useState({ met: 0, total: 0 });
   const [met, setMet] = useState<Set<string>>(() => new Set());
   const [zoomed, setZoomed] = useState(false);
   const [dirOpen, setDirOpen] = useState(false);
@@ -88,7 +87,7 @@ export function VillageApp({ screen, me, inline = false, active = true, night }:
           if (v) setEgg(null);
           if (v) setMet((m) => (m.has(v.id) ? m : new Set(m).add(v.id)));
         },
-        onProgress: (met, total) => setProgress({ met, total }),
+        onProgress: () => {}, // no counter on screen; "you've met everyone" still shows
         onArrival: (a) => showBanner(`${a.name} moved in`),
         onAllMet: () => window.setTimeout(() => showBanner("you've met everyone"), 600),
         onFirstFrame: inline ? () => {} : signalWolfReady,
@@ -209,9 +208,6 @@ export function VillageApp({ screen, me, inline = false, active = true, night }:
         <>
           <div className="absolute inset-x-2.5 top-2.5 flex justify-between gap-2 pointer-events-none">
             <div className="flex flex-wrap items-center gap-1.5 pointer-events-auto">
-              <div className="h-8 inline-flex items-center gap-2 bg-background/90 backdrop-blur-sm border border-foreground/15 px-2.5 text-xs tabular-nums" aria-live="polite" aria-label={`met ${progress.met} of ${progress.total}`}>
-                met {progress.met}/{progress.total}
-              </div>
               {playing && listButton}
             </div>
             <Link href="/village" className={`${CHIP} pointer-events-auto shrink-0 whitespace-nowrap`}>
@@ -233,12 +229,6 @@ export function VillageApp({ screen, me, inline = false, active = true, night }:
                 <FeatherIcon icon="arrow-left" size={14} />
               </Link>
               {listButton}
-              <div className="h-8 inline-flex items-center gap-2 bg-background/90 backdrop-blur-sm border border-foreground/15 px-2.5 text-xs tabular-nums" aria-live="polite" aria-label={`met ${progress.met} of ${progress.total}`}>
-                {progress.met}/{progress.total}
-                <span className="w-12 h-1 bg-foreground/15 overflow-hidden" aria-hidden="true">
-                  <i className="block h-full bg-foreground origin-left transition-transform duration-500 ease-out" style={{ transform: `scaleX(${progress.total ? progress.met / progress.total : 0})` }} />
-                </span>
-              </div>
             </div>
             <div className="flex items-center gap-1.5 pointer-events-auto">
               <button type="button" className={`${ICON_CHIP} ${zoomed ? CHIP_ON : ""}`} aria-pressed={zoomed} aria-label="see the whole village" title="see the whole village" onClick={toggleZoom}>
@@ -373,7 +363,7 @@ const HOW = [
   ["meet everyone", "collect their cards"],
 ];
 const HOW_TOUCH = [
-  ["walk", "tap where you want to go"],
+  ["walk", "tap where you want to go, or drag"],
   ["say hi", "tap someone"],
   ["meet everyone", "collect their cards"],
 ];

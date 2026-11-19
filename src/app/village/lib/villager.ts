@@ -14,7 +14,7 @@ export const HAIR_COLORS = ["#1b1d33", "#4a2c1d", "#8a5a3b", "#d9a65b", "#ece3cf
 export const COLORS = ["#d9453b", "#f28b3c", "#f2c14e", "#3f9b6e", "#7cc3f0", "#3b5bdb", "#021093", "#9b5de5", "#f2a7c3", "#f4f4f4", "#262a40", "#8a5a3b"];
 export const PANTS = ["#2f3350", "#4b5568", "#021093", "#6b5644", "#d9dde8", "#262a40"];
 export const OPTIONS = {
-  hair: ["none", "short", "messy", "bun", "ponytail", "long", "curly"],
+  hair: ["none", "buzz", "short", "messy", "bun", "ponytail", "bob", "long", "curly"],
   top: ["tee", "stripes", "hoodie", "jacket", "puffer"],
   hat: ["none", "beanie", "cap"],
   extra: ["none", "glasses", "headphones", "clip", "scarf"],

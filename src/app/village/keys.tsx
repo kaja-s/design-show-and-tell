@@ -22,6 +22,7 @@ export function Keys({ touch, className = "" }: { touch: boolean; className?: st
   const items: [React.ReactNode, string][] = touch
     ? [
         [<span key="t" className={KBD}>tap</span>, "walk there"],
+        [<span key="d" className={KBD}>drag</span>, "walk that way"],
         [<span key="p" className={KBD}>tap someone</span>, "say hi"],
       ]
     : [
