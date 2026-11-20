@@ -5,7 +5,7 @@
 // ---------------------------------------------------------------------------
 
 // Which show & tell a villager moved in at. Bump with the event cycle.
-export const EVENT = { id: "2026-11-19", label: "19 nov 2026" };
+export const EVENT = { id: "online", label: "online" };
 
 // Character options. Sprites (lib/sprites.ts) are drawn in these colours over
 // a city in the site's blues, so the palette favours colours that pop on it.

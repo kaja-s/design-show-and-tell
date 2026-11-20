@@ -16,7 +16,7 @@
 //   kaja, which the ui opens
 // - a client who only asks for a bigger logo; the billboard on the roof obliges
 // - type "figma": everyone gets a multiplayer cursor trailing behind them
-// - an open-air cinema at the top of the park looping the event's slides
+// - an open-air cinema at the top of the park looping photos from the last event
 // - the font foundry: its sign cycles typefaces; the license is per seat
 // - the icon shop: a hamburger sign; tap it and the shutters open like a nav drawer
 // - the rounded corner barber: every visit takes a little more off the corners
@@ -30,7 +30,6 @@
 // ---------------------------------------------------------------------------
 import { BX, BY, COLS, ROWS, ST, blockX, blockY, layout, type Building, type Palette, type Rect } from "./map";
 import { VISITOR, type Config } from "./villager";
-import { EVENT, HOSTS, SPEAKERS, SPONSOR } from "../../slides/deck";
 
 type G = CanvasRenderingContext2D;
 type Pt = { x: number; y: number };
@@ -222,14 +221,26 @@ export function eggLayout(): EggLayout {
   return cached;
 }
 
-// The slides, as the cinema shows them: [heading, ...lines]
-const SLIDES: string[][] = [
-  ["design show & tell", EVENT.edition, EVENT.dateLabel],
-  ["your hosts", ...HOSTS.map((h) => h.name)],
-  ["thanks to", SPONSOR.name],
-  ["tonight", ...SPEAKERS.map((s) => s.name)],
-  ["the village", "scan the code", "make your villager"],
+// What the cinema shows: text slides ([heading, ...lines]) and photos from the
+// last show & tell (public/village/last-event-*.png, 128x52: twice the
+// screen's resolution, drawn without smoothing so they read as pixel art)
+type Slide = string[] | { photo: number };
+const SLIDES: Slide[] = [
+  ["last show & tell", "19 nov 2026", "visionect"],
+  { photo: 0 },
+  { photo: 1 },
+  { photo: 2 },
+  ["next one", "early 2027", "exact date soon"],
+  ["the village", "move in", "make your villager"],
 ];
+const PHOTOS: HTMLImageElement[] =
+  typeof window === "undefined"
+    ? []
+    : [1, 2, 3].map((i) => {
+        const img = new Image();
+        img.src = `/village/last-event-${i}.png`;
+        return img;
+      });
 const SLIDE_SEC = 3.2;
 const CURSOR_COLORS = ["#f24822", "#ffa629", "#14ae5c", "#0d99ff", "#9747ff", "#ff24bd", "#00b5ce"];
 
@@ -459,14 +470,22 @@ export class Eggs {
     R(g, x - 2, y - 2, w + 4, h + 4, p.ink);
     R(g, x, y, w, h, "#f4f4f4");
     const n = Math.abs(Math.floor(t / SLIDE_SEC)) % SLIDES.length, local = Math.abs(t) % SLIDE_SEC;
-    const [head, ...lines] = SLIDES[n] ?? SLIDES[0];
+    const slide = SLIDES[n] ?? SLIDES[0];
+    const img = Array.isArray(slide) ? null : PHOTOS[slide.photo];
+    if (img?.complete && img.naturalWidth) {
+      const smooth = g.imageSmoothingEnabled;
+      g.imageSmoothingEnabled = false;
+      g.drawImage(img, x, y, w, h);
+      g.imageSmoothingEnabled = smooth;
+    }
+    const [head, ...lines] = Array.isArray(slide) ? slide : [];
     g.textAlign = "center";
     g.textBaseline = "alphabetic";
     g.fillStyle = "#021093";
     const total = 6 + lines.length * 5;
     let ty = y + Math.round((h - total) / 2) + 5;
     g.font = "700 5px ui-monospace, Menlo, monospace";
-    g.fillText(head, x + w / 2, ty, w - 4);
+    if (head) g.fillText(head, x + w / 2, ty, w - 4);
     g.font = "400 4px ui-monospace, Menlo, monospace";
     for (const l of lines) {
       ty += 5;

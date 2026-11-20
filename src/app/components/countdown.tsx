@@ -5,9 +5,9 @@ import { useEffect, useState } from "react";
 // Set to the next event's date (local time, no timezone suffix) when it's
 // confirmed, e.g. `new Date("2026-11-26T18:00:00")`. While null, the slot
 // shows dashes and the small save-the-date line appears beneath it.
-const NEXT_EVENT: Date | null = new Date("2026-11-19T18:00:00");
+const NEXT_EVENT: Date | null = null;
 
-const SAVE_THE_DATE = "[late november 2026 | exact date soon]";
+const SAVE_THE_DATE = "[early 2027 | exact date soon]";
 const PLACEHOLDER = "--D : --H : --M : --S";
 
 // Tab title easter egg: while the tab is hidden the title becomes the slot's
