@@ -25,7 +25,7 @@ const faqs: { q: string; a: React.ReactNode }[] = [
     q: "when + where?",
     a: (
       <>
-        <strong className="font-bold">november 19th, 2026 at 6pm</strong> at visionect (tržaška cesta 118, ljubljana).{" "}
+        <strong className="font-bold">early 2027, exact date soon.</strong> the last one was on november 19th at visionect (tržaška cesta 118, ljubljana).{" "}
         <KeepMeUpdated />
       </>
     ),

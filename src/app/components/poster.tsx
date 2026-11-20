@@ -9,7 +9,7 @@
 import { WOLF_COLS, WOLF_DOTS, WOLF_ROWS } from "./wolf-dots";
 
 const SITE_URL = "design-show-and-tell.vercel.app";
-const DATE_LINE = "[november 19th 2026 | 6pm | visionect]";
+const DATE_LINE = "[early 2027 | exact date soon]";
 const PLACE = "ljubljana";
 
 // Dot radius at full ink, in cell units. Slightly over half a cell so the

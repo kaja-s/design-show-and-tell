@@ -10,7 +10,7 @@
 // near, so the hero and the page loader never wait for it.
 // ---------------------------------------------------------------------------
 import dynamic from "next/dynamic";
-// import Link from "next/link"; // for the hidden "move in" link
+import Link from "next/link";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Keys, useCoarsePointer } from "../village/keys";
 import { useTheme } from "../theme-provider";
@@ -148,14 +148,12 @@ export function VillageWindow() {
         <h2 id="village-title" className="village-title text-[22px] leading-[1.05] sm:text-[32px] text-white text-balance">
           slovenian designer village
         </h2>
-        {/* hidden for now; bring back to let people move in from the homepage
         <Link
           href="/village/join"
           className="mt-0.5 inline-flex items-center gap-1.5 border border-[#93c5fd]/40 px-3 py-1.5 text-xs text-[#93c5fd] transition-[background-color,color,border-color,scale] duration-150 ease-out hover:bg-[#93c5fd] hover:text-[#040c2a] hover:border-[#93c5fd] active:scale-[0.97]"
         >
           move in →
         </Link>
-        */}
       </header>
 
       <div ref={tv} className="relative">
