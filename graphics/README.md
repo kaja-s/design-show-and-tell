@@ -96,3 +96,21 @@ turns the cut-outs into `public/slides/<name>-tint.png` (the blue-toned photo th
 Change `_engine/comp.html` only for new choreography. Its shader math mirrors
 `src/app/components/shader-canvas.tsx`; if the site's halftone or theme colours change, update `THEME`
 and the fragment shader there too.
+
+## newsletter banner
+
+`graphics/newsletter/{night,day}.{gif,png}` are the email header in the site's dark and light themes: 1200×328
+(2× a 600×164 banner in the email column), the halftone wolf howling on top of the title block. Day has no side
+inset, so its text lines up with the email's body text; night is a dark block with a 24px inset.
+`day-centered` is the light one with everything centred (`<Banner centered />`), `day-wolf` just the wolf, at the left
+edge (`<WolfBanner />`). Their source is the page
+`/banner` (`src/app/banner/banner.tsx`, both themes stacked). To change the copy and re-render:
+
+1. Edit `banner.tsx`, open `/banner` with the dev server running at device pixel ratio 2, hide the wolves
+   (`document.querySelectorAll('[data-banner] canvas').forEach(c => c.style.visibility = 'hidden')`) and save
+   each banner's 1200×328 block as `graphics/newsletter/<theme>-background.png`.
+2. `node graphics/newsletter/render.js night` (or `day`, `day-centered`, `day-wolf`) runs `public/wolf.mp4` through the halftone shader
+   (CPU port, the same maths as `shader-canvas.tsx`) in the theme's ink over that background → `<theme>.gif`
+   (12fps, 24 colours, ~170KB) and `<theme>.png` (the first frame, full colour, ~40KB). The wolf is composited
+   with transparency, so its feet overlap the title block cleanly. Keep the wolf's size and per-theme position
+   (`THEMES` in the script, at 2×) in step with `banner.tsx`.

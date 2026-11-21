@@ -85,7 +85,8 @@ export function hexToRgb(hex: string): [number, number, number] {
 export function ShaderCanvas({
   className = "relative w-32 h-32 sm:w-48 sm:h-48 ml-[10px]",
   cells,
-}: { className?: string; cells?: number } = {}) {
+  ink,
+}: { className?: string; cells?: number; /** overrides the theme's ink, e.g. on a dark panel */ ink?: string } = {}) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const animRef = useRef<number>(0);
@@ -161,7 +162,7 @@ export function ShaderCanvas({
       if (video.readyState >= video.HAVE_CURRENT_DATA) {
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, video);
 
-        const fg = hexToRgb(HALFTONE_INK[theme]);
+        const fg = hexToRgb(ink ?? HALFTONE_INK[theme]);
 
         gl.clearColor(0, 0, 0, 0); // Clear with transparent
         gl.clear(gl.COLOR_BUFFER_BIT);
@@ -181,7 +182,7 @@ export function ShaderCanvas({
     return () => {
       cancelAnimationFrame(animRef.current);
     };
-  }, [theme, cells]);
+  }, [theme, cells, ink]);
 
   return (
     <div className={className}>
