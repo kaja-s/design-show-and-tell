@@ -26,6 +26,8 @@ The village stores villagers in Upstash Redis when `KV_REST_API_URL` + `KV_REST_
 
 ## Motion graphics (`graphics/`)
 
+The newsletter header is `graphics/newsletter/{night,day,day-centered,day-wolf}.{gif,png}` (dark, light, light centred, the wolf alone), rendered from the `/banner` page (`src/app/banner/`) by `graphics/newsletter/render.js <night|day|day-centered|day-wolf>`; the steps are in `graphics/README.md`.
+
 `graphics/_engine/comp.html` is one shared composition (WebGL port of the halftone shader + DOM typography + a scripted pointer that clicks the theme toggle; every frame is a pure function of time, and it loops). Each graphic is a folder with a `content.js` that supplies copy, duration, wolf framing and timeline overrides; `graphics/_engine/render.js <name>` drives it through headless Chrome into ffmpeg. `graphics/README.md` has the details.
 
 ## Event cycle: the one recurring edit
